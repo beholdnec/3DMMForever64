@@ -464,7 +464,7 @@ bool KCDC::_FDecode(void *pvSrc, long cbSrc, void *pvDst, long cbDst, long *pcbD
         return fFalse;
     }
 
-#if defined(IN_80386) && false
+#ifdef IN_80386
 
 #include "kcdc_386.h"
 
@@ -834,7 +834,7 @@ bool KCDC::_FDecode2(void *pvSrc, long cbSrc, void *pvDst, long cbDst, long *pcb
         return fFalse;
     }
 
-#if defined(IN_80386) && false
+#ifdef IN_80386
 
 #include "kcd2_386.h"
 
