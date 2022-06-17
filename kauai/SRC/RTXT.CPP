@@ -1209,11 +1209,11 @@ bool TXRD::_FReadChunk(PCFL pcfl, CTG ctg, CNO cno, bool fCopyText)
         {
             if (_pagcact->FFree(icact))
                 continue;
-            _pagcact->GetFixed(icact, &cact);
+            _pagcact->GetFixed(icact, BlobPtr::Make(cact));
             if (bo == kboOther)
             {
                 SwapBytesRglw(&cact, 1);
-                _pagcact->PutFixed(icact, &cact);
+                _pagcact->PutFixed(icact, BlobPtr::Make(cact));
             }
             if (!_FOpenArg(icact, B3Lw(cact), bo, osk))
                 return fFalse;
@@ -1673,14 +1673,14 @@ bool TXRD::_FEnsureInAg(byte sprm, void *pv, long cb, long *pjv)
             continue;
         if (FEqualRgb(qv, pv, cb))
         {
-            _pagcact->GetFixed(iv, &cact);
+            _pagcact->GetFixed(iv, BlobPtr::Make(cact));
             if (B3Lw(cact) == sprm)
             {
                 *pjv = iv + 1;
                 AssertIn(cact & 0x00FFFFFFL, 1, 0x00FFFFFFL);
                 cact++;
                 Assert(B3Lw(cact) == sprm, "cact overflowed");
-                _pagcact->PutFixed(iv, &cact);
+                _pagcact->PutFixed(iv, BlobPtr::Make(cact));
                 return fTrue;
             }
         }
@@ -1711,14 +1711,14 @@ void TXRD::_ReleaseInAg(long jv)
         return;
     }
 
-    _pagcact->GetFixed(jv - 1, &cact);
+    _pagcact->GetFixed(jv - 1, BlobPtr::Make(cact));
     cactT = cact & 0x00FFFFFFL;
     if (--cactT <= 0)
         _pagcact->Delete(jv - 1);
     else
     {
         cact--;
-        _pagcact->PutFixed(jv - 1, &cact);
+        _pagcact->PutFixed(jv - 1, BlobPtr::Make(cact));
     }
 }
 
@@ -1735,10 +1735,10 @@ void TXRD::_AddRefInAg(long jv)
         return;
     }
 
-    _pagcact->GetFixed(jv - 1, &cact);
+    _pagcact->GetFixed(jv - 1, BlobPtr::Make(cact));
     AssertIn(cact & 0x00FFFFFFL, 1, 0x00FFFFFFL);
     ++cact;
-    _pagcact->PutFixed(jv - 1, &cact);
+    _pagcact->PutFixed(jv - 1, BlobPtr::Make(cact));
 }
 
 /***************************************************************************

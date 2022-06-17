@@ -1373,37 +1373,41 @@ void *GGB::PvFixedLock(long iv, long *pcbVar)
 /***************************************************************************
     Get the fixed sized data for the element.
 ***************************************************************************/
-void GGB::GetFixed(long iv, void *pv)
+void GGB::GetFixed(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(_cbFixed, 1, kcbMax);
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
-    AssertPvCb(pv, _cbFixed);
+    AssertPvCb(pv.Ptr(), _cbFixed);
+    Assert(pv.Size() <= _cbFixed, "get too much data");
 
     LOC loc;
 
     loc = *_Qloc(iv);
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    CopyPb(_Qb1(loc.bv), pv, _cbFixed);
+    //CopyPb(_Qb1(loc.bv), pv, _cbFixed);
+    CopyPb(_Qb1(loc.bv), pv.Ptr(), pv.Size());
 }
 
 /***************************************************************************
     Put the fixed sized data for the element.
 ***************************************************************************/
-void GGB::PutFixed(long iv, void *pv)
+void GGB::PutFixed(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(_cbFixed, 1, kcbMax);
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
-    AssertPvCb(pv, _cbFixed);
+    AssertPvCb(pv.Ptr(), _cbFixed);
+    Assert(pv.Size() <= _cbFixed, "put too much data");
 
     LOC loc;
 
     loc = *_Qloc(iv);
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    CopyPb(pv, _Qb1(loc.bv), _cbFixed);
+    //CopyPb(pv, _Qb1(loc.bv), _cbFixed);
+    CopyPb(pv.Ptr(), _Qb1(loc.bv), pv.Size());
     AssertThis(0);
 }
 

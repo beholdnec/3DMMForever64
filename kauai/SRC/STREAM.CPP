@@ -245,7 +245,7 @@ BSF::~BSF(void)
         // release all our reference counts
         for (iflo = _pggflo->IvMac(); iflo-- > 0;)
         {
-            _pggflo->GetFixed(iflo, &flo);
+            _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
             if (pvNil != flo.pfil)
                 ReleasePpo(&flo.pfil);
         }
@@ -271,7 +271,7 @@ long BSF::_IfloFind(long ib, long *pib, long *pcb)
     {
         for (cb = ib; iflo < _pggflo->IvMac(); iflo++)
         {
-            _pggflo->GetFixed(iflo, &flo);
+            _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
             if (flo.cb > cb)
             {
                 *pib = ib - cb;
@@ -316,7 +316,7 @@ bool BSF::_FEnsureSplit(long ib, long *piflo)
         return fTrue;
     }
 
-    _pggflo->GetFixed(iflo, &flo);
+    _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
     Assert(cbT == flo.cb, 0);
 
     cbT = ib - ibMin;
@@ -340,7 +340,7 @@ bool BSF::_FEnsureSplit(long ib, long *piflo)
         flo.fp -= cbT;
         flo.pfil->AddRef();
     }
-    _pggflo->PutFixed(iflo, &flo);
+    _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
     if (pvNil != piflo)
         *piflo = iflo + 1;
     return fTrue;
@@ -364,8 +364,8 @@ void BSF::_AttemptMerge(long ibMin, long ibLim)
     iflo = _IfloFind(LwMax(0, ibMin - 1), &ib);
     while (ib < ibLim && iflo < _pggflo->IvMac() - 1)
     {
-        _pggflo->GetFixed(iflo, &flo);
-        _pggflo->GetFixed(iflo + 1, &floT);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
+        _pggflo->GetFixed(iflo + 1, BlobPtr::Make(floT));
         if (flo.pfil != floT.pfil || pvNil != flo.pfil && flo.fp + flo.cb != floT.fp)
         {
             // cant merge them, try the next
@@ -384,7 +384,7 @@ void BSF::_AttemptMerge(long ibMin, long ibLim)
             AssertPo(flo.pfil, 0);
         }
         flo.cb += floT.cb;
-        _pggflo->PutFixed(iflo, &flo);
+        _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
     }
 }
 
@@ -450,7 +450,7 @@ bool BSF::FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbD
             // adjust the usage counts on the file pieces
             for (iflo = ifloDst + ifloLimSrc - ifloMinWhole; iflo-- > ifloDst;)
             {
-                _pggflo->GetFixed(iflo, &flo);
+                _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
                 if (pvNil != flo.pfil)
                     flo.pfil->AddRef();
             }
@@ -460,7 +460,7 @@ bool BSF::FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbD
         if (ifloMinSrc < ifloMinWhole)
         {
             cbT = cbMinFlo - ibSrc + ibMinSrc;
-            pbsfSrc->_pggflo->GetFixed(ifloMinSrc, &flo);
+            pbsfSrc->_pggflo->GetFixed(ifloMinSrc, BlobPtr::Make(flo));
             if (pvNil == flo.pfil)
             {
                 // a memory piece
@@ -494,7 +494,7 @@ bool BSF::FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbD
             fRet = FReplace(pvNil, 0, ibDst + cbIns, cbDel);
         else
         {
-            pbsfSrc->_pggflo->GetFixed(ifloLimSrc, &flo);
+            pbsfSrc->_pggflo->GetFixed(ifloLimSrc, BlobPtr::Make(flo));
             if (pvNil == flo.pfil)
             {
                 // a memory piece
@@ -559,7 +559,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
     // if ib is in a file flo, split it
     if (ibT > 0)
     {
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         if (pvNil != flo.pfil)
         {
             if (!_FEnsureSplit(ib, &iflo))
@@ -578,14 +578,14 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
     if (ibT > 0 && cbDel > 0)
     {
         // we need to start deleting in the middle of a piece
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         Assert(pvNil == flo.pfil, "why wasn't this flo split?");
         if (ibT + cbDel < flo.cb)
         {
             // deleting just part of this piece and no others
             _pggflo->DeleteRgb(iflo, ibT, cbDel);
             flo.cb -= cbDel;
-            _pggflo->PutFixed(iflo, &flo);
+            _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
             _ibMac -= cbDel;
             cbDel = 0;
         }
@@ -595,7 +595,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
             cbT = flo.cb - ibT;
             _pggflo->DeleteRgb(iflo, ibT, cbT);
             flo.cb = ibT;
-            _pggflo->PutFixed(iflo, &flo);
+            _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
             _ibMac -= cbT;
             cbDel -= cbT;
             iflo++;
@@ -607,7 +607,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
     while (cbDel > 0 && iflo < _pggflo->IvMac())
     {
         // deleting from the beginning of the flo
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         if (cbDel < flo.cb)
         {
             // just remove the first part
@@ -618,7 +618,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
             flo.cb -= cbDel;
             _ibMac -= cbDel;
             cbDel = 0;
-            _pggflo->PutFixed(iflo, &flo);
+            _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
         }
         else
         {
@@ -635,7 +635,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
     {
         if (iflo < _pggflo->IvMac())
         {
-            _pggflo->GetFixed(iflo, &flo);
+            _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
             if (pvNil == flo.pfil)
                 goto LInsertInMem;
         }
@@ -643,7 +643,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
         if (iflo > 0)
         {
             // see if the previous flow is a memory one
-            _pggflo->GetFixed(iflo - 1, &flo);
+            _pggflo->GetFixed(iflo - 1, BlobPtr::Make(flo));
             if (pvNil == flo.pfil)
             {
                 iflo--;
@@ -651,7 +651,7 @@ bool BSF::FReplace(void *prgb, long cbIns, long ib, long cbDel)
             LInsertInMem:
                 AssertDo(_pggflo->FInsertRgb(iflo, ibT, cbIns, prgb), "this shouldn't fail!");
                 flo.cb += cbIns;
-                _pggflo->PutFixed(iflo, &flo);
+                _pggflo->PutFixed(iflo, BlobPtr::Make(flo));
                 _ibMac += cbIns;
                 goto LTryMerge;
             }
@@ -753,7 +753,7 @@ void BSF::FetchRgb(long ib, long cb, void *prgb)
     ib -= ibMin;
     for (; cb > 0 && iflo < _pggflo->IvMac(); iflo++)
     {
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         Assert(flo.cb > ib, "_IfloFind messed up");
 
         // get min(cb, flo.cb - ib) bytes from position ib
@@ -823,7 +823,7 @@ bool BSF::FWriteRgb(PBLCK pblck, long ib)
     for (ibDst = 0; fRet && ibDst < cbWrite && iflo < _pggflo->IvMac(); iflo++)
     {
         Assert(pblck->Cb() == 0, 0);
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         Assert(flo.cb > ib, "_IfloFind messed up");
 
         // write min(cbWrite, flo.cb - ib) bytes from position ib
@@ -911,7 +911,7 @@ void BSF::AssertValid(ulong grfobj)
 
     for (cb = 0, iflo = _pggflo->IvMac(); iflo-- > 0;)
     {
-        _pggflo->GetFixed(iflo, &flo);
+        _pggflo->GetFixed(iflo, BlobPtr::Make(flo));
         cbT = _pggflo->Cb(iflo);
         if (pvNil == flo.pfil)
             Assert(cbT == flo.cb, "wrong sized entry");

@@ -61,7 +61,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     //
     for (iaev = _iaevAddCur; iaev < _iaevCur; iaev++)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
 
         // Is this an event we want to copy?
         switch (aev.aet)
@@ -144,7 +144,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     //
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
 
         if ((!fEntireScene) && (aetAdd == aev.aet) && (*ppactr)->_pggaev->IvMac() > 0)
         {
@@ -638,11 +638,11 @@ bool ACTR::FPasteRte(PACTR pactr)
     //
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
         if (aev.rtel.irpt > _rtelCur.irpt + crptDel)
         {
             aev.rtel.irpt += crptNew - crptDel;
-            _pggaev->PutFixed(iaev, &aev);
+            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
             continue;
         }
         else
@@ -799,7 +799,7 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     _GetNewOrigin(&xr, &yr, &zr);
 
     Assert(_pggaev->IvMac() > 0, "Nothing to paste!");
-    _pggaev->GetFixed(0, &aev);
+    _pggaev->GetFixed(0, BlobPtr::Make(aev));
     if (aev.aet != aetAdd)
         return fFalse;
     dnfrm = aev.nfrm - nfrm;
@@ -827,11 +827,11 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     // Update sound events
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
         if (dnfrm != 0)
         {
             aev.nfrm -= dnfrm;
-            _pggaev->PutFixed(iaev, &aev);
+            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
         }
         if (aetSnd != aev.aet)
             continue;

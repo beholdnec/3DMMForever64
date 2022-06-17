@@ -289,8 +289,8 @@ class GGB : public GGB_PAR
     }
     void *QvFixedGet(long iv, long *pcbVar = pvNil);
     void *PvFixedLock(long iv, long *pcbVar = pvNil);
-    void GetFixed(long iv, void *pv);
-    void PutFixed(long iv, void *pv);
+    void GetFixed(long iv, BlobPtr pv);
+    void PutFixed(long iv, BlobPtr pv);
 
     // access to the variable portion
     long Cb(long iv);

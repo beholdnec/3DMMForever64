@@ -293,7 +293,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
             continue;
         }
 
-        pag->GetFixed(iv, &lw);
+        pag->GetFixed(iv, BlobPtr::Make(lw));
         stn.FFormatSz(PszLit("\tITEM LONG 0x%x"), lw);
         pchse->DumpSz(stn.Psz());
 

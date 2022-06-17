@@ -63,7 +63,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
     dzpBest = klwMax;
     for (icurf = 0; icurf < pggcurf->IvMac(); icurf++)
     {
-        pggcurf->GetFixed(icurf, &curf);
+        pggcurf->GetFixed(icurf, BlobPtr::Make(curf));
         if (kboOther == bo)
             SwapBytesBom(&curf, kbomCurf);
         if (curf.dxp > dxp || curf.dyp > dyp || curf.curt != curtMonochrome ||
@@ -82,7 +82,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
         }
     }
     AssertIn(icurfBest, 0, pggcurf->IvMac());
-    pggcurf->GetFixed(icurfBest, &curf);
+    pggcurf->GetFixed(icurfBest, BlobPtr::Make(curf));
     if (kboOther == bo)
         SwapBytesBom(&curf, kbomCurf);
     cbRowSrc = LwRoundAway(LwDivAway(curf.dxp, 8), 2);

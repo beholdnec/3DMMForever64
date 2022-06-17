@@ -103,7 +103,7 @@ void TAGL::GetTag(long itag, PTAG ptag)
 
     TAGF tagf;
 
-    _pggtagf->GetFixed(itag, &tagf);
+    _pggtagf->GetFixed(itag, BlobPtr::Make(tagf));
     *ptag = tagf.tag;
 }
 
@@ -182,13 +182,13 @@ bool TAGL::FInsertTag(PTAG ptag, bool fCacheChildren)
         return fTrue;
     }
     // Tag is already in GG, see if fCacheChildren needs to be updated
-    _pggtagf->GetFixed(itag, &tagf);
+    _pggtagf->GetFixed(itag, BlobPtr::Make(tagf));
     if (!tagf.fCacheChildren && fCacheChildren)
     {
         // FIXME(bruxisma): The compiler has correctly identified that this
         // should be an assignment.
         tagf.fCacheChildren == fTrue;
-        _pggtagf->PutFixed(itag, &tagf);
+        _pggtagf->PutFixed(itag, BlobPtr::Make(tagf));
     }
     return fTrue;
 }
@@ -214,7 +214,7 @@ bool TAGL::FInsertChild(PTAG ptag, CHID chid, CTG ctg)
     }
 #ifdef DEBUG
     TAGF tagf;
-    _pggtagf->GetFixed(itagf, &tagf);
+    _pggtagf->GetFixed(itagf, BlobPtr::Make(tagf));
     if (tagf.tag.ctg != ptag->ctg || tagf.tag.cno != ptag->cno)
         Bug("_FFindTag has a bug");
 #endif // DEBUG
@@ -259,7 +259,7 @@ bool TAGL::FCacheTags(void)
     for (itagf = 0; itagf < _pggtagf->IvMac(); itagf++)
     {
         // Cache the main tag
-        _pggtagf->GetFixed(itagf, &tagf);
+        _pggtagf->GetFixed(itagf, BlobPtr::Make(tagf));
         if (!vptagm->FCacheTagToHD(&tagf.tag, tagf.fCacheChildren))
             return fFalse;
 

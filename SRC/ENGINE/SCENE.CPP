@@ -944,7 +944,7 @@ bool SCEN::FGotoFrm(long nfrm)
         //
         for (; _isevFrmLim > 0; _isevFrmLim--)
         {
-            _pggsevFrm->GetFixed(_isevFrmLim - 1, &sev);
+            _pggsevFrm->GetFixed(_isevFrmLim - 1, BlobPtr::Make(sev));
             if (sev.nfrm <= _nfrmCur)
             {
                 break;
@@ -963,7 +963,7 @@ bool SCEN::FGotoFrm(long nfrm)
         //
         for (isev = _isevFrmLim - 1; isev >= 0; isev--)
         {
-            _pggsevFrm->GetFixed(isev, &sev);
+            _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
             if (sev.nfrm < _nfrmCur)
             {
                 break;
@@ -1010,7 +1010,7 @@ bool SCEN::FGotoFrm(long nfrm)
         //
         for (; _isevFrmLim < _pggsevFrm->IvMac(); _isevFrmLim++)
         {
-            _pggsevFrm->GetFixed(_isevFrmLim, &sev);
+            _pggsevFrm->GetFixed(_isevFrmLim, BlobPtr::Make(sev));
             if (sev.nfrm > _nfrmCur)
             {
                 break;
@@ -1103,7 +1103,7 @@ void SCEN::_DoPrerenderingWork(bool fStartNow)
     {
         for (isev = _isevFrmLim - 1; isev >= 0; isev--)
         {
-            _pggsevFrm->GetFixed(isev, &sev);
+            _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
             if (sev.nfrm != _nfrmCur)
             {
                 return; // no camera view change in this frame
@@ -1123,7 +1123,7 @@ void SCEN::_DoPrerenderingWork(bool fStartNow)
     nfrmNextChange = _nfrmLast; // if no more view changes, go til end of scene
     for (isev = _isevFrmLim; isev < _pggsevFrm->IvMac(); isev++)
     {
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
         if (sev.sevt == sevtChngCamera)
         {
             nfrmNextChange = sev.nfrm;
@@ -1242,7 +1242,7 @@ bool SCEN::FReplayFrm(ulong grfscen)
     //
     for (isev = _isevFrmLim - 1; isev >= 0; isev--)
     {
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
         if (sev.nfrm < _nfrmCur)
         {
             break;
@@ -1615,7 +1615,7 @@ void SCEN::_MoveBackFirstFrame(long nfrm)
     //
     for (isev = 0; isev < _pggsevFrm->IvMac(); isev++)
     {
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
 
         if (sev.nfrm != _nfrmFirst)
         {
@@ -1629,7 +1629,7 @@ void SCEN::_MoveBackFirstFrame(long nfrm)
             // Move this back
             //
             sev.nfrm = nfrm;
-            _pggsevFrm->PutFixed(isev, &sev);
+            _pggsevFrm->PutFixed(isev, BlobPtr::Make(sev));
             _pggsevFrm->Move(isev, 0);
         }
     }
@@ -1680,7 +1680,7 @@ bool SCEN::FAddSndCore(bool fLoop, bool fQueue, long vlm, long sty, long ctag, P
     //
     for (isev = _isevFrmLim - 1; isev >= 0; isev--)
     {
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
         if (sev.nfrm != _nfrmCur)
             break;
         if (sev.sevt == sevtPlaySnd)
@@ -1861,7 +1861,7 @@ bool SCEN::FAddSndCoreTagc(bool fLoop, bool fQueue, long vlm, long sty, long cta
     //
     for (isev = _isevFrmLim - 1; isev >= 0; isev--)
     {
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
         if (sev.nfrm != _nfrmCur)
             break;
         if (sev.sevt == sevtPlaySnd)
@@ -3335,7 +3335,7 @@ bool SCEN::FSetBkgdCore(PTAG ptag, PTAG ptagOld)
 
         for (isev = 0; isev < _pggsevStart->IvMac(); isev++)
         {
-            _pggsevStart->GetFixed(isev, &sev);
+            _pggsevStart->GetFixed(isev, BlobPtr::Make(sev));
 
             if (sev.sevt == sevtSetBkgd)
             {
@@ -3531,7 +3531,7 @@ bool SCEN::FIsEmpty(void)
     for (isev = 0; isev < _pggsevFrm->IvMac(); isev++)
     {
 
-        _pggsevFrm->GetFixed(isev, &sev);
+        _pggsevFrm->GetFixed(isev, BlobPtr::Make(sev));
         if (sev.sevt != sevtChngCamera && sev.sevt != sevtPlaySnd)
         {
             return (fFalse);
@@ -4038,7 +4038,7 @@ LFail1:
     //
     while (isevStart--)
     {
-        pscen->_pggsevStart->GetFixed(isevStart, &sev);
+        pscen->_pggsevStart->GetFixed(isevStart, BlobPtr::Make(sev));
         switch (sev.sevt)
         {
         case sevtAddActr:
@@ -4063,7 +4063,7 @@ LFail1:
     //
     while (isevFrm--)
     {
-        pscen->_pggsevFrm->GetFixed(isevFrm, &sev);
+        pscen->_pggsevFrm->GetFixed(isevFrm, BlobPtr::Make(sev));
         switch (sev.sevt)
         {
         case sevtAddActr:
@@ -4130,7 +4130,7 @@ bool SCEN::FPlayStartEvents(bool fActorsOnly)
     {
         SEV sev;
 
-        _pggsevStart->GetFixed(isev, &sev);
+        _pggsevStart->GetFixed(isev, BlobPtr::Make(sev));
         if (fActorsOnly && sev.sevt != sevtAddActr)
             continue;
 
@@ -5572,14 +5572,14 @@ bool SCEN::FChopBackCore()
     {
         _isevFrmLim--;
 
-        _pggsevFrm->GetFixed(_isevFrmLim, &sev);
+        _pggsevFrm->GetFixed(_isevFrmLim, BlobPtr::Make(sev));
 
         if ((sev.sevt == sevtChngCamera) && (fCopyCam))
         {
 
             fCopyCam = fFalse;
             sev.nfrm = _nfrmCur;
-            _pggsevFrm->PutFixed(_isevFrmLim, &sev);
+            _pggsevFrm->PutFixed(_isevFrmLim, BlobPtr::Make(sev));
         }
         else
         {
@@ -5597,7 +5597,7 @@ bool SCEN::FChopBackCore()
     for (; _isevFrmLim < _pggsevFrm->IvMac(); _isevFrmLim++)
     {
 
-        _pggsevFrm->GetFixed(_isevFrmLim, &sev);
+        _pggsevFrm->GetFixed(_isevFrmLim, BlobPtr::Make(sev));
         if (sev.nfrm != _nfrmCur)
         {
             break;

@@ -442,7 +442,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
     // Set the volume for any events in the actor list for this frame
     for (iaev = _iaevFrmMin; iaev < _iaevCur; iaev++)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
         if (aev.aet == aetActn)
             fActnThisFrame = fTrue;
 
@@ -465,7 +465,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
     {
         for (iaev = _iaevFrmMin - 1; iaev > 0; iaev--)
         {
-            _pggaev->GetFixed(iaev, &aev);
+            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
 
             // Quit when the action changes
             if (aev.aet == aetActn || (nfrmMM != ivNil && nfrmMM > aev.nfrm))
@@ -543,7 +543,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
         // Non-motion match sounds
         for (iaev = _iaevFrmMin; iaev < _iaevCur; iaev++)
         {
-            _pggaev->GetFixed(iaev, &aev);
+            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
             if (aev.aet != aetSnd)
                 continue;
 
@@ -637,7 +637,7 @@ bool ACTR::FDeleteSndCore(long sty, bool fMotionMatch)
     iaevFirst = (fMotionMatch) ? _iaevActnCur : _iaevFrmMin;
     for (iaev = _iaevCur - 1; iaev >= iaevFirst; iaev--)
     {
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
         if (fMotionMatch && nfrmMM != ivNil && nfrmMM > aev.nfrm)
             break;
 
@@ -705,7 +705,7 @@ bool ACTR::FSoundInFrm(void)
     {
         AEV aev;
 
-        _pggaev->GetFixed(iaev, &aev);
+        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
         if (aev.aet == aetSnd)
             return fTrue;
     }

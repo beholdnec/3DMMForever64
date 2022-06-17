@@ -92,11 +92,11 @@ class DLG : public DLG_PAR
     long IditFromSit(long sit);
     void GetDit(long idit, DIT *pdit)
     {
-        GetFixed(idit, pdit);
+        GetFixed(idit, BlobPtr::Make(*pdit));
     }
     void PutDit(long idit, DIT *pdit)
     {
-        PutFixed(idit, pdit);
+        PutFixed(idit, BlobPtr::Make(*pdit));
     }
 
     void GetStn(long idit, PSTN pstn);

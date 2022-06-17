@@ -232,7 +232,7 @@ void ACTN::GetCel(long icel, CEL *pcel)
     AssertIn(icel, 0, Ccel());
     AssertVarMem(pcel);
 
-    _pggcel->GetFixed(icel, pcel);
+    _pggcel->GetFixed(icel, BlobPtr::Make(*pcel));
 }
 
 /***************************************************************************

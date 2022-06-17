@@ -1446,7 +1446,7 @@ bool DOCI::_FWrite(long iv)
         else
         {
             Assert(cb == ((PGGB)_pgrpb)->CbFixed(), "bad cb in GG/AG");
-            ((PGGB)_pgrpb)->PutFixed(iv, pv);
+            ((PGGB)_pgrpb)->PutFixed(iv, BlobPtr(pv, cb));
         }
         break;
     case kclsGST:
@@ -1532,7 +1532,7 @@ HQ DOCI::_HqRead(void)
         if (_dln == 0)
             ((PGGB)_pgrpb)->Get(_iv, pv);
         else
-            ((PGGB)_pgrpb)->GetFixed(_iv, pv);
+            ((PGGB)_pgrpb)->GetFixed(_iv, BlobPtr(pv, cb));
         break;
     case kclsGST:
     case kclsAST:

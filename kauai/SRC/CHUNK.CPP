@@ -1038,7 +1038,7 @@ void CFL::AssertValid(ulong grfcfl)
     fFirstCrp = fTrue;
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        _pggcrp->GetFixed(icrp, &crp);
+        _pggcrp->GetFixed(icrp, BlobPtr::Make(crp));
         cbVar = _pggcrp->Cb(icrp);
         cbRgch = crp.CbRgch(cbVar);
 
@@ -2794,7 +2794,7 @@ void CFL::Move(CTG ctg, CNO cno, CTG ctgNew, CNO cnoNew)
         // index.  In ship, we'll stop once we changed ccrpRef KIDs.
         Debug(ccrpRef++;) for (icrp = _pggcrp->IvMac(); icrp-- > 0 && ccrpRef > 0;)
         {
-            _pggcrp->GetFixed(icrp, &crp);
+            _pggcrp->GetFixed(icrp, BlobPtr::Make(crp));
             qkid = (KID *)_pggcrp->QvGet(icrp);
             for (ikid = 0; ikid < crp.ckid;)
             {
