@@ -235,7 +235,8 @@ class BASE
   public:
 #ifdef DEBUG
     void *operator new(size_t cb, schar *pszsFile, long lwLine);
-    void operator delete(void *pv);
+    void operator delete(void* pv, schar* pszsFile, long lwLine); // To prevent warning C4291
+    void operator delete(void* pv);
     void MarkMemStub(void);
 #else //! DEBUG
     void *operator new(size_t cb);
