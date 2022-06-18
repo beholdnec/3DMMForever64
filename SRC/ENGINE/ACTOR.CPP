@@ -1362,7 +1362,7 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
             // First, the _pggsmm needs to be updated
             for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
             {
-                psmm = (SMM *)_pglsmm->QvGet(ismm);
+                psmm = _pglsmm->QvGet(ismm).Cast<SMM>();
                 if (psmm->aevsnd.sty == aevsnd.sty && aevsnd.celn == psmm->aevsnd.celn)
                 {
                     _pglsmm->Delete(ismm);
@@ -3499,7 +3499,7 @@ void ACTR::_AdvanceRtel(BRS dwrStep, RTEL *prtel, long iaevCur, long nfrmCur, bo
     }
 
     // Move to the correct path segment
-    dwrT = ((RPT *)_pglrpt->QvGet(prtel->irpt))->dwr;
+    dwrT = (_pglrpt->QvGet(prtel->irpt).Cast<RPT>())->dwr;
     dwrT = BrsSub(dwrT, prtel->dwrOffset);
     if (rZero == dwrT)
     {
@@ -3521,10 +3521,10 @@ void ACTR::_AdvanceRtel(BRS dwrStep, RTEL *prtel, long iaevCur, long nfrmCur, bo
         AssertIn(prtel->irpt, 1, _pglrpt->IvMac());
         prtel->dwrOffset = rZero;
         dwrStep = BrsSub(dwrStep, dwrT);
-        dwrT = ((RPT *)_pglrpt->QvGet(prtel->irpt))->dwr;
+        dwrT = (_pglrpt->QvGet(prtel->irpt).Cast<RPT>())->dwr;
     }
 
-    dwrT = ((RPT *)_pglrpt->QvGet(prtel->irpt))->dwr;
+    dwrT = (_pglrpt->QvGet(prtel->irpt).Cast<RPT>())->dwr;
     prtel->dwrOffset = BrsAdd(prtel->dwrOffset, dwrStep);
 
 LDoneMove:

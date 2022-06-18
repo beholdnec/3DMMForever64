@@ -131,10 +131,10 @@ class GLB : public GLB_PAR
     {
         return _cbEntry;
     }
-    void *QvGet(long iv);
+    BlobPtr QvGet(long iv);
     void Get(long iv, void *pv);
     void Put(long iv, void *pv);
-    void *PvLock(long iv);
+    BlobPtr PvLock(long iv);
     void SetMinGrow(long cvAdd);
 
     virtual bool FAdd(void *pv, long *piv = pvNil) = 0;

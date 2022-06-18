@@ -192,7 +192,7 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     AssertBomRglw(kbomBmat34, size(BMAT34));
     if (kboOther == bo)
     {
-        SwapBytesRglw(_pglbmat34->QvGet(0), LwMul(_pglbmat34->IvMac(), size(BMAT34) / size(long)));
+        SwapBytesRglw(_pglbmat34->QvGet(0).Ptr(), LwMul(_pglbmat34->IvMac(), size(BMAT34) / size(long)));
     }
 
     // read (optional) GL of motion-match sounds (chid 0, ctg kctgGlms):
@@ -206,7 +206,7 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         AssertBomRglw(kbomTag, size(TAG));
         if (kboOther == bo)
         {
-            SwapBytesRglw(_pgltagSnd->QvGet(0), LwMul(_pgltagSnd->IvMac(), size(TAG) / size(long)));
+            SwapBytesRglw(_pgltagSnd->QvGet(0).Ptr(), LwMul(_pgltagSnd->IvMac(), size(TAG) / size(long)));
         }
     }
 
@@ -437,7 +437,7 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     Assert(_pglibactPar->CbEntry() == size(short), "Bad _pglibactPar!");
     if (kboOther == bo)
-        SwapBytesRgsw(_pglibactPar->QvGet(0), _pglibactPar->IvMac());
+        SwapBytesRgsw(_pglibactPar->QvGet(0).Ptr(), _pglibactPar->IvMac());
 
     // read GLBS (body-part-set ID list)
     if (!pcfl->FGetKidChidCtg(ctg, cno, 0, kctgGlbs, &kid))
@@ -449,7 +449,7 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     Assert(_pglibset->CbEntry() == size(short), "Bad TMPL _pglibset!");
     if (kboOther == bo)
-        SwapBytesRgsw(_pglibset->QvGet(0), _pglibset->IvMac());
+        SwapBytesRgsw(_pglibset->QvGet(0).Ptr(), _pglibset->IvMac());
 
 #ifdef DEBUG
     // GLDC is obsolete
@@ -954,12 +954,12 @@ bool TMPL::FIbsetAccOfIbset(long ibset, long *pibsetAcc)
             // for each ibact in ibsetT, see if its parent is in ibset
             for (ibact = 0; ibact < _pglibactPar->IvMac(); ibact++)
             {
-                ibsetOfIbact = *(short *)_pglibset->QvGet(ibact);
+                ibsetOfIbact = *_pglibset->QvGet(ibact).Cast<short>();
                 if (ibsetT == ibsetOfIbact)
                 {
                     // see if ibact's parent in ibset
-                    ibactPar = *(short *)_pglibactPar->QvGet(ibact);
-                    ibsetOfIbactPar = *(short *)_pglibset->QvGet(ibactPar);
+                    ibactPar = *_pglibactPar->QvGet(ibact).Cast<short>();
+                    ibsetOfIbactPar = *_pglibset->QvGet(ibactPar).Cast<short>();
                     if (ibsetOfIbactPar == ibset)
                     {
                         // so ibset is a parent bset of ibsetT

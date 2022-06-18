@@ -213,7 +213,7 @@ bool SCEB::FResume(long *plwReturn, bool *pfPaused)
     AssertIn(_ilwCur, 1, _ilwMac + 1);
     for (_fPaused = fFalse; _ilwCur < _ilwMac && !_fError && !_fPaused;)
     {
-        lw = *(long *)_pscpt->_pgllw->QvGet(_ilwCur++);
+        lw = *_pscpt->_pgllw->QvGet(_ilwCur++).Cast<long>();
         clwPush = B2Lw(lw);
         if (!FIn(clwPush, 0, _ilwMac - _ilwCur + 1))
         {
@@ -232,7 +232,7 @@ bool SCEB::FResume(long *plwReturn, bool *pfPaused)
             }
             clwPush--;
             rtvn.lu1 = (ulong)lw & 0x0000FFFF;
-            rtvn.lu2 = *(ulong *)_pscpt->_pgllw->QvGet(_ilwCur++);
+            rtvn.lu2 = *_pscpt->_pgllw->QvGet(_ilwCur++).Cast<ulong>();
             ilw = _ilwCur;
             if (!_FExecVarOp(op, &rtvn))
                 goto LFail;
@@ -254,7 +254,7 @@ bool SCEB::FResume(long *plwReturn, bool *pfPaused)
                 _Error(fFalse);
                 break;
             }
-            CopyPb(_pscpt->_pgllw->QvGet(_ilwCur), _pgllwStack->QvGet(ilw), LwMul(clwPush, size(long)));
+            CopyPb(_pscpt->_pgllw->QvGet(_ilwCur).Ptr(), _pgllwStack->QvGet(ilw).Ptr(), LwMul(clwPush, size(long)));
             _ilwCur += clwPush;
         }
     }
@@ -701,7 +701,7 @@ long SCEB::_LwPop(void)
         _Error(fTrue);
         return 0;
     }
-    lw = *(long *)_pgllwStack->QvGet(--ilw);
+    lw = *_pgllwStack->QvGet(--ilw).Cast<long>();
     AssertDo(_pgllwStack->FSetIvMac(ilw), 0);
     return lw;
 }
@@ -721,7 +721,7 @@ long *SCEB::_QlwGet(long clw)
         _Error(fTrue);
         return pvNil;
     }
-    return (long *)_pgllwStack->QvGet(ilwMac - clw);
+    return _pgllwStack->QvGet(ilwMac - clw).Cast<long>();
 }
 
 /***************************************************************************
@@ -1271,7 +1271,7 @@ bool FFindRtvm(PGL pglrtvm, RTVN *prtvn, long *plw, long *pirtvm)
     RTVM *qrgrtvm, *qrtvm;
     long irtvm, irtvmMin, irtvmLim;
 
-    qrgrtvm = (RTVM *)pglrtvm->QvGet(0);
+    qrgrtvm = pglrtvm->QvGet(0).Cast<RTVM>();
     for (irtvmMin = 0, irtvmLim = pglrtvm->IvMac(); irtvmMin < irtvmLim;)
     {
         irtvm = (irtvmMin + irtvmLim) / 2;
@@ -1382,7 +1382,7 @@ PSCPT SCPT::PscptRead(PCFL pcfl, CTG ctg, CNO cno)
     }
 
     if (kboOther == bo)
-        SwapBytesRglw(pgllw->QvGet(0), pgllw->IvMac());
+        SwapBytesRglw(pgllw->QvGet(0).Ptr(), pgllw->IvMac());
     pscpt->_pgllw = pgllw;
     pscpt->_pgstLiterals = pgst;
     return pscpt;

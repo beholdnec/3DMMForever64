@@ -3046,7 +3046,7 @@ bool SCEN::FRemTboxCore(PTBOX ptbox)
             //
             for (itbox = 0; itbox < _pglptbox->IvMac(); itbox++)
             {
-                if (*(PTBOX *)_pglptbox->QvGet(itbox) == ptbox)
+                if (*_pglptbox->QvGet(itbox).Cast<PTBOX>() == ptbox)
                 {
 
                     if (_ptboxSelected == ptbox)

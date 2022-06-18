@@ -326,7 +326,7 @@ void CHSE::DumpList(PGLB pglb)
         else
         {
             DumpSz(PszLit("\tITEM"));
-            _bsf.FReplace(pglb->PvLock(iv), cbEntry, 0, _bsf.IbMac());
+            _bsf.FReplace(pglb->PvLock(iv).Ptr(), cbEntry, 0, _bsf.IbMac());
             pglb->Unlock();
             _DumpBsf(2);
         }

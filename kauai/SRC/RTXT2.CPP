@@ -615,7 +615,7 @@ void TXTG::_FetchLin(long ilin, LIN *plin, long *pilinActual)
 
     if (_ilinInval < ilinLim)
     {
-        qlin = (LIN *)_pgllin->QvGet(_ilinInval);
+        qlin = _pgllin->QvGet(_ilinInval).Cast<LIN>();
         if (_ilinInval == 0)
         {
             cpLim = 0;
@@ -642,7 +642,7 @@ void TXTG::_FetchLin(long ilin, LIN *plin, long *pilinActual)
 
     if (ilin < _ilinInval)
     {
-        *plin = *(LIN *)_pgllin->QvGet(ilin);
+        *plin = *_pgllin->QvGet(ilin).Cast<LIN>();
         return;
     }
 
@@ -656,7 +656,7 @@ void TXTG::_FetchLin(long ilin, LIN *plin, long *pilinActual)
     else
     {
         // get the LIN in case we don't actuall calc any lines below
-        *plin = *(LIN *)_pgllin->QvGet(ilinLim - 1);
+        *plin = *_pgllin->QvGet(ilinLim - 1).Cast<LIN>();
         cpLim = plin->cpMin + plin->ccp;
         dypTot = plin->dypTot + plin->dyp;
     }
@@ -695,7 +695,7 @@ void TXTG::_FindCp(long cpFind, LIN *plin, long *pilin, bool fCalcLines)
     bool fAdd;
 
     // get the starting cp and dypTot values for _ilinInval
-    qlin = (LIN *)_pgllin->QvGet(_ilinInval);
+    qlin = _pgllin->QvGet(_ilinInval).Cast<LIN>(0);
     if (_ilinInval == 0)
     {
         cpLim = 0;
@@ -717,7 +717,7 @@ void TXTG::_FindCp(long cpFind, LIN *plin, long *pilin, bool fCalcLines)
         for (ivMin = 0, ivLim = _ilinInval; ivMin < ivLim;)
         {
             iv = (ivMin + ivLim) / 2;
-            qlin = (LIN *)_pgllin->QvGet(iv);
+            qlin = _pgllin->QvGet(iv).Cast<LIN>();
             if (cpFind < qlin->cpMin)
                 ivLim = iv;
             else if (cpFind >= qlin->cpMin + qlin->ccp)
@@ -742,7 +742,7 @@ void TXTG::_FindCp(long cpFind, LIN *plin, long *pilin, bool fCalcLines)
     if (_ilinInval < (ilinMac = _pgllin->IvMac()))
     {
         // adjust LINs up to cpFind
-        qlin = (LIN *)_pgllin->QvGet(_ilinInval);
+        qlin = _pgllin->QvGet(_ilinInval).Cast<LIN>();
         for (; _ilinInval < ilinMac && cpFind >= cpLim; _ilinInval++, qlin++)
         {
             qlin->cpMin = cpLim;
@@ -771,7 +771,7 @@ void TXTG::_FindCp(long cpFind, LIN *plin, long *pilin, bool fCalcLines)
         if (pvNil != plin)
         {
             if (ilinMac > 0)
-                *plin = *(LIN *)_pgllin->QvGet(ilinMac - 1);
+                *plin = *_pgllin->QvGet(ilinMac - 1).Cast<LIN>();
             else
                 ClearPb(plin, size(LIN));
         }
@@ -815,7 +815,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
     bool fAdd;
 
     // get the starting cp and dypTot values for _ilinInval
-    qlin = (LIN *)_pgllin->QvGet(_ilinInval);
+    qlin = _pgllin->QvGet(_ilinInval).Cast<LIN>();
     if (_ilinInval == 0)
     {
         cpLim = 0;
@@ -837,7 +837,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
         for (ivMin = 0, ivLim = _ilinInval; ivMin < ivLim;)
         {
             iv = (ivMin + ivLim) / 2;
-            qlin = (LIN *)_pgllin->QvGet(iv);
+            qlin = _pgllin->QvGet(iv).Cast<LIN>();
             if (dypFind < qlin->dypTot)
                 ivLim = iv;
             else if (dypFind >= qlin->dypTot + qlin->dyp)
@@ -862,7 +862,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
     if (_ilinInval < (ilinMac = _pgllin->IvMac()))
     {
         // adjust LINs up to cp
-        qlin = (LIN *)_pgllin->QvGet(_ilinInval);
+        qlin = _pgllin->QvGet(_ilinInval).Cast<LIN>();
         for (; _ilinInval < ilinMac && dypFind >= dypTot; _ilinInval++, qlin++)
         {
             qlin->cpMin = cpLim;
@@ -891,7 +891,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
         if (pvNil != plin)
         {
             if (ilinMac > 0)
-                *plin = *(LIN *)_pgllin->QvGet(ilinMac - 1);
+                *plin = *_pgllin->QvGet(ilinMac - 1).Cast<LIN>();
             else
                 ClearPb(plin, size(LIN));
         }

@@ -158,7 +158,7 @@ void CLOK::RemoveCmh(PCMH pcmh)
 
     for (ialad = _pglalad->IvMac(); ialad-- > 0;)
     {
-        qalad = (ALAD *)_pglalad->QvGet(ialad);
+        qalad = _pglalad->QvGet(ialad).Cast<ALAD>();
         if (qalad->pcmh == pcmh)
             _pglalad->Delete(ialad);
     }
@@ -225,7 +225,7 @@ bool CLOK::FSetAlarm(long dtim, PCMH pcmhNotify, long lwUser, bool fAdjustForDel
     for (ialadMin = 0, ialadLim = _pglalad->IvMac(); ialadMin < ialadLim;)
     {
         ialad = (ialadMin + ialadLim) / 2;
-        qalad = (ALAD *)_pglalad->QvGet(ialad);
+        qalad = _pglalad->QvGet(ialad).Cast<ALAD>();
         if (qalad->tim < alad.tim)
             ialadLim = ialad;
         else

@@ -546,7 +546,8 @@ bool CRF::_FFindCre(CTG ctg, CNO cno, PFNRPO pfnrpo, long *picre)
     long icreMin, icreLim, icre;
 
     // Do a binary search.  The CREs are sorted by (ctg, cno, pfnrpo).
-    qrgcre = (CRE *)_pglcre->QvGet(0);
+    // FIXME: Cast asserts on startup when correct count is passed...
+    qrgcre = _pglcre->QvGet(0).Cast<CRE>(0 /*_pglcre->IvMac()*/);
     for (icreMin = 0, icreLim = _pglcre->IvMac(); icreMin < icreLim;)
     {
         icre = (icreMin + icreLim) / 2;
@@ -593,7 +594,7 @@ bool CRF::_FFindBaco(PBACO pbaco, long *picre)
     cno = pbaco->_cno;
 
     // Do a binary search.  The CREs are sorted by (ctg, cno, pfnrpo).
-    qrgcre = (CRE *)_pglcre->QvGet(0);
+    qrgcre = _pglcre->QvGet(0).Cast<CRE>();
     for (icreMin = 0, icreLim = _pglcre->IvMac(); icreMin < icreLim;)
     {
         icre = (icreMin + icreLim) / 2;

@@ -330,7 +330,7 @@ bool ACTR::_FReadRoute(PCFL pcfl, CNO cno)
     AssertBomRglw(kbomRpt, size(RPT));
     if (kboOther == bo)
     {
-        SwapBytesRglw(_pglrpt->QvGet(0), LwMul(_pglrpt->IvMac(), size(RPT) / size(long)));
+        SwapBytesRglw(_pglrpt->QvGet(0).Ptr(), LwMul(_pglrpt->IvMac(), size(RPT) / size(long)));
     }
     return fTrue;
 }

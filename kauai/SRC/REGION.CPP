@@ -62,7 +62,7 @@ class REGBL : public REGBL_PAR
             _rc.xpLeft = xp;
         if (_rc.xpRight < xp)
             _rc.xpRight = xp;
-        *(long *)_pglxp->QvGet(_ixpCur++) = xp;
+        *_pglxp->QvGet(_ixpCur++).Cast<long>() = xp;
     }
 
     bool FDone(void)
@@ -137,7 +137,7 @@ bool REGBL::FStartRow(long dyp, long cxpMax)
 
     dyp = LwMin(dyp, _rcRef.ypBottom - _ypCur);
     _idypCur = _ixpCur;
-    *(long *)_pglxp->QvGet(_ixpCur++) = dyp;
+    *_pglxp->QvGet(_ixpCur++).Cast<long>() = dyp;
     _ypCur += dyp;
     return fTrue;
 }
@@ -151,7 +151,7 @@ void REGBL::EndRow(void)
     Assert((_ixpCur - _idypCur) & 1, "not an even number of xp values");
     Assert(_ixpCur < _pglxp->IvMac(), "overflow in EndRow");
     long czp;
-    long *qrgxp = (long *)_pglxp->QvGet(0);
+    long *qrgxp = _pglxp->QvGet(0).Cast<long>();
 
     qrgxp[_ixpCur++] = klwMax;
     if ((czp = _ixpCur - _idypCur) > 2)
@@ -284,7 +284,7 @@ void REGSC::_InitCore(PGL pglxp, RC *prc, RC *prcRel)
     if (pvNil != (_pglxpSrc = pglxp))
     {
         _pglxpSrc->AddRef();
-        _pxpLimCur = (long *)_pglxpSrc->PvLock(0);
+        _pxpLimCur = _pglxpSrc->PvLock(0).Cast<long>();
         _pxpLimSrc = _pxpLimCur + _pglxpSrc->IvMac();
     }
     else

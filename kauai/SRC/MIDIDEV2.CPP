@@ -270,7 +270,7 @@ bool MDWS::_FInit(PMIDS pmids)
             cmev = pmev - rgmev;
             if (!_pglmev->FSetIvMac(imev + cmev))
                 return fFalse;
-            CopyPb(rgmev, _pglmev->QvGet(imev), LwMul(cmev, size(MEV)));
+            CopyPb(rgmev, _pglmev->QvGet(imev).Ptr(), LwMul(cmev, size(MEV)));
             if (!fEvt)
             {
                 // Add a final NOP so when we seek and there's only one
@@ -303,7 +303,7 @@ bool MDWS::_FInit(PMIDS pmids)
 /***************************************************************************
     Return a locked pointer to the data.
 ***************************************************************************/
-void *MDWS::PvLockData(long *pcb)
+BlobPtr MDWS::PvLockData(long *pcb)
 {
     AssertThis(0);
     AssertVarMem(pcb);
@@ -852,7 +852,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
             cb = LwMul(_pglmevKey->IvMac(), size(MEV));
             if (0 < cb)
             {
-                pvData = _pglmevKey->PvLock(0);
+                pvData = _pglmevKey->PvLock(0).Ptr();
                 if (!_pmisi->FQueueBuffer(pvData, cb, 0, 1, 0))
                 {
                     // streaming the key events failed
@@ -866,7 +866,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
         }
 
         _cpvOut++;
-        pvData = msos.pmdws->PvLockData(&cb);
+        pvData = msos.pmdws->PvLockData(&cb).Ptr();
         if (_pmisi->FQueueBuffer(pvData, cb, cbSkip, msos.cactPlay, (ulong)msos.pmdws))
         {
             // it worked!
@@ -899,7 +899,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
         long cmsos = _pglmsos->IvMac();
 
         AssertIn(imsos, 1, cmsos);
-        SwapBlocks(_pglmsos->QvGet(0), LwMul(imsos, size(MSOS)), LwMul(cmsos - imsos, size(MSOS)));
+        SwapBlocks(_pglmsos->QvGet(0).Ptr(), LwMul(imsos, size(MSOS)), LwMul(cmsos - imsos, size(MSOS)));
     }
 }
 
@@ -948,7 +948,7 @@ bool MSMIX::_FGetKeyEvents(PMDWS pmdws, ulong dtsSeek, long *pcbSkip)
         return fFalse;
     _pglmevKey->FSetIvMac(0);
 
-    pmevMin = (PMEV)pmdws->PvLockData(&cb);
+    pmevMin = pmdws->PvLockData(&cb).Cast<MEV>();
     cb = LwRoundToward(cb, size(MEV));
     pmevLim = (PMEV)PvAddBv(pmevMin, cb);
 
@@ -996,7 +996,7 @@ bool MSMIX::_FGetKeyEvents(PMDWS pmdws, ulong dtsSeek, long *pcbSkip)
                 return fFalse;
             }
 
-            qrgmev = (PMEV)_pglmevKey->QvGet(0);
+            qrgmev = _pglmevKey->QvGet(0).Cast<MEV>();
             BltPb(qrgmev, qrgmev + cmevNew, LwMul(cmev, size(MEV)));
             CopyPb(pmevDst, qrgmev, LwMul(cmevNew, size(MEV)));
 
@@ -1093,10 +1093,10 @@ void MSMIX::_Notify(void *pvData, PMDWS pmdws)
     _cpvOut--;
     if (pvNil != pmdws)
     {
-        AssertVar(_pglmsos->IvMac() > 0 && ((MSOS *)_pglmsos->QvGet(0))->pmdws == pmdws, "Wrong pmdws", &pmdws);
+        AssertVar(_pglmsos->IvMac() > 0 && (_pglmsos->QvGet(0).Cast<MSOS>())->pmdws == pmdws, "Wrong pmdws", &pmdws);
         pmdws->UnlockData();
     }
-    else if (pvNil != _pglmevKey && pvData == _pglmevKey->QvGet(0))
+    else if (pvNil != _pglmevKey && pvData == _pglmevKey->QvGet(0).Ptr())
         _pglmevKey->Unlock();
     else
     {

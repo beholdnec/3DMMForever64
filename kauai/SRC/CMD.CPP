@@ -734,7 +734,8 @@ bool CEX::_FFindCmhl(long cmhl, long *picmhe)
     long icmhe, icmheMin, icmheLim;
     CMHE *qrgcmhe;
 
-    qrgcmhe = (CMHE *)_pglcmhe->QvGet(0);
+    // FIXME: Cast asserts on startup when the correct count is used...
+    qrgcmhe = _pglcmhe->QvGet(0).Cast<CMHE>(0 /*_pglcmhe->IvMac()*/);
     for (icmheMin = 0, icmheLim = _pglcmhe->IvMac(); icmheMin < icmheLim;)
     {
         icmhe = (icmheMin + icmheLim) / 2;

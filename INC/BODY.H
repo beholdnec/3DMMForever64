@@ -68,7 +68,7 @@ class BODY : public BODY_PAR
     }                       // root, hilite, and body part BACTs
     long _Ibset(long ipart) // body part set that this part belongs to
     {
-        return *(short *)_pglibset->QvGet(ipart);
+        return *_pglibset->QvGet(ipart).Cast<short>();
     }
     void _RemoveMaterial(long ibset);
 

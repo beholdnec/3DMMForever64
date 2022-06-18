@@ -1246,7 +1246,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
         else
         {
             Assert(iv == pglb->IvMac() - 1, "what?");
-            prgb = (byte *)pglb->PvLock(iv);
+            prgb = (byte *)pglb->PvLock(iv).Ptr();
             if (cb > 0)
                 _bsf.FetchRgb(0, cb, prgb);
             if (cb < cbEntry)

@@ -232,7 +232,7 @@ void TestGl(void)
 
     for (isw = 0; isw < 10; isw++)
     {
-        qsw = (short *)pglsw->QvGet(isw);
+        qsw = pglsw->QvGet(isw).Cast<short>();
         AssertDo(*qsw == isw, 0);
         pglsw->Get(isw, &sw);
         AssertDo(sw == isw, 0);
@@ -248,7 +248,7 @@ void TestGl(void)
         AssertDo(sw == isw * 2 + 1, 0);
         sw = (short)isw * 100;
         pglsw->Put(isw, &sw);
-        qsw = (short *)pglsw->QvGet(isw);
+        qsw = pglsw->QvGet(isw).Cast<short>();
         AssertDo(*qsw == isw * 100, 0);
         *qsw = (short)isw;
     }

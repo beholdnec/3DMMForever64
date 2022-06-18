@@ -1194,7 +1194,7 @@ bool TXRD::_FReadChunk(PCFL pcfl, CTG ctg, CNO cno, bool fCopyText)
     }
     if (bo == kboOther)
     {
-        SwapBytesRglw(_pglmpe->QvGet(0), LwMul(_pglmpe->IvMac(), size(MPE)) / size(long));
+        SwapBytesRglw(_pglmpe->QvGet(0).Ptr(), LwMul(_pglmpe->IvMac(), size(MPE)) / size(long));
     }
 
     // get the text property arguments
@@ -1546,7 +1546,7 @@ void TXRD::_AdjustMpe(long cp, long ccpIns, long ccpDel)
     _cpMinChp = _cpLimChp = _cpMinPap = _cpLimPap = 0;
     for (impe = 0; impe < _pglmpe->IvMac();)
     {
-        qmpe = (MPE *)_pglmpe->QvGet(impe);
+        qmpe = _pglmpe->QvGet(impe).Cast<MPE>();
         cpT = _CpFromSpcp(qmpe->spcp);
         AssertIn(cpT, 0, kcpMaxTxrd);
         if (cpT < cp)
@@ -1584,7 +1584,7 @@ void TXRD::_AdjustMpe(long cp, long ccpIns, long ccpDel)
         {
             if (++impe >= _pglmpe->IvMac())
                 break;
-            qmpe = (MPE *)_pglmpe->QvGet(impe);
+            qmpe = _pglmpe->QvGet(impe).Cast<MPE>();
             if (_SprmFromSpcp(qmpe->spcp) != sprm)
                 break;
             cpT = _CpFromSpcp(qmpe->spcp);
@@ -1601,14 +1601,14 @@ void TXRD::_AdjustMpe(long cp, long ccpIns, long ccpDel)
         {
             // a character sprm - put the last one at cp + ccpIns
             AssertIn(cp + ccpIns, 0, CpMac());
-            qmpe = (MPE *)_pglmpe->QvGet(--impe);
+            qmpe = _pglmpe->QvGet(--impe).Cast<MPE>();
             qmpe->spcp = _SpcpFromSprmCp(sprm, cp + ccpIns);
         }
         else if (fBefore)
         {
             // a paragraph sprm - the last one goes at cp
             AssertIn(cp, 0, kcpMaxTxrd);
-            qmpe = (MPE *)_pglmpe->QvGet(--impe);
+            qmpe = _pglmpe->QvGet(--impe).Cast<MPE>();
             qmpe->spcp = _SpcpFromSprmCp(sprm, cp);
         }
         else
@@ -1617,12 +1617,12 @@ void TXRD::_AdjustMpe(long cp, long ccpIns, long ccpDel)
             // next paragraph (if there is one and it doesn't already have an MPE).
             cpT = CpLimPara(cp + ccpIns - 1);
             if (cpT < CpMac() &&
-                (impe >= _pglmpe->IvMac() || _SprmFromSpcp((qmpe = (MPE *)_pglmpe->QvGet(impe))->spcp) != sprm ||
+                (impe >= _pglmpe->IvMac() || _SprmFromSpcp((qmpe = _pglmpe->QvGet(impe).Cast<MPE>())->spcp) != sprm ||
                  _CpFromSpcp(qmpe->spcp) + ccpIns - ccpDel > cpT))
             {
                 // put the last one at cpT - if there isn't already one
                 AssertIn(cpT, 0, kcpMaxTxrd);
-                qmpe = (MPE *)_pglmpe->QvGet(--impe);
+                qmpe = _pglmpe->QvGet(--impe).Cast<MPE>();
                 qmpe->spcp = _SpcpFromSprmCp(sprm, cpT);
             }
             else
@@ -1632,7 +1632,7 @@ void TXRD::_AdjustMpe(long cp, long ccpIns, long ccpDel)
         // delete all the previous ones
         while (impeMin < impe)
         {
-            qmpe = (MPE *)_pglmpe->QvGet(--impe);
+            qmpe = _pglmpe->QvGet(--impe).Cast<MPE>();
             _ReleaseSprmLw(sprm, qmpe->lw);
             _pglmpe->Delete(impe);
         }

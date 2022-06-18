@@ -204,7 +204,7 @@ bool BKGD::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         if (_pglclr != pvNil)
         {
             if (kboOther == bo)
-                SwapBytesRglw(_pglclr->QvGet(0), _pglclr->IvMac());
+                SwapBytesRglw(_pglclr->QvGet(0).Ptr(), _pglclr->IvMac());
         }
         _bIndexBase = bkgdf.bIndexBase;
     }
@@ -223,7 +223,7 @@ bool BKGD::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     AssertBomRglw(kbomLite, size(LITE));
     if (kboOther == bo)
     {
-        SwapBytesRglw(pgllite->QvGet(0), LwMul(pgllite->IvMac(), size(LITE) / size(long)));
+        SwapBytesRglw(pgllite->QvGet(0).Ptr(), LwMul(pgllite->IvMac(), size(LITE) / size(long)));
     }
     _cbactLight = pgllite->IvMac();
     if (!FAllocPv((void **)&_prgbactLight, LwMul(_cbactLight, size(BACT)), fmemClear, mprNormal))
@@ -287,7 +287,7 @@ void BKGD::_SetupLights(PGL pgllite)
 
     for (ilite = 0; ilite < _cbactLight; ilite++)
     {
-        qlite = (LITE *)pgllite->QvGet(ilite);
+        qlite = pgllite->QvGet(ilite).Cast<LITE>();
         pbact = &_prgbactLight[ilite];
         pblit = &_prgblitLight[ilite];
         pblit->type = (byte)qlite->lt;
@@ -492,7 +492,7 @@ bool BKGD::FSetCamera(PBWLD pbwld, long icam)
     {
         AssertDo(_pglapos->FSetIvMac(capos), "Should never fail");
         _pglapos->Lock();
-        if (!blck.FReadRgb(_pglapos->QvGet(0), size(APOS) * capos, size(CAM)))
+        if (!blck.FReadRgb(_pglapos->QvGet(0).Ptr(), size(APOS) * capos, size(CAM)))
         {
             ReleasePpo(&_pglapos);
             return fFalse;

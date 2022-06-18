@@ -1490,7 +1490,7 @@ bool EDML::FReplace(achar *prgch, long cchIns, long ich1, long ich2, long gin)
         long *pich;
         long lnLim;
 
-        pich = (long *)_pglich->QvGet(++ln);
+        pich = _pglich->QvGet(++ln).Cast<long>(_pglich->IvMac() - ln);
         for (lnLim = _pglich->IvMac(); ln < lnLim; ln++, pich++)
             *pich += dich;
     }

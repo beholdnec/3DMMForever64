@@ -615,7 +615,7 @@ bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, 
             goto LFail;
 
         AssertDo((*ppglclr)->FSetIvMac(256), 0);
-        fRet = pfil->FReadRgbSeq((*ppglclr)->PvLock(0), LwMul(size(CLR), 256), &fpCur);
+        fRet = pfil->FReadRgbSeq((*ppglclr)->PvLock(0).Ptr(), LwMul(size(CLR), 256), &fpCur);
         (*ppglclr)->Unlock();
         if (!fRet)
             goto LFail;
@@ -829,7 +829,7 @@ bool FWriteBitmap(FNI *pfni, byte *prgb, PGL pglclr, long dxp, long dyp, bool fU
         goto LFail;
 
     /* Write the palette */
-    if (!pfil->FWriteRgbSeq(pglclr->PvLock(0), LwMul(size(CLR), 256), &fpCur))
+    if (!pfil->FWriteRgbSeq(pglclr->PvLock(0).Ptr(), LwMul(size(CLR), 256), &fpCur))
     {
         pglclr->Unlock();
         goto LFail;

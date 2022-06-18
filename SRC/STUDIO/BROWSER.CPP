@@ -2115,7 +2115,7 @@ bool BRWM::_FSndListed(CNO cno, long *pithd)
 
     for (ithd = _cthumCD; ithd < _pglthd->IvMac(); ithd++)
     {
-        pthd = (THD *)_pglthd->QvGet(ithd);
+        pthd = _pglthd->QvGet(ithd).Cast<THD>();
         if (pthd->tag.cno == cno)
         {
             if (pvNil != pithd)

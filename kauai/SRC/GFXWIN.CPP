@@ -289,7 +289,7 @@ PGL GPT::PglclrGetPalette(void)
         return pvNil;
 
     AssertDo(pglclr->FSetIvMac(_cclrPal), 0);
-    CopyPb(_prgclr, pglclr->QvGet(0), LwMul(size(CLR), _cclrPal));
+    CopyPb(_prgclr, pglclr->QvGet(0).Ptr(), LwMul(size(CLR), _cclrPal));
     return pglclr;
 }
 
@@ -655,7 +655,8 @@ void GPT::SetOffscreenColors(PGL pglclr)
 
     if (FIn(_cbitPixel, 2, 9))
     {
-        SetDIBColorTable(_hdc, 0, LwMin(pglclr->IvMac(), 1L << _cbitPixel), (RGBQUAD *)pglclr->PvLock(0));
+        UINT cEntries = LwMin(pglclr->IvMac(), 1L << _cbitPixel);
+        SetDIBColorTable(_hdc, 0, cEntries, pglclr->PvLock(0).Cast<RGBQUAD>(cEntries));
         pglclr->Unlock();
         _fOwnPalette = fTrue;
     }

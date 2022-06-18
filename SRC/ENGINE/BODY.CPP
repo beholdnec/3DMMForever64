@@ -199,7 +199,7 @@ bool BODY::_FInitShape(PGL pglibactPar, PGL pglibset)
     Assert(pglibactPar->CbEntry() == size(short), "bad pglibactPar");
     AssertPo(pglibset, 0);
     Assert(pglibset->CbEntry() == size(short), "bad pglibset");
-    Assert(pglibactPar->IvMac() == 0 || ivNil == *(short *)pglibactPar->QvGet(0), "bad first item in pglibactPar");
+    Assert(pglibactPar->IvMac() == 0 || ivNil == *pglibactPar->QvGet(0).Cast<short>(), "bad first item in pglibactPar");
     Assert(pglibactPar->IvMac() == pglibset->IvMac(), "pglibactPar must be same size as pglibset");
 
     BACT *pbact;

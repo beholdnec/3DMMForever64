@@ -1604,7 +1604,7 @@ void CFL::_ReadFreeMap(void)
         AssertBomRglw(kbomFsm, size(FSM));
         if (bo != kboCur && (cfsm = _csto.pglfsm->IvMac()) > 0)
         {
-            SwapBytesRglw(_csto.pglfsm->QvGet(0), cfsm * (size(FSM) / size(long)));
+            SwapBytesRglw(_csto.pglfsm->QvGet(0).Ptr(), cfsm * (size(FSM) / size(long)));
         }
     }
 }
@@ -2222,7 +2222,8 @@ bool CFL::_FAllocFlo(long cb, PFLO pflo, bool fForceOnExtra)
     // look for a free spot in the free space map
     if (pcsto->pglfsm != pvNil && (cfsm = pcsto->pglfsm->IvMac()) > 0)
     {
-        qfsm = (FSM *)pcsto->pglfsm->QvGet(0);
+        // TODO: Implement SpanPtr for arrays
+        qfsm = pcsto->pglfsm->QvGet(0).Cast<FSM>();
         for (ifsm = 0; ifsm < cfsm; ifsm++, qfsm++)
         {
             if (qfsm->cb >= cb)

@@ -123,7 +123,7 @@ class TXDD : public TXDD_PAR
 
     long *_QichLn(long ln)
     {
-        return (long *)_pglichStarts->QvGet(ln);
+        return _pglichStarts->QvGet(ln).Cast<long>();
     }
 
     void _InvalAllTxdd(long ich, long cchIns, long cchDel);

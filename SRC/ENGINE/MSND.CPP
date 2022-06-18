@@ -755,7 +755,7 @@ bool MSQ::FEnqueue(PMSND pmsnd, long objID, bool fLoop, bool fQueue, long vlm, l
     if (!fQueue)
         for (isqe = 0; isqe < _pglsqe->IvMac(); isqe++)
         {
-            psqe = (SQE *)_pglsqe->QvGet(isqe);
+            psqe = _pglsqe->QvGet(isqe).Cast<SQE>();
             sqnT = psqe->fActr ? MSND::SqnActr(psqe->pmsnd->Sty(), psqe->objID)
                                : MSND::SqnBkgd(psqe->pmsnd->Sty(), psqe->objID);
             if (sqnT == sqn)

@@ -292,37 +292,4 @@ class BLL : public BLL_PAR
     }
 };
 
-/***************************************************************************
-    Pointer to blob of data. A convenience class to combine a pointer with
-    a size in bytes. This class does not own any data, therefore the data
-    will not be deleted.
-***************************************************************************/
-class BlobPtr
-{
-public:
-    BlobPtr(void* ptr, size_t size)
-        : _ptr(ptr), _size(size)
-    { }
-
-    template<typename T>
-    static BlobPtr Make(T& data)
-    {
-        return BlobPtr(&data, sizeof(T));
-    }
-
-    void* Ptr() const
-    {
-        return _ptr;
-    }
-
-    size_t Size() const
-    {
-        return _size;
-    }
-
-private:
-    void* _ptr;
-    size_t _size;
-};
-
 #endif //! BASE_H

@@ -1150,7 +1150,7 @@ bool SCCB::_FResolveToOpl(long opl, long oplMin, long *pietn)
     {
         cetn = _pgletnStack->IvMac();
         Assert(cetn > 1, "bad stack");
-        Assert(((ETN *)_pgletnStack->QvGet(cetn - 1))->opl >= opl, "bad opl on top of stack");
+        Assert((_pgletnStack->QvGet(cetn - 1).Cast<ETN>())->opl >= opl, "bad opl on top of stack");
         _pgletnStack->Get(cetn - 2, &etn);
         if (etn.opl < opl)
             break;
@@ -1918,7 +1918,7 @@ void SCCB::_BeginCst(long cst, long ietn)
                 return;
             }
             AssertDo(cstd.pgletnTree->FSetIvMac(cetn), 0);
-            CopyPb(_pgletnTree->QvGet(0), cstd.pgletnTree->QvGet(0), LwMul(cetn, size(ETN)));
+            CopyPb(_pgletnTree->QvGet(0).Ptr(), cstd.pgletnTree->QvGet(0).Ptr(), LwMul(cetn, size(ETN)));
 
             // jump to where the condition will be
             _PushLabelRequestLw(cstd.lwLabel1);

@@ -226,8 +226,8 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
             goto LFail;
         }
 
-        prptSrc = (RPT *)_pglrpt->QvGet(_rtelCur.irpt + 1);
-        prptDest = (RPT *)(*ppactr)->_pglrpt->QvGet(1);
+        prptSrc = _pglrpt->QvGet(_rtelCur.irpt + 1).Cast<RPT>();
+        prptDest = (*ppactr)->_pglrpt->QvGet(1).Cast<RPT>();
         CopyPb(prptSrc, prptDest, LwMul(irptLim - (_rtelCur.irpt + 1), size(RPT)));
     }
     else
@@ -425,8 +425,8 @@ bool ACTR::_FDupCopy(PACTR pactrSrc, PACTR pactrDest)
             goto LFail;
         }
 
-        prptSrc = (RPT *)pactrSrc->_pglrpt->QvGet(0);
-        prptDest = (RPT *)pactrDest->_pglrpt->QvGet(0);
+        prptSrc = pactrSrc->_pglrpt->QvGet(0).Cast<RPT>();
+        prptDest = pactrDest->_pglrpt->QvGet(0).Cast<RPT>();
         CopyPb(prptSrc, prptDest, LwMul(pactrSrc->_pglrpt->IvMac(), size(RPT)));
     }
 
@@ -440,8 +440,8 @@ bool ACTR::_FDupCopy(PACTR pactrSrc, PACTR pactrDest)
             goto LFail;
         }
 
-        psmmSrc = (SMM *)pactrSrc->_pglsmm->QvGet(0);
-        psmmDest = (SMM *)pactrDest->_pglsmm->QvGet(0);
+        psmmSrc = pactrSrc->_pglsmm->QvGet(0).Cast<SMM>();
+        psmmDest = pactrDest->_pglsmm->QvGet(0).Cast<SMM>();
         CopyPb(psmmSrc, psmmDest, LwMul(pactrSrc->_pglsmm->IvMac(), size(SMM)));
     }
 

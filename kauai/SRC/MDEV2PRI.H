@@ -76,7 +76,7 @@ class MDWS : public MDWS_PAR
     {
         return _dts;
     }
-    void *PvLockData(long *pcb);
+    BlobPtr PvLockData(long *pcb);
     void UnlockData(void);
 };
 

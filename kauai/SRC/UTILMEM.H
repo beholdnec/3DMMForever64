@@ -300,4 +300,44 @@ inline long LwThreadCur(void)
     return MacWin(0, GetCurrentThreadId());
 }
 
+/***************************************************************************
+    Pointer to blob of data. A convenience class to combine a pointer with
+    a size in bytes. This class does not own any data, therefore the data
+    will not be deleted.
+***************************************************************************/
+class BlobPtr
+{
+public:
+    BlobPtr() : _ptr(NULL), _size(0) { }
+
+    BlobPtr(void* ptr, size_t size) : _ptr(ptr), _size(size) { }
+
+    template<typename T>
+    static BlobPtr Make(T& data)
+    {
+        return BlobPtr(&data, sizeof(T));
+    }
+
+    template<typename T>
+    T* Cast(size_t count = 1) const
+    {
+        AssertH(_size >= sizeof(T) * count);
+        return reinterpret_cast<T*>(_ptr);
+    }
+
+    void* Ptr() const
+    {
+        return _ptr;
+    }
+
+    size_t Size() const
+    {
+        return _size;
+    }
+
+private:
+    void* _ptr;
+    size_t _size;
+};
+
 #endif //! UTILMEM_H

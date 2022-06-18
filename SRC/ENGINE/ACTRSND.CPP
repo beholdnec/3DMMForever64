@@ -241,7 +241,7 @@ bool ACTR::_FEnqueueSmmInMsq(void)
 
     for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
     {
-        psmm = (SMM *)(_pglsmm->QvGet(ismm));
+        psmm = _pglsmm->QvGet(ismm).Cast<SMM>();
         Assert(psmm->aevsnd.celn != smmNil, "Logic error in smm");
         if (psmm->aevsnd.celn != celn)
         {
@@ -307,7 +307,7 @@ bool ACTR::_FInsertSmm(long iaev)
 
     for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
     {
-        psmm = (SMM *)_pglsmm->QvGet(ismm);
+        psmm = _pglsmm->QvGet(ismm).Cast<SMM>();
         if (psmm->aevsnd.celn != paevsnd->celn)
             continue;
         if (psmm->aevsnd.sty != paevsnd->sty)

@@ -3360,7 +3360,7 @@ bool SEL::_FFilter(CTG ctg, CNO cno)
     if (pvNil == _pglctg || 0 == (cctg = _pglctg->IvMac()))
         return fTrue;
 
-    for (qctg = (CTG *)_pglctg->QvGet(0); cctg-- > 0; qctg++)
+    for (qctg = _pglctg->QvGet(0).Cast<CTG>(cctg); cctg-- > 0; qctg++)
     {
         if (*qctg == ctg)
             return !_fHideList;

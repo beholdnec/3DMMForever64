@@ -2334,7 +2334,7 @@ bool OGN::_FAddEdge(AEI *paei)
     AssertIn(paei->ipt, 0, IvMac());
     AssertIn(paei->iptPenCur, 0, paei->cpt);
 
-    PT *prgptThis = (PT *)QvGet(0); // Already locked in PognTraceRgpt().
+    PT *prgptThis = QvGet(0).Cast<PT>(); // Already locked in PognTraceRgpt().
     long iptEnd = (paei->ipt + paei->dipt) % IvMac();
     long iptPenNew = IptFindLeftmost(paei->prgpt, paei->cpt, prgptThis[iptEnd].xp - prgptThis[paei->ipt].xp,
                                      prgptThis[iptEnd].yp - prgptThis[paei->ipt].yp);

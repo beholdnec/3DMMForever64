@@ -1827,7 +1827,7 @@ LRestart:
     // now go through and actually set the positions
     for (idsed = idsedStart; ivNil != idsed; idsed = _IdsedNext(idsed, idsedStart))
     {
-        qdsed = (DSED *)_paldsed->QvGet(idsed);
+        qdsed = _paldsed->QvGet(idsed).Cast<DSED>();
         if (ivNil != qdsed->idsedLeft)
             continue;
 

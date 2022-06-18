@@ -305,11 +305,11 @@ GLB::GLB(long cb)
     Return a volatile pointer to a list entry.
     NOTE: don't assert !FFree(iv) for allocated lists.
 ***************************************************************************/
-void *GLB::QvGet(long iv)
+BlobPtr GLB::QvGet(long iv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac + 1);
-    return (0 == _ivMac) ? pvNil : _Qb1(LwMul(iv, _cbEntry));
+    return (0 == _ivMac) ? BlobPtr() : BlobPtr(_Qb1(LwMul(iv, _cbEntry)), _cbEntry);
 }
 
 /***************************************************************************
@@ -320,7 +320,7 @@ void GLB::Get(long iv, void *pv)
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     AssertPvCb(pv, _cbEntry);
-    CopyPb(QvGet(iv), pv, _cbEntry);
+    CopyPb(QvGet(iv).Ptr(), pv, _cbEntry);
 }
 
 /***************************************************************************
@@ -331,14 +331,14 @@ void GLB::Put(long iv, void *pv)
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     AssertPvCb(pv, _cbEntry);
-    CopyPb(pv, QvGet(iv), _cbEntry);
+    CopyPb(pv, QvGet(iv).Ptr(), _cbEntry);
     AssertThis(0);
 }
 
 /***************************************************************************
     Lock the data and return a pointer to the ith item.
 ***************************************************************************/
-void *GLB::PvLock(long iv)
+BlobPtr GLB::PvLock(long iv)
 {
     Lock();
     return QvGet(iv);
@@ -1006,7 +1006,7 @@ void AL::Delete(long iv)
     Assert(!FFree(iv), "already free!");
 
     // trash the thing
-    TrashPvCb(QvGet(iv), _cbEntry);
+    TrashPvCb(QvGet(iv).Ptr(), _cbEntry);
 
     *_Qgrfbit(iv) &= ~Fbit(iv);
     _cvFree++;

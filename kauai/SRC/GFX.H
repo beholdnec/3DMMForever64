@@ -363,11 +363,11 @@ class OGN : public OGN_PAR
   public:
     PT *PrgptLock(long ipt = 0)
     {
-        return (PT *)PvLock(ipt);
+        return PvLock(ipt).Cast<PT>();
     }
     PT *QrgptGet(long ipt = 0)
     {
-        return (PT *)QvGet(ipt);
+        return QvGet(ipt).Cast<PT>();
     }
 
     POGN PognTraceOgn(POGN pogn, ulong grfogn);

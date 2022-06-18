@@ -345,7 +345,7 @@ class DMW : public DMW_PAR
     void _RemoveDsg(PDSG pdsg, long *pidsedStartLayout);
     DSED *_Qdsed(long idsed)
     {
-        return (DSED *)_paldsed->QvGet(idsed);
+        return _paldsed->QvGet(idsed).Cast<DSED>();
     }
     void _SplitRcRel(long idsed, RC *prcLeft, RC *prcRight);
 

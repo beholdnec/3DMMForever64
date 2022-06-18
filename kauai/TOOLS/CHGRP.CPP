@@ -832,7 +832,7 @@ void DCGL::Draw(PGNV pgnv, RC *prcClip)
             goto LDisplay;
         }
 
-        CopyPb(pglb->QvGet(iv), rgb, cbDisp);
+        CopyPb(pglb->QvGet(iv).Ptr(), rgb, cbDisp);
 
         // first comes the item number
         stn.FFormatSz(PszLit("%5d) "), iv);
