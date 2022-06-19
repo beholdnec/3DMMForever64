@@ -278,7 +278,7 @@ class TXRD : public TXRD_PAR
 
     PCFL _pcfl;
     GLPtr<MPE> _pglmpe;
-    PAG _pagcact; // for sprm's that have more than a long's worth of data
+    AGPtr<long> _pagcact; // for sprm's that have more than a long's worth of data
 
     long _onnDef; // default font and font size
     long _dypFontDef;

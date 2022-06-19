@@ -524,4 +524,60 @@ private:
     PGG _pgg = pvNil;
 };
 
+
+/****************************************
+    AGPtr provides a template-typed wrapper around a PAG.
+****************************************/
+// TODO: Implement typename TVar?
+template<typename TFixed>
+class AGPtr
+{
+public:
+    AGPtr() = default;
+
+    PAG operator->() const
+    {
+        return _pag;
+    }
+
+    explicit operator bool() const
+    {
+        return _pag != pvNil;
+    }
+
+    static AGPtr New(long cvInit = 0, long cbInit = 0)
+    {
+        return AGPtr(AG::PagNew(sizeof(TFixed), cvInit, cbInit));
+    }
+
+    static AGPtr Read(PBLCK pblck, short* pbo = pvNil, short* posk = pvNil)
+    {
+        return AGPtr(AG::PagRead(pblck, pbo, posk));
+    }
+
+    void Release()
+    {
+        ReleasePpo(&_pag);
+    }
+
+    void GetFixed(long iv, TFixed* pv) const
+    {
+        _pag->GetFixed(iv, BlobPtr::Make(*pv));
+    }
+
+    void PutFixed(long iv, TFixed* pv) const
+    {
+        _pag->PutFixed(iv, BlobPtr::Make(*pv));
+    }
+
+private:
+    explicit AGPtr(PAG pag) : _pag(pag)
+    {
+        // FIXME: should this be _pag->CbFixed() == sizeof(TFixed)?
+        AssertH(_pag == pvNil || _pag->CbFixed() >= sizeof(TFixed));
+    }
+
+    PAG _pag = pvNil;
+};
+
 #endif //! UTILMEM_H

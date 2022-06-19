@@ -252,7 +252,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
     AssertVarMem(pkid);
     AssertVarMem(pckiPar);
 
-    PAG pag;
+    AGPtr<long> pag;
     short bo, osk;
     STN stn, stnT, stnT2;
     byte rgb[2 * kcbMaxDataStn];
@@ -260,11 +260,11 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
     long iv, lw, cb, ib, cbRead;
     CKI cki;
 
-    pag = pvNil;
-    if (!pcfl->FFind(pkid->cki.ctg, pkid->cki.cno, &blck) || pvNil == (pag = AG::PagRead(&blck, &bo, &osk)) ||
+    pag = {};
+    if (!pcfl->FFind(pkid->cki.ctg, pkid->cki.cno, &blck) || !(pag = AGPtr<long>::Read(&blck, &bo, &osk)) ||
         bo != kboCur || osk != koskCur || size(long) != pag->CbFixed())
     {
-        ReleasePpo(&pag);
+        pag.Release();
         return fFalse;
     }
 
@@ -293,7 +293,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
             continue;
         }
 
-        pag->GetFixed(iv, BlobPtr::Make(lw));
+        pag.GetFixed(iv, &lw);
         stn.FFormatSz(PszLit("\tITEM LONG 0x%x"), lw);
         pchse->DumpSz(stn.Psz());
 
@@ -432,7 +432,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
     }
 
     // dump the ENDCHUNK
-    ReleasePpo(&pag);
+    pag.Release();
     pchse->DumpSz(PszLit("ENDCHUNK"));
 
     return fTrue;

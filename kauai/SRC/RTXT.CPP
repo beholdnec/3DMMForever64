@@ -1002,7 +1002,7 @@ TXRD::TXRD(PDOCB pdocb, ulong grfdoc) : TXRD_PAR(pdocb, grfdoc)
 TXRD::~TXRD(void)
 {
     _pglmpe.Release();
-    ReleasePpo(&_pagcact);
+    _pagcact.Release();
     ReleasePpo(&_pcfl);
 }
 
@@ -1200,7 +1200,7 @@ bool TXRD::_FReadChunk(PCFL pcfl, CTG ctg, CNO cno, bool fCopyText)
     // get the text property arguments
     if (pcfl->FGetKidChidCtg(ctg, cno, 0, kctgTxtPropArgs, &kid))
     {
-        if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck) || pvNil == (_pagcact = AG::PagRead(&blck, &bo, &osk)) ||
+        if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck) || !(_pagcact = AGPtr<long>::Read(&blck, &bo, &osk)) ||
             size(long) != _pagcact->CbFixed())
         {
             return fFalse;
@@ -1209,11 +1209,11 @@ bool TXRD::_FReadChunk(PCFL pcfl, CTG ctg, CNO cno, bool fCopyText)
         {
             if (_pagcact->FFree(icact))
                 continue;
-            _pagcact->GetFixed(icact, BlobPtr::Make(cact));
+            _pagcact.GetFixed(icact, &cact);
             if (bo == kboOther)
             {
                 SwapBytesRglw(&cact, 1);
-                _pagcact->PutFixed(icact, BlobPtr::Make(cact));
+                _pagcact.PutFixed(icact, &cact);
             }
             if (!_FOpenArg(icact, B3Lw(cact), bo, osk))
                 return fFalse;
@@ -1398,7 +1398,7 @@ bool TXRD::FSaveToChunk(PCFL pcfl, CKI *pcki, bool fRedirectText)
         goto LFail;
     }
 
-    if (pvNil != _pagcact && 0 < _pagcact->IvMac())
+    if (_pagcact && 0 < _pagcact->IvMac())
     {
         cb = _pagcact->CbOnFile();
         if (!pcfl->FAddChild(pcki->ctg, pcki->cno, 0, cb, kctgTxtPropArgs, &cno, &blck) || !_pagcact->FWrite(&blck))
@@ -1657,7 +1657,7 @@ bool TXRD::_FEnsureInAg(byte sprm, void *pv, long cb, long *pjv)
     long cact, iv, cbT;
     void *qv;
 
-    if (pvNil == _pagcact && pvNil == (_pagcact = AG::PagNew(size(long), 1, cb)))
+    if (!_pagcact && !(_pagcact = AGPtr<long>::New(1, cb)))
     {
         TrashVar(pjv);
         return fFalse;
@@ -1673,14 +1673,14 @@ bool TXRD::_FEnsureInAg(byte sprm, void *pv, long cb, long *pjv)
             continue;
         if (FEqualRgb(qv, pv, cb))
         {
-            _pagcact->GetFixed(iv, BlobPtr::Make(cact));
+            _pagcact.GetFixed(iv, &cact);
             if (B3Lw(cact) == sprm)
             {
                 *pjv = iv + 1;
                 AssertIn(cact & 0x00FFFFFFL, 1, 0x00FFFFFFL);
                 cact++;
                 Assert(B3Lw(cact) == sprm, "cact overflowed");
-                _pagcact->PutFixed(iv, BlobPtr::Make(cact));
+                _pagcact.PutFixed(iv, &cact);
                 return fTrue;
             }
         }
@@ -1705,20 +1705,20 @@ void TXRD::_ReleaseInAg(long jv)
 {
     long cact, cactT;
 
-    if (pvNil == _pagcact || !FIn(jv, 1, _pagcact->IvMac() + 1) || _pagcact->FFree(jv - 1))
+    if (!_pagcact || !FIn(jv, 1, _pagcact->IvMac() + 1) || _pagcact->FFree(jv - 1))
     {
         Bug("bad index into AG");
         return;
     }
 
-    _pagcact->GetFixed(jv - 1, BlobPtr::Make(cact));
+    _pagcact.GetFixed(jv - 1, &cact);
     cactT = cact & 0x00FFFFFFL;
     if (--cactT <= 0)
         _pagcact->Delete(jv - 1);
     else
     {
         cact--;
-        _pagcact->PutFixed(jv - 1, BlobPtr::Make(cact));
+        _pagcact.PutFixed(jv - 1, &cact);
     }
 }
 
@@ -1729,16 +1729,16 @@ void TXRD::_AddRefInAg(long jv)
 {
     long cact;
 
-    if (pvNil == _pagcact || !FIn(jv, 1, _pagcact->IvMac() + 1) || _pagcact->FFree(jv - 1))
+    if (!_pagcact || !FIn(jv, 1, _pagcact->IvMac() + 1) || _pagcact->FFree(jv - 1))
     {
         Bug("bad index into AG");
         return;
     }
 
-    _pagcact->GetFixed(jv - 1, BlobPtr::Make(cact));
+    _pagcact.GetFixed(jv - 1, &cact);
     AssertIn(cact & 0x00FFFFFFL, 1, 0x00FFFFFFL);
     ++cact;
-    _pagcact->PutFixed(jv - 1, BlobPtr::Make(cact));
+    _pagcact.PutFixed(jv - 1, &cact);
 }
 
 /***************************************************************************
