@@ -1003,7 +1003,7 @@ bool _FReadStringReg(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
     AssertPo(pblck, fblckReadable);
     AssertNilOrVarMem(ppbaco);
     AssertVarMem(pcb);
-    PGST pgst;
+    GSTPtr<long> pgst;
     PCABO pcabo;
     short bo;
 
@@ -1015,7 +1015,7 @@ bool _FReadStringReg(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
         return fFalse;
     *pcb = pblck->Cb();
 
-    if (pvNil == (pgst = GST::PgstRead(pblck, &bo)) || pgst->CbExtra() != size(long))
+    if (!(pgst = GSTPtr<long>::Read(pblck, &bo)) || pgst->CbExtra() != size(long))
     {
         goto LFail;
     }
@@ -1026,16 +1026,16 @@ bool _FReadStringReg(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
 
         for (istn = pgst->IvMac(); istn-- > 0;)
         {
-            pgst->GetExtra(istn, &stid);
+            pgst.GetExtra(istn, &stid);
             SwapBytesRglw(&stid, 1);
-            pgst->PutExtra(istn, &stid);
+            pgst.PutExtra(istn, &stid);
         }
     }
 
-    if (pvNil == (pcabo = NewObj CABO(pgst)))
+    if (pvNil == (pcabo = NewObj CABO(pgst.Unwrap())))
     {
     LFail:
-        ReleasePpo(&pgst);
+        pgst.Release();
         TrashVar(pcb);
         TrashVar(ppbaco);
         return fFalse;
@@ -1052,7 +1052,7 @@ void SCEB::_MergeStrings(CNO cno, RSC rsc)
 {
     AssertThis(0);
     PCABO pcabo;
-    PGST pgst;
+    GSTPtr<long> pgst;
     long istn, stid;
     STN stn;
     bool fFail;
@@ -1081,14 +1081,14 @@ void SCEB::_MergeStrings(CNO cno, RSC rsc)
     }
 
     Assert(pcabo->po->FIs(kclsGST), 0);
-    pgst = (PGST)pcabo->po;
+    pgst = GSTPtr<long>::Wrap((PGST)pcabo->po);
     Assert(pgst->CbExtra() == size(long), 0);
 
     fFail = fFalse;
     for (istn = pgst->IvMac(); istn-- > 0;)
     {
         pgst->GetStn(istn, &stn);
-        pgst->GetExtra(istn, &stid);
+        pgst.GetExtra(istn, &stid);
         fFail |= !_pstrg->FPut(stid, &stn);
     }
 
@@ -1487,7 +1487,6 @@ void SCPT::MarkMem(void)
 ***************************************************************************/
 STRG::STRG(void)
 {
-    _pgst = pvNil;
     AssertThis(0);
 }
 
@@ -1497,7 +1496,7 @@ STRG::STRG(void)
 STRG::~STRG(void)
 {
     AssertThis(0);
-    ReleasePpo(&_pgst);
+    _pgst.Release();
 }
 
 #ifdef DEBUG
@@ -1617,7 +1616,7 @@ bool STRG::FMove(long stidSrc, long stidDst)
             istnSrc--;
     }
 
-    _pgst->PutExtra(istnSrc, &stidDst);
+    _pgst.PutExtra(istnSrc, &stidDst);
     _pgst->Move(istnSrc, istnDst);
     return fTrue;
 }
@@ -1634,7 +1633,7 @@ bool STRG::_FFind(long stid, long *pistn)
     long ivMin, ivLim, iv;
     long stidT;
 
-    if (pvNil == _pgst)
+    if (!_pgst)
     {
         *pistn = 0;
         return fFalse;
@@ -1643,7 +1642,7 @@ bool STRG::_FFind(long stid, long *pistn)
     for (ivMin = 0, ivLim = _pgst->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        _pgst->GetExtra(iv, &stidT);
+        _pgst.GetExtra(iv, &stidT);
         if (stidT < stid)
             ivMin = iv + 1;
         else if (stidT > stid)
@@ -1666,10 +1665,10 @@ bool STRG::_FEnsureGst(void)
 {
     AssertThis(0);
 
-    if (pvNil != _pgst)
+    if (_pgst)
         return fTrue;
-    _pgst = GST::PgstNew(size(long));
+    _pgst = GSTPtr<long>::New();
     AssertThis(0);
 
-    return pvNil != _pgst;
+    return !!_pgst;
 }

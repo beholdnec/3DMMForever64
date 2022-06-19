@@ -90,7 +90,7 @@ class TAGM : public TAGM_PAR
     FNI _fniHDRoot;     // Root HD directory to search for content
     long _cbCache;      // Size of RAM Cache on files in CRM for each source
     GLPtr<struct SFS> _pglsfs;        // GL of source file structs
-    PGST _pgstSource;   // String table of source descriptions
+    GSTPtr<long> _pgstSource;   // String table of source descriptions
     PFNINSCD _pfninscd; // Function to call when source is not found
 
   protected:
@@ -119,8 +119,8 @@ class TAGM : public TAGM_PAR
     ~TAGM(void);
 
     // GstSource stuff:
-    PGST PgstSource(void);
-    bool FMergeGstSource(PGST pgst, short bo, short osk);
+    GSTPtr<long> PgstSource(void);
+    bool FMergeGstSource(GSTPtr<long> pgst, short bo, short osk);
     bool FAddStnSource(PSTN pstnMerged, long sid);
     bool FGetSid(PSTN pstn, long *psid); // pstn can be short or long
 

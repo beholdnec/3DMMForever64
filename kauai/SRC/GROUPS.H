@@ -449,8 +449,8 @@ class GSTB : public GSTB_PAR
     void GetStn(long istn, PSTN pstn);
     bool FFindStn(PSTN pstn, long *pistn, ulong grfgst = fgstNil);
 
-    void GetExtra(long istn, void *pv);
-    void PutExtra(long istn, void *pv);
+    void GetExtra(long istn, BlobPtr pv);
+    void PutExtra(long istn, BlobPtr pv);
     bool FFindExtra(void *prgbFind, PSTN pstn = pvNil, long *pistn = pvNil);
 };
 

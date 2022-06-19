@@ -1194,7 +1194,7 @@ void DCST::Draw(PGNV pgnv, RC *prcClip)
 
         if (_clnItem > 1 && pvNil != pbExtra)
         {
-            pgstb->GetExtra(iv, pbExtra);
+            pgstb->GetExtra(iv, BlobPtr(pbExtra, cbExtra));
             stn = PszLit("       ");
 
             // now add the bytes in hex, with a space after every four bytes
@@ -1277,7 +1277,7 @@ bool DCST::FCmdAddItem(PCMD pcmd)
 
     if ((cb = pgstb->CbExtra()) > 0 && FAllocHq(&hq, cb, fmemClear, mprNormal))
     {
-        pgstb->PutExtra(ivNew, PvLockHq(hq));
+        pgstb->PutExtra(ivNew, BlobPtr(PvLockHq(hq), cb));
         UnlockHq(hq);
         FreePhq(&hq);
     }
@@ -1459,7 +1459,7 @@ bool DOCI::_FWrite(long iv)
         else
         {
             Assert(cb == ((PGSTB)_pgrpb)->CbExtra(), "bad cb in GST/AST");
-            ((PGSTB)_pgrpb)->PutExtra(iv, pv);
+            ((PGSTB)_pgrpb)->PutExtra(iv, BlobPtr(pv, cb));
         }
         break;
     default:
@@ -1539,7 +1539,7 @@ HQ DOCI::_HqRead(void)
         if (_dln == 0)
             CopyPb(stn.Prgch(), pv, stn.Cch() * size(achar));
         else
-            ((PGSTB)_pgrpb)->GetExtra(_iv, pv);
+            ((PGSTB)_pgrpb)->GetExtra(_iv, BlobPtr(pv, cb));
         break;
     }
     UnlockHq(hq);

@@ -474,7 +474,7 @@ class BRWT : public BRWT_PAR
     MARKMEM
 
   protected:
-    PGST _pgst;
+    GSTPtr<long> _pgst;
     bool _fEnableAccel;
 
     virtual long _Cthum(void)
@@ -498,7 +498,7 @@ class BRWT : public BRWT_PAR
     ~BRWT(void);
 
     static PBRWT PbrwtNew(PRCA prca, long kidPar, long kidBrwt);
-    void SetGst(PGST pgst);
+    void SetGst(GSTPtr<long> pgst);
     bool FInit(PCMD pcmd, long thumSelect, long thumDisplay, PSTDIO pstdio, bool fWrapScroll = fTrue,
                long cthumScroll = ivNil);
 };

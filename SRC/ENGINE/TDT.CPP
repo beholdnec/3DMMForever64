@@ -48,15 +48,15 @@ const CHID kchidTdt = 0; // CHID of TDT under TMPL chunk
 const BRS kdwrStepWalk = BR_SCALAR(1.0); // step size for walk action
 const BRS kdwrStep = BR_SCALAR(5.0);     // step size for all other actions
 
-PGST TDT::_pgstAction = pvNil;
+GSTPtr<long> TDT::_pgstAction;
 
 /***************************************************************************
     Set the GST of action names for TDTs
 ***************************************************************************/
-bool TDT::FSetActionNames(PGST pgstAction)
+bool TDT::FSetActionNames(GSTPtr<long> pgstAction)
 {
     AssertPo(pgstAction, 0);
-    Assert(pvNil == _pgstAction, "you already set the action names");
+    Assert(!_pgstAction, "you already set the action names");
 
     _pgstAction = pgstAction;
     _pgstAction->AddRef();
@@ -329,7 +329,7 @@ bool TDT::FGetActnName(long anid, PSTN pstn)
 
     for (istn = 0; istn < _pgstAction->IvMac(); istn++)
     {
-        _pgstAction->GetExtra(istn, &anidT);
+        _pgstAction.GetExtra(istn, &anidT);
         if (anid == anidT)
         {
             _pgstAction->GetStn(istn, pstn);

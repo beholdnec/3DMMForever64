@@ -189,8 +189,8 @@ class SCCB : public SCCB_PAR
     GLPtr<struct ETN> _pgletnStack;   // token stack for building expression tree (in-fix only)
     GLPtr<struct CSTD> _pglcstd;       // control structure stack (in-fix only)
     PGST _pgstNames;    // encountered names (in-fix only)
-    PGST _pgstLabel;    // encountered labels, sorted, extra long is label value
-    PGST _pgstReq;      // label references, extra long is address of reference
+    GSTPtr<long> _pgstLabel;    // encountered labels, sorted, extra long is label value
+    GSTPtr<long> _pgstReq;      // label references, extra long is address of reference
     long _ilwOpLast;    // address of the last opcode
     long _lwLastLabel;  // for internal temporary labels
     bool _fError : 1;   // whether an error has occured during compiling

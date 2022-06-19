@@ -1846,7 +1846,7 @@ HFONT NTL::HfntCreate(DSF *pdsf)
     LOGFONT lgf;
     long cch;
 
-    _pgst->GetExtra(pdsf->onn, &lgf);
+    _pgst->GetExtra(pdsf->onn, BlobPtr(&lgf, offset(LOGFONT, lfFaceName)));
     _pgst->GetRgch(pdsf->onn, lgf.lfFaceName, size(lgf.lfFaceName) - 1, &cch);
     lgf.lfFaceName[cch] = 0;
     lgf.lfItalic = FPure(pdsf->grfont & fontItalic);
@@ -1866,7 +1866,7 @@ bool NTL::FFixedPitch(long onn)
     Assert(FValidOnn(onn), "bad onn");
     LOGFONT lgf;
 
-    _pgst->GetExtra(onn, &lgf);
+    _pgst->GetExtra(onn, BlobPtr(&lgf, offset(LOGFONT, lfFaceName)));
     return (lgf.lfPitchAndFamily & 0x03) == FIXED_PITCH;
 }
 

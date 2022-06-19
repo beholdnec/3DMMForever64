@@ -266,7 +266,7 @@ PMVIE MVIE::PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni, CNO cno)
     BLCK blck;
     short bo;
     short osk;
-    PGST pgstSource;
+    GSTPtr<long> pgstSource;
 
     //
     // Create the movie object
@@ -291,8 +291,8 @@ PMVIE MVIE::PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni, CNO cno)
     //
     if (pvNil == pfni)
     {
-        pmvie->_pgstmactr = GST::PgstNew(size(MACTR));
-        if (pmvie->_pgstmactr == pvNil)
+        pmvie->_pgstmactr = GSTPtr<MACTR>::New();
+        if (!pmvie->_pgstmactr)
         {
             goto LFail;
         }
@@ -373,12 +373,12 @@ PMVIE MVIE::PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni, CNO cno)
     if (pcfl->FGetKidChidCtg(kctgMvie, cno, kchidGstSource, kctgGst, &kid) &&
         pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
     {
-        pgstSource = GST::PgstRead(&blck, &bo, &osk);
-        if (pvNil != pgstSource)
+        pgstSource = GSTPtr<long>::Read(&blck, &bo, &osk);
+        if (pgstSource)
         {
             // Ignore result...we can survive failure
             vptagm->FMergeGstSource(pgstSource, bo, osk);
-            ReleasePpo(&pgstSource);
+            pgstSource.Release();
         }
     }
 
@@ -388,7 +388,7 @@ PMVIE MVIE::PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni, CNO cno)
     Assert(pcfl == pmvie->_pcrfAutoSave->Pcfl(), "pcfl isn't right");
     if (!FReadRollCall(pmvie->_pcrfAutoSave, cno, &pmvie->_pgstmactr, &pmvie->_aridLim))
     {
-        pmvie->_pgstmactr = pvNil;
+        pmvie->_pgstmactr = {};
         goto LFail;
     }
 
@@ -452,11 +452,11 @@ LFail:
     Returns: fTrue if there were no failures, fFalse otherwise
 
 ************************************************************ PETED ***********/
-bool MVIE::FReadRollCall(PCRF pcrf, CNO cno, PGST *ppgst, long *paridLim)
+bool MVIE::FReadRollCall(PCRF pcrf, CNO cno, GSTPtr<MACTR> *ppgst, long *paridLim)
 {
     AssertPo(pcrf, 0);
     AssertVarMem(ppgst);
-    Assert(*ppgst == pvNil, "Overwriting existing GST");
+    Assert(!*ppgst, "Overwriting existing GST");
     AssertNilOrVarMem(paridLim);
 
     short bo;
@@ -472,14 +472,14 @@ bool MVIE::FReadRollCall(PCRF pcrf, CNO cno, PGST *ppgst, long *paridLim)
         goto LFail;
     }
 
-    *ppgst = GST::PgstRead(&blck, &bo);
-    if (*ppgst == pvNil)
+    *ppgst = GSTPtr<MACTR>::Read(&blck, &bo);
+    if (!*ppgst)
         goto LFail;
 
     imactrMac = (*ppgst)->IvMac();
     for (imactr = 0; imactr < imactrMac; imactr++)
     {
-        (*ppgst)->GetExtra(imactr, &mactr);
+        (*ppgst).GetExtra(imactr, &mactr);
         if (bo == kboOther)
             SwapBytesBom(&mactr, kbomMactr);
 
@@ -489,7 +489,7 @@ bool MVIE::FReadRollCall(PCRF pcrf, CNO cno, PGST *ppgst, long *paridLim)
         // Open the tags, since they might be TDTs
         AssertDo(vptagm->FOpenTag(&mactr.tagTmpl, pcrf), "Should never fail when not copying the tag");
 
-        (*ppgst)->PutExtra(imactr, &mactr);
+        (*ppgst).PutExtra(imactr, &mactr);
     }
 
     return fTrue;
@@ -618,14 +618,14 @@ MVIE::~MVIE(void)
     //
     // Release the roll call
     //
-    if (_pgstmactr != pvNil)
+    if (_pgstmactr)
     {
         for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
         {
-            _pgstmactr->GetExtra(imactr, &mactr);
+            _pgstmactr.GetExtra(imactr, &mactr);
             vptagm->CloseTag(&mactr.tagTmpl);
         }
-        ReleasePpo(&_pgstmactr);
+        _pgstmactr.Release();
     }
 
     //
@@ -774,7 +774,7 @@ bool MVIE::FGetArid(long iarid, long *parid, PSTN pstn, long *pcactRef, PTAG pta
     }
 
     _pgstmactr->GetStn(iarid, pstn);
-    _pgstmactr->GetExtra(iarid, &mactr);
+    _pgstmactr->GetExtra(iarid, BlobPtr::Make(mactr));
     *parid = mactr.arid;
     *pcactRef = mactr.cactRef;
     if (pvNil != ptagTmpl)
@@ -851,7 +851,7 @@ bool MVIE::FChooseArid(long arid)
         //
         for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
         {
-            _pgstmactr->GetExtra(imactr, &mactr);
+            _pgstmactr.GetExtra(imactr, &mactr);
             if (mactr.arid == arid)
             {
                 pactr = ACTR::PactrNew(&(mactr.tagTmpl));
@@ -928,7 +928,7 @@ bool MVIE::FGetName(long arid, PSTN pstn)
 
     for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
     {
-        _pgstmactr->GetExtra(imactr, &mactr);
+        _pgstmactr.GetExtra(imactr, &mactr);
         if (mactr.arid == arid)
         {
             _pgstmactr->GetStn(imactr, pstn);
@@ -962,8 +962,7 @@ bool MVIE::FNameActr(long arid, PSTN pstn)
 
     for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
     {
-
-        _pgstmactr->GetExtra(imactr, &mactr);
+        _pgstmactr->GetExtra(imactr, BlobPtr::Make(mactr));
         if (mactr.arid == arid)
         {
 
@@ -998,7 +997,7 @@ bool MVIE::FIsPropBrwsIarid(long iarid)
     AssertIn(iarid, 0, _pgstmactr->IvMac());
 
     MACTR mactr;
-    _pgstmactr->GetExtra(iarid, &mactr);
+    _pgstmactr.GetExtra(iarid, &mactr);
     return FPure(mactr.grfbrws & fbrwsProp);
 }
 
@@ -1019,7 +1018,7 @@ bool MVIE::FIsIaridTdt(long iarid)
     AssertIn(iarid, 0, _pgstmactr->IvMac());
 
     MACTR mactr;
-    _pgstmactr->GetExtra(iarid, &mactr);
+    _pgstmactr->GetExtra(iarid, BlobPtr::Make(mactr));
     return FPure(mactr.grfbrws & fbrwsTdt);
 }
 
@@ -1046,13 +1045,11 @@ void MVIE::ChangeActrTag(long arid, PTAG ptag)
 
     for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
     {
-
-        _pgstmactr->GetExtra(imactr, &mactr);
+        _pgstmactr.GetExtra(imactr, &mactr);
         if (mactr.arid == arid)
         {
-
             mactr.tagTmpl = *ptag;
-            _pgstmactr->PutExtra(imactr, &mactr);
+            _pgstmactr.PutExtra(imactr, &mactr);
             return;
         }
     }
@@ -1088,8 +1085,7 @@ bool MVIE::FAddToRollCall(ACTR *pactr, PSTN pstn)
         //
         for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
         {
-
-            _pgstmactr->GetExtra(imactr, &mactr);
+            _pgstmactr.GetExtra(imactr, &mactr);
             if (mactr.arid == pactr->Arid())
             {
                 TAG tagTmpl;
@@ -1103,7 +1099,7 @@ bool MVIE::FAddToRollCall(ACTR *pactr, PSTN pstn)
                     // ACTR::GetTagTmpl doesn't AddRef the pcrf, so do it here:
                     TAGM::DupTag(&tagTmpl);
                 }
-                _pgstmactr->PutExtra(imactr, &mactr);
+                _pgstmactr.PutExtra(imactr, &mactr);
                 Pmcc()->UpdateRollCall();
                 return (fTrue);
             }
@@ -1167,7 +1163,7 @@ void MVIE::RemFromRollCall(ACTR *pactr, bool fDelIfOnlyRef)
     //
     for (imactr = 0; imactr < _pgstmactr->IvMac(); imactr++)
     {
-        _pgstmactr->GetExtra(imactr, &mactr);
+        _pgstmactr.GetExtra(imactr, &mactr);
         if (mactr.arid == pactr->Arid())
         {
             mactr.cactRef--;
@@ -1179,7 +1175,7 @@ void MVIE::RemFromRollCall(ACTR *pactr, bool fDelIfOnlyRef)
             }
             else
             {
-                _pgstmactr->PutExtra(imactr, &mactr);
+                _pgstmactr.PutExtra(imactr, &mactr);
             }
 
             if (mactr.cactRef == 0)
@@ -2453,7 +2449,7 @@ bool MVIE::FAutoSave(PFNI pfni, bool fCleanRollCall)
     MFP mfp;
     KID kidScen, kidGstRollCall, kidGstSource;
     PCFL pcfl;
-    PGST pgstSource = pvNil;
+    GSTPtr<long> pgstSource;
 
     if (_pcrfAutoSave == pvNil)
     {
@@ -2540,7 +2536,7 @@ LRetry:
 
         for (imactr = 0; imactr < _pgstmactr->IvMac();)
         {
-            _pgstmactr->GetExtra(imactr, &mactr);
+            _pgstmactr.GetExtra(imactr, &mactr);
             if (mactr.cactRef == 0)
             {
                 _pgstmactr->Delete(imactr);
@@ -2587,7 +2583,7 @@ LRetry:
     }
 
     pgstSource = vptagm->PgstSource();
-    if (pgstSource == pvNil)
+    if (!pgstSource)
         goto LFail2;
 
     if (!pcfl->FAdd(pgstSource->CbOnFile(), kctgGst, &cnoSource, &blck))
@@ -4965,12 +4961,12 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
 
     long imactr, imactrMac, icnoMac = 0;
     PCFL pcfl = _pcrfAutoSave->Pcfl();
-    PGST pgstmactr = pvNil;
+    GSTPtr<MACTR> pgstmactr;
 
     /* Update the roll call GST */
     if (!FReadRollCall(_pcrfAutoSave, cno, &pgstmactr))
     {
-        pgstmactr = pvNil;
+        pgstmactr = {};
         goto LFail;
     }
     imactrMac = pgstmactr->IvMac();
@@ -4980,7 +4976,7 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
         MACTR mactr;
 
         pgstmactr->GetStn(imactr, &stn);
-        pgstmactr->GetExtra(imactr, &mactr);
+        pgstmactr.GetExtra(imactr, &mactr);
 
         mactr.arid += aridMin;
         mactr.cactRef = 0;
@@ -5051,14 +5047,14 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
         pglcno.Release();
     }
 
-    ReleasePpo(&pgstmactr);
+    pgstmactr.Release();
 
     return fTrue;
 LFail:
     /* NOTE: I could use more variables and make the loops below faster,
         but this is a failure case so I'm not very concerned about
         performance here */
-    if (pgstmactr != pvNil)
+    if (pgstmactr)
     {
         MACTR mactr;
 
@@ -5066,7 +5062,7 @@ LFail:
         imactrMac = _pgstmactr->IvMac();
         while (imactr--)
         {
-            _pgstmactr->GetExtra(--imactrMac, &mactr);
+            _pgstmactr.GetExtra(--imactrMac, &mactr);
             vptagm->CloseTag(&mactr.tagTmpl);
             _pgstmactr->Delete(imactrMac);
             pgstmactr->Delete(imactr);
@@ -5076,10 +5072,10 @@ LFail:
         imactrMac = pgstmactr->IvMac();
         while (imactrMac--)
         {
-            pgstmactr->GetExtra(imactrMac, &mactr);
+            pgstmactr.GetExtra(imactrMac, &mactr);
             vptagm->CloseTag(&mactr.tagTmpl);
         }
-        ReleasePpo(&pgstmactr);
+        pgstmactr.Release();
     }
     return fFalse;
 }

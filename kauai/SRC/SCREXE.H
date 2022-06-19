@@ -76,7 +76,7 @@ class STRG : public STRG_PAR
 
   protected:
     long _stidLast;
-    PGST _pgst;
+    GSTPtr<long> _pgst;
 
     bool _FFind(long stid, long *pistn);
     bool _FEnsureGst(void);

@@ -210,7 +210,7 @@ END_CMD_MAP_NIL()
 /***************************************************************************
     Create a new font menu
 ***************************************************************************/
-PMPFNT MPFNT::PmpfntNew(PRCA prca, long kidParent, long kidMenu, PCMD pcmd, long ithumSelect, PGST pgst)
+PMPFNT MPFNT::PmpfntNew(PRCA prca, long kidParent, long kidMenu, PCMD pcmd, long ithumSelect, GSTPtr<long> pgst)
 {
     AssertPo(prca, 0);
     AssertVarMem(pcmd);
@@ -284,7 +284,7 @@ bool MPFNT::_FSetThumFrame(long istn, PGOB pgobPar)
         Assert(ptgob != pvNil, "No TGOB for the text");
         Assert(ptgob->FIs(kclsTGOB), "GOB isn't a TGOB");
 
-        _pgst->GetExtra(istn, &onn);
+        _pgst.GetExtra(istn, &onn);
         ptgob->SetFont(onn);
         ptgob->SetAlign(tahLeft, tavCenter);
         return fTrue;
@@ -301,7 +301,7 @@ void MPFNT::_ApplySelection(long ithumSelect, long sid)
 
     long onn;
 
-    _pgst->GetExtra(ithumSelect, &onn);
+    _pgst.GetExtra(ithumSelect, &onn);
     vpcex->EnqueueCid(cidTextSetFont, _pstdio, pvNil, onn);
 }
 

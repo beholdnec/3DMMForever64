@@ -560,7 +560,7 @@ class MVIE : public MVIE_PAR
 
     STN _stnTitle; // Title of the movie
 
-    PGST _pgstmactr;             // GST of actors in the movie (for roll call)
+    GSTPtr<struct MACTR> _pgstmactr;             // GST of actors in the movie (for roll call)
     PSCEN _pscenOpen;            // Index of current open scene.
     long _cscen;                 // Number of scenes in the movie.
     long _iscen;                 // Number of scene open in the movie.
@@ -644,7 +644,7 @@ class MVIE : public MVIE_PAR
     static PMVIE PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni = pvNil, CNO cno = cnoNil);
     // Create a movie and read it if
     //   pfni != pvNil
-    static bool FReadRollCall(PCRF pcrf, CNO cno, PGST *ppgst, long *paridLim = pvNil);
+    static bool FReadRollCall(PCRF pcrf, CNO cno, GSTPtr<MACTR> *ppgst, long *paridLim = pvNil);
     // reads roll call for a given movie
     void ForceSaveAs(void)
     {

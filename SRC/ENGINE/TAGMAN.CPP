@@ -89,8 +89,8 @@ PTAGM TAGM::PtagmNew(PFNI pfniHDRoot, PFNINSCD pfninscd, long cbCache)
     if (!ptagm->_pglsfs)
         goto LFail;
 
-    ptagm->_pgstSource = GST::PgstNew(size(long)); // extra data is sid
-    if (pvNil == ptagm->_pgstSource)
+    ptagm->_pgstSource = GSTPtr<long>::New(); // extra data is sid
+    if (!ptagm->_pgstSource)
         goto LFail;
 
     AssertPo(ptagm, 0);
@@ -119,7 +119,7 @@ TAGM::~TAGM(void)
         }
         _pglsfs.Release();
     }
-    ReleasePpo(&_pgstSource);
+    _pgstSource.Release();
 }
 
 /***************************************************************************
@@ -151,7 +151,7 @@ void TAGM::SplitString(PSTN pstnMerged, PSTN pstnLong, PSTN pstnShort)
 /***************************************************************************
     Return source title string table so it can be embedded in documents
 ***************************************************************************/
-PGST TAGM::PgstSource(void)
+GSTPtr<long> TAGM::PgstSource(void)
 {
     AssertThis(0);
     return _pgstSource;
@@ -172,7 +172,7 @@ bool TAGM::_FFindSid(long sid, long *pistn)
 
     for (istn = 0; istn < _pgstSource->IvMac(); istn++)
     {
-        _pgstSource->GetExtra(istn, &sidT);
+        _pgstSource.GetExtra(istn, &sidT);
         if (sid == sidT) // it's already in there
         {
             if (pvNil != pistn)
@@ -188,7 +188,7 @@ bool TAGM::_FFindSid(long sid, long *pistn)
     Add source title string table entries to tag manager, if it doesn't
     already know them.
 ***************************************************************************/
-bool TAGM::FMergeGstSource(PGST pgst, short bo, short osk)
+bool TAGM::FMergeGstSource(GSTPtr<long> pgst, short bo, short osk)
 {
     AssertThis(0);
     AssertPo(pgst, 0);
@@ -201,7 +201,7 @@ bool TAGM::FMergeGstSource(PGST pgst, short bo, short osk)
     for (istn = 0; istn < pgst->IvMac(); istn++)
     {
         pgst->GetStn(istn, &stn);
-        pgst->GetExtra(istn, &sid);
+        pgst.GetExtra(istn, &sid);
         if (kboOther == bo)
             SwapBytesBom(&sid, kbomSid);
         if (!FAddStnSource(&stn, sid))
@@ -246,13 +246,13 @@ bool TAGM::FGetSid(PSTN pstn, long *psid)
         _pgstSource->GetStn(istn, &stnMerged);
         if (stnMerged.FEqualUser(pstn, fstnIgnoreCase))
         {
-            _pgstSource->GetExtra(istn, psid);
+            _pgstSource.GetExtra(istn, psid);
             return fTrue;
         }
         SplitString(&stnMerged, &stnLong, &stnShort);
         if (stnLong.FEqualUser(pstn, fstnIgnoreCase) || stnShort.FEqualUser(pstn, fstnIgnoreCase))
         {
-            _pgstSource->GetExtra(istn, psid);
+            _pgstSource.GetExtra(istn, psid);
             return fTrue;
         }
     }
@@ -273,7 +273,7 @@ bool TAGM::_FGetStnMergedOfSid(long sid, PSTN pstn)
     for (istn = 0; istn < _pgstSource->IvMac(); istn++)
     {
         _pgstSource->GetStn(istn, pstn);
-        _pgstSource->GetExtra(istn, &sidT);
+        _pgstSource.GetExtra(istn, &sidT);
         if (sid == sidT)
             return fTrue;
     }

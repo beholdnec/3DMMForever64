@@ -1551,7 +1551,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
                 _bsf.FetchRgb(0, cb, pvExtra);
             if (cb < cbExtra)
                 ClearPb(PvAddBv(pvExtra, cb), cbExtra - cb);
-            pgstb->PutExtra(iv, pvExtra);
+            pgstb->PutExtra(iv, BlobPtr(pvExtra, cbExtra));
         }
     }
 
@@ -2160,7 +2160,6 @@ static KEYTT _rgkeytt[] = {
 ***************************************************************************/
 CHLX::CHLX(PBSF pbsf, PSTN pstnFile) : CHLX_PAR(pbsf, pstnFile)
 {
-    _pgstVariables = pvNil;
     AssertThis(0);
 }
 
@@ -2169,7 +2168,7 @@ CHLX::CHLX(PBSF pbsf, PSTN pstnFile) : CHLX_PAR(pbsf, pstnFile)
 ***************************************************************************/
 CHLX::~CHLX(void)
 {
-    ReleasePpo(&_pgstVariables);
+    _pgstVariables.Release();
 }
 
 /***************************************************************************
@@ -2204,10 +2203,10 @@ bool CHLX::FGetTok(PTOK ptok)
         if (!ptok->stn.FEqualSz(PszLit("SET")))
         {
             // check for a variable
-            if (pvNil != _pgstVariables && _pgstVariables->FFindStn(&ptok->stn, &istn, fgstSorted))
+            if (_pgstVariables && _pgstVariables->FFindStn(&ptok->stn, &istn, fgstSorted))
             {
                 ptok->tt = ttLong;
-                _pgstVariables->GetExtra(istn, &ptok->lw);
+                _pgstVariables.GetExtra(istn, &ptok->lw);
             }
             break;
         }
@@ -2309,10 +2308,10 @@ bool CHLX::_FDoSet(PTOK ptok)
 
     lw = 0;
     istn = ivNil;
-    if (pvNil != _pgstVariables || pvNil != (_pgstVariables = GST::PgstNew(size(long))))
+    if (_pgstVariables || (_pgstVariables = GSTPtr<long>::New()))
     {
         if (_pgstVariables->FFindStn(&ptok->stn, &istn, fgstSorted))
-            _pgstVariables->GetExtra(istn, &lw);
+            _pgstVariables.GetExtra(istn, &lw);
         else if (!_pgstVariables->FInsertStn(istn, &ptok->stn, &lw))
             istn = ivNil;
     }
@@ -2353,7 +2352,7 @@ bool CHLX::_FDoSet(PTOK ptok)
                 long istnT;
                 if (!_pgstVariables->FFindStn(&ptok->stn, &istnT, fgstSorted))
                     return fFalse;
-                _pgstVariables->GetExtra(istnT, &ptok->lw);
+                _pgstVariables.GetExtra(istnT, &ptok->lw);
                 ptok->tt = ttLong;
                 break;
             }
@@ -2412,7 +2411,7 @@ bool CHLX::_FDoSet(PTOK ptok)
     }
 
     if (ivNil != istn)
-        _pgstVariables->PutExtra(istn, &lw);
+        _pgstVariables.PutExtra(istn, &lw);
     return fTrue;
 }
 

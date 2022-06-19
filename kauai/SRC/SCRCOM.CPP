@@ -269,8 +269,6 @@ SCCB::SCCB(void)
     _plexb = pvNil;
     _pscpt = pvNil;
     _pgstNames = pvNil;
-    _pgstLabel = pvNil;
-    _pgstReq = pvNil;
     _pmsnk = pvNil;
     AssertThis(0);
 }
@@ -400,8 +398,8 @@ void SCCB::_Free(void)
     ReleasePpo(&_pscpt);
     ReleasePpo(&_plexb);
     ReleasePpo(&_pmsnk);
-    ReleasePpo(&_pgstLabel);
-    ReleasePpo(&_pgstReq);
+    _pgstLabel.Release();
+    _pgstReq.Release();
     _pgletnTree.Release();
     _pgletnStack.Release();
     if (_pglcstd)
@@ -436,7 +434,7 @@ PSCPT SCCB::PscptCompileLex(PLEXB plexb, bool fInFix, PMSNK pmsnk, long ttEnd)
         _CompilePost();
 
     // link all the label requests with the labels
-    if (pvNil != _pgstReq)
+    if (_pgstReq)
     {
         AssertPo(_pgstReq, 0);
         long istn;
@@ -454,7 +452,7 @@ PSCPT SCCB::PscptCompileLex(PLEXB plexb, bool fInFix, PMSNK pmsnk, long ttEnd)
             else if (pvNil != _pscpt)
             {
                 AssertPo(_pscpt, 0);
-                _pgstReq->GetExtra(istn, &ilw);
+                _pgstReq.GetExtra(istn, &ilw);
                 Assert(B3Lw(lw) == kbLabel, 0);
                 AssertIn(ilw, 1, _pscpt->_pgllw->IvMac());
                 _pscpt->_pgllw.Put(ilw, &lw);
@@ -691,12 +689,12 @@ bool SCCB::_FFindLabel(PSTN pstn, long *plwLoc)
     AssertVarMem(plwLoc);
     long istn;
 
-    if (pvNil == _pgstLabel || !_pgstLabel->FFindStn(pstn, &istn, fgstSorted))
+    if (!_pgstLabel || !_pgstLabel->FFindStn(pstn, &istn, fgstSorted))
     {
         TrashVar(plwLoc);
         return fFalse;
     }
-    _pgstLabel->GetExtra(istn, plwLoc);
+    _pgstLabel.GetExtra(istn, plwLoc);
     return fTrue;
 }
 
@@ -710,7 +708,7 @@ void SCCB::_AddLabel(PSTN pstn)
     long lw;
     long istn;
 
-    if (pvNil == _pgstLabel && pvNil == (_pgstLabel = GST::PgstNew(size(long), 5, 100)))
+    if (!_pgstLabel && !(_pgstLabel = GSTPtr<long>::New(5, 100)))
     {
         _ReportError(_pszOom);
         return;
@@ -749,7 +747,7 @@ void SCCB::_PushLabelRequest(PSTN pstn)
     if (_fError)
         return;
 
-    if (pvNil == _pgstReq && pvNil == (_pgstReq = GST::PgstNew(size(long), 10, 200)))
+    if (!_pgstReq && !(_pgstReq = GSTPtr<long>::New(10, 200)))
     {
         _ReportError(_pszOom);
         return;

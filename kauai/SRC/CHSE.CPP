@@ -428,7 +428,7 @@ bool CHSE::FDumpStringTable(PGSTB pgstb)
 
         if (cbExtra > 0)
         {
-            pgstb->GetExtra(iv, pvExtra);
+            pgstb->GetExtra(iv, BlobPtr(pvExtra, cbExtra));
             _bsf.FReplace(pvExtra, cbExtra, 0, _bsf.IbMac());
             _DumpBsf(2);
         }

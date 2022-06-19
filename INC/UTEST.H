@@ -106,10 +106,10 @@ class APP : public APP_PAR
     FNI _fniPortfolioDoc;  // document last opened in portfolio
     PMVIE _pmvieHandoff;   // Stores movie for studio to use
     PKWA _pkwa;            // Kidworld for App
-    PGST _pgstBuildingFiles;
-    PGST _pgstStudioFiles;
-    PGST _pgstSharedFiles;
-    PGST _pgstApp;        // Misc. app global strings
+    GSTPtr<long> _pgstBuildingFiles;
+    GSTPtr<long> _pgstStudioFiles;
+    GSTPtr<long> _pgstSharedFiles;
+    GSTPtr<long> _pgstApp;        // Misc. app global strings
     STN _stnAppName;      // App name
     STN _stnProductLong;  // Long version of product name
     STN _stnProductShort; // Short version of product name
@@ -155,7 +155,7 @@ class APP : public APP_PAR
     void _SkipToSpace(char **ppch);
     void _SkipSpace(char **ppch);
     bool _FEnsureProductNames(void);
-    bool _FFindProductDir(PGST pgst);
+    bool _FFindProductDir(GSTPtr<long> pgst);
     bool _FQueryProductExists(STN *pstnLong, STN *pstnShort, FNI *pfni);
     bool _FFindMsKidsDir(void);
     bool _FFindMsKidsDirAt(FNI *path);
@@ -172,13 +172,13 @@ class APP : public APP_PAR
     bool _FOpenResourceFile(void);
     bool _FInitKidworld(void);
     bool _FInitProductNames(void);
-    bool _FReadTitlesFromReg(PGST *ppgst);
+    bool _FReadTitlesFromReg(GSTPtr<long> *ppgst);
     bool _FInitTdt(void);
-    PGST _PgstRead(CNO cno);
+    GSTPtr<long> _PgstRead(CNO cno);
     bool _FReadStringTables(void);
     bool _FSetWindowTitle(void);
     bool _FInitCrm(void);
-    bool _FAddToCrm(PGST pgstFiles, PCRM pcrm, GLPtr<long> pglFiles);
+    bool _FAddToCrm(GSTPtr<long> pgstFiles, PCRM pcrm, GLPtr<long> pglFiles);
     bool _FInitBuilding(void);
     bool _FInitStudio(PFNI pfniUserDoc, bool fFailIfDocOpenFailed = fTrue);
     void _GetWindowProps(long *pxp, long *pyp, long *pdxp, long *pdyp, DWORD *pdwStyle);

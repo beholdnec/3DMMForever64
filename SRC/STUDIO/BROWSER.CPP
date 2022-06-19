@@ -2439,7 +2439,7 @@ PBRWT BRWT::PbrwtNew(PRCA prca, long kidPar, long kidGlass)
         return pvNil;
     }
 
-    pbrwt->_pgst = pvNil;
+    pbrwt->_pgst = {};
 
     return pbrwt;
 }
@@ -2449,12 +2449,12 @@ PBRWT BRWT::PbrwtNew(PRCA prca, long kidPar, long kidGlass)
  * Set the Gst for BRWT text
  *
  ****************************************************/
-void BRWT::SetGst(PGST pgst)
+void BRWT::SetGst(GSTPtr<long> pgst)
 {
     AssertThis(0);
     AssertPo(pgst, 0);
 
-    ReleasePpo(&_pgst);
+    _pgst.Release();
 
     _pgst = pgst;
     _pgst->AddRef();
@@ -2605,14 +2605,15 @@ bool BRWA::FBuildGst(PSCEN pscen)
     PTMPL ptmpl;
     long cactn;
     long iactn;
-    PGST pgst;
+    GSTPtr<long> pgst;
 
     Assert(pvNil != pscen && pvNil != pscen->PactrSelected(), "kidBrwsAction: Invalid actor");
 
     ptmpl = pscen->PactrSelected()->Ptmpl();
     Assert(pvNil != ptmpl, "Actor has no template");
 
-    if (pvNil == (pgst = GST::PgstNew(0)))
+    // XXX: The GST is created with no extra data. 
+    if (!(pgst = GSTPtr<long>::Wrap(GST::PgstNew(0))))
         return fFalse;
 
     cactn = ptmpl->Cactn();
@@ -2625,7 +2626,7 @@ bool BRWA::FBuildGst(PSCEN pscen)
     }
 
     SetGst(pgst);
-    ReleasePpo(&pgst);
+    pgst.Release();
 
     if (!FBuildApe(pscen->PactrSelected()))
         goto LFail;
@@ -2636,7 +2637,7 @@ bool BRWA::FBuildGst(PSCEN pscen)
     return fTrue;
 
 LFail:
-    ReleasePpo(&pgst);
+    pgst.Release();
     return fFalse;
 }
 
@@ -3396,7 +3397,7 @@ BRWL::~BRWL(void)
 BRWT::~BRWT(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pgst);
+    _pgst.Release();
 
     if (_fEnableAccel)
         vapp.EnableAccel();

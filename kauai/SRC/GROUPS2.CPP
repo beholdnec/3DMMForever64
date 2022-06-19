@@ -434,35 +434,37 @@ bool GSTB::FFindExtra(void *prgbFind, PSTN pstn, long *pistn)
 /***************************************************************************
     Fetch the extra data for element istn.
 ***************************************************************************/
-void GSTB::GetExtra(long istn, void *pv)
+void GSTB::GetExtra(long istn, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(istn, 0, _ivMac);
     Assert(!FFree(istn), "string entry is free!");
     Assert(_cbEntry > size(long), "no extra data");
-    AssertPvCb(pv, _cbEntry - size(long));
+    AssertPvCb(pv.Ptr(), _cbEntry - size(long));
+    Assert(pv.Size() >= _cbEntry - size(long), "not enough space");
 
     byte *qb;
 
     qb = (byte *)_Qbst(istn) + size(long);
-    CopyPb(qb, pv, _cbEntry - size(long));
+    CopyPb(qb, pv.Ptr(), _cbEntry - size(long));
 }
 
 /***************************************************************************
     Put the extra data for element istn.
 ***************************************************************************/
-void GSTB::PutExtra(long istn, void *pv)
+void GSTB::PutExtra(long istn, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(istn, 0, _ivMac);
     Assert(!FFree(istn), "string entry is free!");
     Assert(_cbEntry > size(long), "no extra data");
-    AssertPvCb(pv, _cbEntry - size(long));
+    AssertPvCb(pv.Ptr(), _cbEntry - size(long));
+    Assert(pv.Size() >= _cbEntry - size(long), "not enough data");
 
     byte *qb;
 
     qb = (byte *)_Qbst(istn) + size(long);
-    CopyPb(pv, qb, _cbEntry - size(long));
+    CopyPb(pv.Ptr(), qb, _cbEntry - size(long));
     AssertThis(0);
 }
 

@@ -88,7 +88,7 @@ class CHLX : public CHLX_PAR
     NOCOPY(CHLX)
 
   protected:
-    PGST _pgstVariables;
+    GSTPtr<long> _pgstVariables;
 
     bool _FDoSet(PTOK ptok);
 

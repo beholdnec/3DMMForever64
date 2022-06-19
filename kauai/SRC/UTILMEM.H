@@ -589,4 +589,69 @@ private:
     PAG _pag = pvNil;
 };
 
+/****************************************
+    GSTPtr provides a template-typed wrapper around a GST.
+    TExtra is the type of the extra data associated with each string.
+****************************************/
+template<typename TExtra>
+class GSTPtr
+{
+public:
+    GSTPtr() = default;
+
+    PGST operator->() const
+    {
+        return _pgst;
+    }
+
+    explicit operator bool() const
+    {
+        return _pgst != pvNil;
+    }
+
+    static GSTPtr Wrap(PGST pgst)
+    {
+        return GSTPtr(pgst);
+    }
+
+    static GSTPtr New(long cstnInit = 0, long cchInit = 0)
+    {
+        return GSTPtr(GST::PgstNew(sizeof(TExtra), cstnInit, cchInit));
+    }
+
+    static GSTPtr Read(PBLCK pblck, short* pbo = pvNil, short* posk = pvNil)
+    {
+        return GSTPtr(GST::PgstRead(pblck, pbo, posk));
+    }
+
+    PGST Unwrap() const
+    {
+        return _pgst;
+    }
+
+    void Release()
+    {
+        ReleasePpo(&_pgst);
+    }
+
+    void GetExtra(long istn, TExtra* pv) const
+    {
+        _pgst->GetExtra(istn, BlobPtr::Make(*pv));
+    }
+
+    void PutExtra(long istn, TExtra* pv) const
+    {
+        _pgst->PutExtra(istn, BlobPtr::Make(*pv));
+    }
+
+private:
+    explicit GSTPtr(PGST pgst) : _pgst(pgst)
+    {
+        // FIXME: should this be _pgst->CbExtra() == sizeof(TExtra)?
+        AssertH(_pgst == pvNil || _pgst->CbExtra() >= sizeof(TExtra));
+    }
+
+    PGST _pgst = pvNil;
+};
+
 #endif //! UTILMEM_H

@@ -1225,10 +1225,10 @@ bool STDIO::FCmdCreatePopup(PCMD pcmd)
         MP::PmpNew(kidBackground, kid, _pcrm, pcmd, bws, thumSel, ksidInvalid, ckiRoot, ctgNil, this, cid, fFalse);
         break;
     case cidTextFont: {
-        PGST pgst;
+        GSTPtr<long> pgst;
         long onnCur, onnSystem = vntl.OnnSystem();
 
-        if ((pgst = GST::PgstNew(size(onnCur))) == pvNil)
+        if (!(pgst = GSTPtr<long>::New()))
             break;
 
         for (onnCur = 0; onnCur < vntl.OnnMac(); onnCur++)
@@ -1240,15 +1240,15 @@ bool STDIO::FCmdCreatePopup(PCMD pcmd)
                 vntl.GetStn(onnCur, &stn);
                 if (!pgst->FAddStn(&stn, &onnCur))
                 {
-                    ReleasePpo(&pgst);
+                    pgst.Release();
                     break;
                 }
             }
         }
-        if (pgst != pvNil)
+        if (pgst)
         {
             MPFNT::PmpfntNew(_pcrm, kidBackground, kidTextFont, pcmd, (grfchp & kfchpOnn) ? chp.onn : ivNil, pgst);
-            ReleasePpo(&pgst);
+            pgst.Release();
         }
         break;
     }

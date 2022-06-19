@@ -1384,7 +1384,7 @@ void GGB::GetFixed(long iv, BlobPtr pv)
     Assert(!FFree(iv), "element free!");
     AssertPvCb(pv.Ptr(), _cbFixed);
     // FIXME: change these asserts to == ?
-    Assert(pv.Size() >= _cbFixed, "not enough space to get item");
+    Assert(pv.Size() >= _cbFixed, "not enough space");
 
     LOC loc;
 
@@ -1403,7 +1403,7 @@ void GGB::PutFixed(long iv, BlobPtr pv)
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
     AssertPvCb(pv.Ptr(), _cbFixed);
-    Assert(pv.Size() >= _cbFixed, "not enough space to put item");
+    Assert(pv.Size() >= _cbFixed, "not enough data");
 
     LOC loc;
 
@@ -1471,7 +1471,7 @@ void GGB::Get(long iv, BlobPtr pv)
 
     loc = *_Qloc(iv);
     AssertPvCb(pv.Ptr(), loc.cb - _cbFixed);
-    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough space to get item");
+    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough space");
     CopyPb(_Qb1(loc.bv + _cbFixed), pv.Ptr(), loc.cb - _cbFixed);
 }
 
@@ -1488,7 +1488,7 @@ void GGB::Put(long iv, BlobPtr pv)
 
     loc = *_Qloc(iv);
     AssertPvCb(pv.Ptr(), loc.cb - _cbFixed);
-    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough space to put item");
+    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough data");
     CopyPb(pv.Ptr(), _Qb1(loc.bv + _cbFixed), loc.cb - _cbFixed);
 }
 

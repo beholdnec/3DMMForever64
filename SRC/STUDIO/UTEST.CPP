@@ -1496,7 +1496,7 @@ bool APP::_FInitProductNames(void)
 {
     AssertBaseThis(0);
 
-    PGST pgst;
+    GSTPtr<long> pgst;
     BLCK blck;
 
     // Use kcbCacheTagm of cache per source, don't cache on CD
@@ -1532,18 +1532,18 @@ bool APP::_FInitProductNames(void)
         goto LFail;
     }
 
-    ReleasePpo(&pgst);
+    pgst.Release();
     return fTrue;
 
 LFail:
-    ReleasePpo(&pgst);
+    pgst.Release();
     return fFalse;
 }
 
 /***************************************************************************
     Read the sids and titles of installed 3DMovie products from the registry
 ***************************************************************************/
-bool APP::_FReadTitlesFromReg(PGST *ppgst)
+bool APP::_FReadTitlesFromReg(GSTPtr<long> *ppgst)
 {
     AssertBaseThis(0);
     AssertVarMem(ppgst);
@@ -1558,10 +1558,10 @@ bool APP::_FReadTitlesFromReg(PGST *ppgst)
     SZ szTitle;
     STN stnTitle;
     DWORD cchTitle = kcchMaxSz;
-    PGST pgst;
+    GSTPtr<long> pgst;
     long sid;
 
-    if ((pgst = GST::PgstNew(size(long))) == pvNil)
+    if (!(pgst = GSTPtr<long>::New()))
         goto LFail;
     if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, kszProductsKey, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL,
                        &hkey, &dwDisposition) != ERROR_SUCCESS)
@@ -1605,8 +1605,8 @@ bool APP::_FReadTitlesFromReg(PGST *ppgst)
     return fTrue;
 
 LFail:
-    ReleasePpo(&pgst);
-    *ppgst = pvNil;
+    pgst.Release();
+    *ppgst = {};
     return fFalse;
 }
 
@@ -1618,19 +1618,19 @@ bool APP::_FInitTdt(void)
     AssertBaseThis(0);
     AssertPo(_pcfl, 0);
 
-    PGST pgst;
+    GSTPtr<long> pgst;
 
     // set TDT action names
     pgst = _PgstRead(kcnoGstAction);
-    if (pvNil == pgst)
+    if (!pgst)
         return fFalse;
     Assert(pgst->CbExtra() == size(long), "bad Action string table");
     if (!TDT::FSetActionNames(pgst))
     {
-        ReleasePpo(&pgst);
+        pgst.Release();
         return fFalse;
     }
-    ReleasePpo(&pgst);
+    pgst.Release();
     return fTrue;
 }
 
@@ -1638,12 +1638,12 @@ bool APP::_FInitTdt(void)
     Read and byte-swap a GST from _pcfl.  Assumes that extra data, if any,
     is a long.
 ***************************************************************************/
-PGST APP::_PgstRead(CNO cno)
+GSTPtr<long> APP::_PgstRead(CNO cno)
 {
     AssertBaseThis(0);
     AssertPo(_pcfl, 0);
 
-    PGST pgst;
+    GSTPtr<long> pgst;
     BLCK blck;
     short bo;
     short osk;
@@ -1651,18 +1651,18 @@ PGST APP::_PgstRead(CNO cno)
     long lwExtra;
 
     if (!_pcfl->FFind(kctgGst, cno, &blck))
-        return pvNil;
-    pgst = GST::PgstRead(&blck, &bo, &osk);
-    if (pvNil == pgst)
-        return pvNil;
+        return {};
+    pgst = GSTPtr<long>::Read(&blck, &bo, &osk);
+    if (!pgst)
+        return {};
     Assert(pgst->CbExtra() == 0 || pgst->CbExtra() == size(long), "unexpected extra size");
     if (kboCur != bo && 0 != pgst->CbExtra())
     {
         for (istn = 0; istn < pgst->IvMac(); istn++)
         {
-            pgst->GetExtra(istn, &lwExtra);
+            pgst.GetExtra(istn, &lwExtra);
             SwapBytesRglw(&lwExtra, 1);
-            pgst->PutExtra(istn, &lwExtra);
+            pgst.PutExtra(istn, &lwExtra);
         }
     }
     return pgst;
@@ -1678,22 +1678,22 @@ bool APP::_FReadStringTables(void)
 
     // read studio filename list
     _pgstStudioFiles = _PgstRead(kcnoGstStudioFiles);
-    if (pvNil == _pgstStudioFiles)
+    if (!_pgstStudioFiles)
         return fFalse;
 
     // read building filename list
     _pgstBuildingFiles = _PgstRead(kcnoGstBuildingFiles);
-    if (pvNil == _pgstBuildingFiles)
+    if (!_pgstBuildingFiles)
         return fFalse;
 
     // read shared filename list
     _pgstSharedFiles = _PgstRead(kcnoGstSharedFiles);
-    if (pvNil == _pgstSharedFiles)
+    if (!_pgstSharedFiles)
         return fFalse;
 
     // read misc app strings
     _pgstApp = _PgstRead(kcnoGstApp);
-    if (pvNil == _pgstApp)
+    if (!_pgstApp)
         return fFalse;
 
     return fTrue;
@@ -1819,7 +1819,7 @@ LFail:
     it is filled in with the positions in the CRM of each of the loaded
     crfs.
 ***************************************************************************/
-bool APP::_FAddToCrm(PGST pgstFiles, PCRM pcrm, GLPtr<long> pglFiles)
+bool APP::_FAddToCrm(GSTPtr<long> pgstFiles, PCRM pcrm, GLPtr<long> pglFiles)
 {
     AssertBaseThis(0);
     AssertPo(&_fniProductDir, ffniDir);
@@ -1838,7 +1838,7 @@ bool APP::_FAddToCrm(PGST pgstFiles, PCRM pcrm, GLPtr<long> pglFiles)
     for (istn = 0; istn < pgstFiles->IvMac(); istn++)
     {
         pgstFiles->GetStn(istn, &stn);
-        pgstFiles->GetExtra(istn, &cbCache);
+        pgstFiles.GetExtra(istn, &cbCache);
 #ifdef DEBUG
         {
             bool fAskForCDSav = Pkwa()->FAskForCD();
@@ -1922,7 +1922,7 @@ bool APP::_FInitBuilding(void)
     // appear in _pgstBuilding, I can get the cache amounts from there.
     for (i = 0; i < _pglicrfBuilding->IvMac(); i++)
     {
-        _pgstBuildingFiles->GetExtra(i, &cbCache);
+        _pgstBuildingFiles.GetExtra(i, &cbCache);
         _pglicrfBuilding.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
@@ -1970,7 +1970,7 @@ bool APP::_FInitStudio(PFNI pfniUserDoc, bool fFailIfDocOpenFailed)
     // Up the cache limits of the studio crfs in the global crm.
     for (i = 0; i < _pglicrfStudio->IvMac(); i++)
     {
-        _pgstStudioFiles->GetExtra(i, &cbCache);
+        _pgstStudioFiles.GetExtra(i, &cbCache);
         _pglicrfStudio.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
@@ -2352,10 +2352,10 @@ bool APP::_FFindMsKidsDirAt(FNI* path)
         second, the registry of installed products.
     This routine updates _stnProductLong and _stnProductShort on return.
 ***************************************************************************/
-bool APP::_FFindProductDir(PGST pgst)
+bool APP::_FFindProductDir(GSTPtr<long> pgst)
 {
     AssertBaseThis(0);
-    AssertVarMem(pgst);
+    AssertVarMem(pgst.Unwrap());
 
     STN stnLong;
     STN stnShort;
@@ -3099,7 +3099,7 @@ long APP::DypTextDef(void)
     {
         STN stn;
 
-        if (pvNil == _pgstApp || !FGetStnApp(idsDefaultDypFont, &stn) || !stn.FGetLw(&_dypTextDef) || _dypTextDef <= 0)
+        if (!_pgstApp || !FGetStnApp(idsDefaultDypFont, &stn) || !stn.FGetLw(&_dypTextDef) || _dypTextDef <= 0)
         {
             Warn("DypTextDef failed");
             _dypTextDef = APP_PAR::DypTextDef();
@@ -3580,10 +3580,10 @@ void APP::_CleanUp(void)
     ReleasePpo(&_pcrmAll);
     _pglicrfBuilding.Release();
     _pglicrfStudio.Release();
-    ReleasePpo(&_pgstBuildingFiles);
-    ReleasePpo(&_pgstStudioFiles);
-    ReleasePpo(&_pgstSharedFiles);
-    ReleasePpo(&_pgstApp);
+    _pgstBuildingFiles.Release();
+    _pgstStudioFiles.Release();
+    _pgstSharedFiles.Release();
+    _pgstApp.Release();
     ReleasePpo(&_pkwa);
     BWLD::CloseBRender();
     APP_PAR::_CleanUp();
