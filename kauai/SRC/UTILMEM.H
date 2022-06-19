@@ -483,6 +483,12 @@ public:
         return GGPtr(GG::PggRead(pblck, pbo, posk));
     }
 
+    static GGPtr Read(class FIL* pfil, FP fp, long cb, short* pbo = pvNil, short* posk = pvNil)
+    {
+        // TODO: validate cb?
+        return GGPtr(GG::PggRead(pfil, fp, cb, pbo, posk));
+    }
+
     GGPtr Dup() const
     {
         return GGPtr(_pgg->PggDup());
@@ -501,6 +507,11 @@ public:
     void PutFixed(long iv, TFixed* pv) const
     {
         _pgg->PutFixed(iv, BlobPtr::Make(*pv));
+    }
+
+    bool FCopyEntries(GGPtr pggSrc, long ivSrc, long ivDst, long cv)
+    {
+        return _pgg->FCopyEntries(pggSrc._pgg, ivSrc, ivDst, cv);
     }
 
 private:

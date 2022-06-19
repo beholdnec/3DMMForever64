@@ -140,7 +140,7 @@ class SCEN : public SCEN_PAR
     STN _stnName;         // Name of this scene
     GLPtr<PACTR> _pglpactr;        // List of actors in the scene.
     GLPtr<PTBOX> _pglptbox;        // List of text boxes in the scene.
-    PGG _pggsevStart;     // List of frame independent events.
+    GGPtr<SEV> _pggsevStart;     // List of frame independent events.
     PMVIE _pmvie;         // Movie this scene is a part of.
     PBKGD _pbkgd;         // Background for this scene.
     ulong _grfscen;       // Disabled functionality.

@@ -75,7 +75,7 @@ class BSF : public BSF_PAR
     NOCOPY(BSF)
 
   protected:
-    PGG _pggflo;
+    GGPtr<FLO> _pggflo;
     long _ibMac;
 
     long _IfloFind(long ib, long *pib, long *pcb = pvNil);

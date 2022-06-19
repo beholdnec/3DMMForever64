@@ -61,6 +61,16 @@ struct KID
 };
 const BOM kbomKid = 0xFC000000;
 
+#ifdef CHUNK_BIG_INDEX
+
+typedef struct CRPBG CRP;
+
+#else //! CHUNK_BIG_INDEX
+
+typedef struct CRPSM CRP;
+
+#endif //! CHUNK_BIG_INDEX
+
 /***************************************************************************
     Chunky file class.
 ***************************************************************************/
@@ -83,7 +93,7 @@ class CFL : public CFL_PAR
         GLPtr<struct FSM> pglfsm; // free space map
     };
 
-    PGG _pggcrp;     // the index
+    GGPtr<CRP> _pggcrp;     // the index
     CSTO _csto;      // the main file
     CSTO _cstoExtra; // the scratch file
 

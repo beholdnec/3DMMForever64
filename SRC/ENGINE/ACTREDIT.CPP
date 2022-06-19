@@ -61,7 +61,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     //
     for (iaev = _iaevAddCur; iaev < _iaevCur; iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         // Is this an event we want to copy?
         switch (aev.aet)
@@ -144,7 +144,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     //
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         if ((!fEntireScene) && (aetAdd == aev.aet) && (*ppactr)->_pggaev->IvMac() > 0)
         {
@@ -329,7 +329,7 @@ void ACTR::Restore(PACTR pactr)
     // Copy over all members
     // Note that both copies will point to the same *_pbody & *_ptmpl
     cactRef = pactrDest->_cactRef;
-    PGG pggaev = pactrDest->_pggaev;
+    GGPtr<AEV> pggaev = pactrDest->_pggaev;
     GLPtr<RPT> pglrpt = pactrDest->_pglrpt;
     GLPtr<SMM> pglsmm = pactrDest->_pglsmm;
     *(pactrDest) = *pactrSrc;
@@ -398,7 +398,7 @@ bool ACTR::_FDupCopy(PACTR pactrSrc, PACTR pactrDest)
     //
     // Copy all events.
     //
-    if (!pactrDest->_pggaev->FCopyEntries(pactrSrc->_pggaev, 0, 0, pactrSrc->_pggaev->IvMac()))
+    if (!pactrDest->_pggaev.FCopyEntries(pactrSrc->_pggaev, 0, 0, pactrSrc->_pggaev->IvMac()))
     {
         goto LFail;
     }
@@ -638,11 +638,11 @@ bool ACTR::FPasteRte(PACTR pactr)
     //
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.rtel.irpt > _rtelCur.irpt + crptDel)
         {
             aev.rtel.irpt += crptNew - crptDel;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
             continue;
         }
         else
@@ -799,7 +799,7 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     _GetNewOrigin(&xr, &yr, &zr);
 
     Assert(_pggaev->IvMac() > 0, "Nothing to paste!");
-    _pggaev->GetFixed(0, BlobPtr::Make(aev));
+    _pggaev.GetFixed(0, &aev);
     if (aev.aet != aetAdd)
         return fFalse;
     dnfrm = aev.nfrm - nfrm;
@@ -827,11 +827,11 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     // Update sound events
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (dnfrm != 0)
         {
             aev.nfrm -= dnfrm;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
         }
         if (aetSnd != aev.aet)
             continue;

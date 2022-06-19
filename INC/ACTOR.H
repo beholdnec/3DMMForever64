@@ -333,7 +333,7 @@ class ACTR : public ACTR_PAR
     // Note: In addition to these components, any complete actor must
     // have either fLifeDirty set or _nfrmLast current.
     // Note: _tagTmpl cannot be derived from _ptmpl
-    PGG _pggaev;      // GG pointer to Actor EVent list
+    GGPtr<AEV> _pggaev;      // GG pointer to Actor EVent list
     GLPtr<RPT> _pglrpt;      // GL pointer to actor's route
     TMPL *_ptmpl;     // Actor body & action list template
     BODY *_pbody;     // Actor's body
@@ -456,9 +456,9 @@ class ACTR : public ACTR_PAR
     bool _FReadActor(PCFL pcfl, CNO cno);
     bool _FReadRoute(PCFL pcfl, CNO cno);
     bool _FReadEvents(PCFL pcfl, CNO cno);
-    static void _SwapBytesPggaev(PGG pggaev);
+    static void _SwapBytesPggaev(GGPtr<AEV> pggaev);
     bool _FOpenTags(PCRF pcrf);
-    static bool _FIsIaevTag(PGG pggaev, long iaev, PTAG *pptag, PAEV *pqaev = pvNil);
+    static bool _FIsIaevTag(GGPtr<AEV> pggaev, long iaev, PTAG *pptag, PAEV *pqaev = pvNil);
     void _CloseTags(void);
 
   public:

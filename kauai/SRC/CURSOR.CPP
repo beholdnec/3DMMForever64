@@ -31,7 +31,7 @@ CURS::~CURS(void)
 ***************************************************************************/
 bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, long *pcb)
 {
-    PGG pggcurf;
+    GGPtr<CURF> pggcurf;
     long icurf, icurfBest;
     CURF curf;
     short bo;
@@ -45,9 +45,9 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
     if (pvNil == ppbaco)
         return fTrue;
 
-    if (pvNil == (pggcurf = GG::PggRead(pblck, &bo)) || pggcurf->IvMac() == 0)
+    if (!(pggcurf = GGPtr<CURF>::Read(pblck, &bo)) || pggcurf->IvMac() == 0)
     {
-        ReleasePpo(&pggcurf);
+        pggcurf.Release();
         return fFalse;
     }
 
@@ -63,7 +63,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
     dzpBest = klwMax;
     for (icurf = 0; icurf < pggcurf->IvMac(); icurf++)
     {
-        pggcurf->GetFixed(icurf, BlobPtr::Make(curf));
+        pggcurf.GetFixed(icurf, &curf);
         if (kboOther == bo)
             SwapBytesBom(&curf, kbomCurf);
         if (curf.dxp > dxp || curf.dyp > dyp || curf.curt != curtMonochrome ||
@@ -82,7 +82,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
         }
     }
     AssertIn(icurfBest, 0, pggcurf->IvMac());
-    pggcurf->GetFixed(icurfBest, BlobPtr::Make(curf));
+    pggcurf.GetFixed(icurfBest, &curf);
     if (kboOther == bo)
         SwapBytesBom(&curf, kbomCurf);
     cbRowSrc = LwRoundAway(LwDivAway(curf.dxp, 8), 2);
@@ -126,7 +126,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
 
 LFail:
     FreePpv((void **)&prgb);
-    ReleasePpo(&pggcurf);
+    pggcurf.Release();
 
     *ppbaco = pcurs;
     return pvNil != pcurs;

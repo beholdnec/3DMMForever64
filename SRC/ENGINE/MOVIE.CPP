@@ -3589,7 +3589,7 @@ bool MVIE::FSoonerLaterActr(long nfrm)
 
     if (CundbUndo() > 0)
     {
-        _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(paund));
+        _pglpundb.Get(_ipundbLimDone - 1, (PUNDB*)&paund);
 
         if (paund->FIs(kclsAUND) && paund->FSoonerLater())
         {

@@ -141,7 +141,7 @@ ACTR::~ACTR(void)
 
     _CloseTags();
     ReleasePpo(&_pbody);
-    ReleasePpo(&_pggaev);
+    _pggaev.Release();
     _pglrpt.Release();
     _pglsmm.Release();
     ReleasePpo(&_ptmpl);
@@ -247,7 +247,7 @@ bool ACTR::_FCreateGroups(void)
 {
     AssertBaseThis(0);
 
-    if (pvNil == (_pggaev = GG::PggNew(size(AEV), kcaevInit, kcbVarAdd)))
+    if (!(_pggaev = GGPtr<AEV>::New(kcaevInit, kcbVarAdd)))
         return fFalse;
 
     if (!(_pglrpt = GLPtr<RPT>::New(kcrptGrow)))
@@ -687,7 +687,7 @@ bool ACTR::_FDoFrm(bool fPositionBody, bool *pfPositionDirty, bool *pfSoundInFra
         // An aetActn Event will change _rtelCur at the time it is executed
         for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (aev.aet == aetAdd)
             {
                 if (!_FIsAddNow(iaev))
@@ -816,7 +816,7 @@ bool ACTR::FReplayFrame(long grfscen)
 
     for (iaev = _iaevFrmMin; iaev < _iaevCur; iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet != aetSnd)
             continue;
 
@@ -871,7 +871,7 @@ bool ACTR::_FIsDoneAevSub(long iaev, RTEL rtel)
 
     for (; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet == aetAdd)
             return fTrue;
         if (aev.rtel > rtel)
@@ -992,11 +992,11 @@ bool ACTR::_FDoAevCore(long iaev)
     AEV aev;
     COST cost;
 
-    _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+    _pggaev.GetFixed(iaev, &aev);
     if (aev.nfrm != _nfrmCur)
     {
         aev.nfrm = _nfrmCur;
-        _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.PutFixed(iaev, &aev);
     }
     AssertIn(aev.aet, 0, aetLim);
 
@@ -1279,14 +1279,14 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
         return;
     }
 
-    _pggaev->GetFixed(iaevNew, BlobPtr::Make(aevNew));
+    _pggaev.GetFixed(iaevNew, &aevNew);
 
     //
     // Check if Aev is in the list already
     //
     for (iaev = iaevFirst; iaev < iaevNew; iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         if ((aev.aet != aevNew.aet) && (aev.aet != aetRem) && (aev.aet != aetRotH))
             continue;
@@ -1802,7 +1802,7 @@ bool ACTR::_FAddAevFromPrev(long iaevLim, ulong grfaet)
     _FFindPrevAevAet(aetAdd, iaevLim, &iaevAdd);
     _FindAevLastSub(iaevAdd, iaevLim, &iaevLast);
 
-    _pggaev->GetFixed(_iaevCur - 1, BlobPtr::Make(aevCur));
+    _pggaev.GetFixed(_iaevCur - 1, &aevCur);
 
     // It is more efficient to insert non-costume events backwards
     for (iaev = iaevLast; iaev > iaevAdd; iaev--)
@@ -1811,7 +1811,7 @@ bool ACTR::_FAddAevFromPrev(long iaevLim, ulong grfaet)
             break;
 
         Assert(iaev >= 0, "Logic error");
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (!(grfaet & (1 << aev.aet)) || aev.aet == aetCost)
             continue;
 
@@ -1845,7 +1845,7 @@ bool ACTR::_FAddAevFromPrev(long iaevLim, ulong grfaet)
     // Costumes needed to be gathered forward
     for (iaev = iaevAdd + 1; iaev <= iaevLast; iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet != aetCost)
             continue;
 
@@ -1929,7 +1929,7 @@ bool ACTR::_FAddAevFromLater(void)
     // Find the next Add event
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet == aetAdd)
         {
             iaevStart = iaev;
@@ -1944,7 +1944,7 @@ bool ACTR::_FAddAevFromLater(void)
     // Stuff in the events from this next Add event
     for (iaev = iaevStart; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         if (aev.rtel != rtelAdd)
         {
@@ -2002,7 +2002,7 @@ bool ACTR::_FFindPrevAevAet(long aet, long iaevCur, long *piaevAdd)
     iaevCur--;
     for (; iaevCur >= 0; iaevCur--)
     {
-        _pggaev->GetFixed(iaevCur, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaevCur, &aev);
         if (aev.aet == aet)
         {
             *piaevAdd = iaevCur;
@@ -2067,7 +2067,7 @@ void ACTR::_FindAevLastSub(long iaevAdd, long iaevLim, long *piaevLast)
     if (iaevLim == ivNil)
         iaevLim = _pggaev->IvMac();
 
-    _pggaev->GetFixed(iaevLim - 1, BlobPtr::Make(aev));
+    _pggaev.GetFixed(iaevLim - 1, &aev);
 
     if (_FIsStalled(iaevAdd, &aev.rtel, piaevLast))
     {
@@ -2570,11 +2570,11 @@ bool ACTR::FSoonerLater(long dnfrm)
         // The times of past events need to be correct.
         for (iaev = _iaevCur - 1; dnfrmT > 0 && iaev >= 0; iaev--)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (aev.aet != aetAdd || iaev == 0)
             {
                 aev.nfrm -= dnfrmT;
-                _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+                _pggaev.PutFixed(iaev, &aev);
                 continue;
             }
 
@@ -2582,7 +2582,7 @@ bool ACTR::FSoonerLater(long dnfrm)
             paevPrev = (AEV *)_pggaev->QvFixedGet(iaev - 1);
             dnfrmSub = aev.nfrm - (paevPrev->nfrm);
             aev.nfrm -= dnfrmT;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
             dnfrmT -= (dnfrmSub - 1);
         }
     }
@@ -2592,12 +2592,12 @@ bool ACTR::FSoonerLater(long dnfrm)
         dnfrmT = dnfrm;
         for (iaev = _iaevAddCur; dnfrmT > 0 && iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (aev.aet != aetAdd || iaev == _iaevAddCur)
             {
                 nfrmSav = aev.nfrm;
                 aev.nfrm += dnfrmT;
-                _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+                _pggaev.PutFixed(iaev, &aev);
                 continue;
             }
             // Adjust for the gap between subroutes
@@ -2606,12 +2606,12 @@ bool ACTR::FSoonerLater(long dnfrm)
             if (dnfrmT <= 0)
                 break;
             aev.nfrm += dnfrmT;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
         }
     }
-    _pggaev->GetFixed(0, BlobPtr::Make(aev));
+    _pggaev.GetFixed(0, &aev);
     _nfrmFirst = aev.nfrm;
-    _pggaev->GetFixed(_pggaev->IvMac() - 1, BlobPtr::Make(aev));
+    _pggaev.GetFixed(_pggaev->IvMac() - 1, &aev);
     _nfrmLast = aev.nfrm;
 
     _nfrmCur += dnfrm;
@@ -2997,7 +2997,7 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
         // and store the ptr in pvVarCmp
         for (iaev = 0; iaev < iaevMin - 1; iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (aet != aev.aet)
                 continue;
 
@@ -3012,7 +3012,7 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
         bool fDelete = fFalse;
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         // Stage entrance events are boundaries to edits
         if (aetAdd == aev.aet)
@@ -3201,7 +3201,7 @@ void ACTR::_PrepActnFill(long iaevMin, long anidPrev, long anidNew, ulong grfaet
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         // Stage entrance events are boundaries to edits
         if (aetAdd == aev.aet)
@@ -3287,7 +3287,7 @@ void ACTR::_PrepCostFill(long iaevMin, AEVCOST *paevcost)
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
         // Stage entrance events are boundaries to edits
         if (aetAdd == aev.aet)
@@ -3381,7 +3381,7 @@ void ACTR::_AdjustAevForRteIns(long irptAdjust, long iaevMin)
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.rtel.irpt >= irptAdjust) // offset from later point
         {
             aev.rtel.irpt++;
@@ -3401,7 +3401,7 @@ void ACTR::_AdjustAevForRteIns(long irptAdjust, long iaevMin)
                 aev.rtel.irpt++;
             }
         }
-        _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.PutFixed(iaev, &aev);
     }
 }
 /***************************************************************************
@@ -3435,7 +3435,7 @@ void ACTR::_AdjustAevForRteDel(long irptAdjust, long iaevMin)
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.rtel.irpt > irptAdjust) // offset from later point
         {
             aev.rtel.irpt--;
@@ -3455,7 +3455,7 @@ void ACTR::_AdjustAevForRteDel(long irptAdjust, long iaevMin)
         else
             continue;
 
-        _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.PutFixed(iaev, &aev);
     }
 }
 
@@ -3537,7 +3537,7 @@ LDoneMove:
         // at the location of the event.
         for (iaev = iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if ((aev.rtel <= *prtel) && (aev.aet == aetStep || aev.aet == aetActn))
             {
                 *prtel = aev.rtel;
@@ -3758,7 +3758,7 @@ void ACTR::_CalcRteOrient(BMAT34 *pbmat34, BRA *pxa, BRA *pya, BRA *pza, ulong *
         *pza = aZero;
 
     AssertIn(_iaevAddCur, 0, _pggaev->IvMac());
-    _pggaev->GetFixed(_iaevAddCur, BlobPtr::Make(aev));
+    _pggaev.GetFixed(_iaevAddCur, &aev);
     irptAdd = aev.rtel.irpt;
     irptPrev = (rZero < _rtelCur.dwrOffset || _rtelCur.irpt == aev.rtel.irpt) ? _rtelCur.irpt : _rtelCur.irpt - 1;
 
@@ -4084,7 +4084,7 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
         // Scan all events for this frame
         for (iaev = iaevNew; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
 
             if ((aev.rtel > rtel) &&
                 ((aetAdd != aev.aet) || (_fModeRecord && !fEndSubRoute) || (!fEndSubRoute && !fDoneSubRoute)))
@@ -4157,7 +4157,7 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
             if (aev.nfrm != _nfrmLast)
             {
                 aev.nfrm = _nfrmLast;
-                _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+                _pggaev.PutFixed(iaev, &aev);
             }
         }
 
@@ -4203,7 +4203,7 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
             }
 
             // Add events jump in space.  Update rtel
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             rtel = aev.rtel;
 
             // Initialization for _AdvanceRtel()
@@ -4242,7 +4242,7 @@ bool ACTR::_FIsStalled(long iaevFirst, RTEL *prtel, long *piaevLast)
 
     for (iaev = iaevFirst; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if ((aev.rtel.irpt > prtel->irpt) || (aev.rtel.dwrOffset > prtel->dwrOffset))
         {
             if (piaevLast != pvNil)
@@ -4331,7 +4331,7 @@ bool ACTR::FBeginRecord(ulong tsCurrent, bool fReplace, PACTR pactrRestore)
 
         for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (irptNext < aev.rtel.irpt)
                 break;
             if (aetRem == aev.aet)
@@ -4375,7 +4375,7 @@ bool ACTR::FBeginRecord(ulong tsCurrent, bool fReplace, PACTR pactrRestore)
 
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet != aetAdd)
             continue;
         nfrmAdd = aev.nfrm;
@@ -4386,7 +4386,7 @@ bool ACTR::FBeginRecord(ulong tsCurrent, bool fReplace, PACTR pactrRestore)
         }
         else
         {
-            _pggaev->GetFixed(iaev - 1, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev - 1, &aev);
             nfrmPrev = aev.nfrm;
         }
         _dnfrmGap -= (nfrmAdd - nfrmPrev);
@@ -4640,7 +4640,7 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
 
         for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             if (aev.aet == aetAdd)
             {
                 irptLim = aev.rtel.irpt;
@@ -4696,7 +4696,7 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
     //
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
 
 #ifdef BUG1961
         // If we were rejoin-recording from a static segment, there is
@@ -4722,7 +4722,7 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
             else
             {
                 aev.rtel = rtelJoin;
-                _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+                _pggaev.PutFixed(iaev, &aev);
                 _MergeAev(iaevJoinFirst, iaev, &iaevNew);
                 if (iaevNew < iaev)
                     iaev--;
@@ -4802,7 +4802,7 @@ void ACTR::DeleteFwdCore(bool fDeleteAll, bool *pfAlive, long iaevCur)
                 goto LEnd;
             }
 #ifdef DEBUG
-            _pggaev->GetFixed(_iaevAddCur, BlobPtr::Make(aev));
+            _pggaev.GetFixed(_iaevAddCur, &aev);
             Assert(aetAdd == aev.aet, "Should be an add event at _iaevAddCur");
 #endif // DEBUG
             if (_fOnStage)
@@ -4821,7 +4821,7 @@ void ACTR::DeleteFwdCore(bool fDeleteAll, bool *pfAlive, long iaevCur)
        // Tweak events override the last step event.
             for (iaev = _iaevCur - 1; iaev > 0; iaev--)
             {
-                _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+                _pggaev.GetFixed(iaev, &aev);
                 if (aev.rtel != _rtelCur)
                     break;
                 if (aev.aet == aetTweak)
@@ -4995,7 +4995,7 @@ void ACTR::_SaveCurPathOrien(void)
 
     if (_iaevAddCur >= 0 && !_ptmpl->FIsTdt())
     {
-        _pggaev->GetFixed(_iaevAddCur, BlobPtr::Make(aev));
+        _pggaev.GetFixed(_iaevAddCur, &aev);
         _pglrpt.Get(aev.rtel.irpt, &rpt);
         if (rZero != rpt.dwr) // ie, non-static path segment
         {
@@ -5057,7 +5057,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
     // previous and next nodes
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.rtel.irpt > _rtelCur.irpt)
             break;
 
@@ -5084,7 +5084,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
             dwrOffsetT = BrsSub(aev.rtel.dwrOffset, _rtelCur.dwrOffset);
             aev.rtel.dwrOffset = dwrOffsetT;
         }
-        _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.PutFixed(iaev, &aev);
     }
 
     //
@@ -5105,7 +5105,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
     //
     for (iaev = 0; iaev < _iaevCur; iaev++)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (!_fOnStage || iaev < _iaevAddCur)
         {
             _RemoveAev(iaev);
@@ -5154,7 +5154,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
         LDefault:
             aev.rtel = _rtelCur;
             aev.nfrm = _nfrmCur;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
             if (iaev > 0)
                 _MergeAev(0, iaev, &iaevNew);
             else
@@ -5186,9 +5186,9 @@ void ACTR::DeleteBackCore(bool *pfAlive)
 #endif // BUG1866
         for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             aev.rtel.irpt -= dnrpt;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
         }
 #ifndef BUG1866
         if (!_fOnStage)
@@ -5207,7 +5207,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
     else
     {
         // Adjust remaining state variables
-        _pggaev->GetFixed(0, BlobPtr::Make(aev));
+        _pggaev.GetFixed(0, &aev);
         Assert(aev.aet == aetAdd, "An aetAdd event should be the first event");
         _nfrmFirst = aev.nfrm;
         _fLifeDirty = fTrue;
@@ -5264,14 +5264,14 @@ void ACTR::_TruncateSubRte(long irptDelLim)
     // Update aev's rtel's
     for (iaev = _iaevCur - 1; iaev >= 0; iaev--)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.rtel.irpt < irpt)
             break;
         if (aev.rtel.dwrOffset >= rptNode1.dwr)
         {
             aev.rtel.dwrOffset = rZero;
             aev.rtel.irpt++;
-            _pggaev->PutFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.PutFixed(iaev, &aev);
         }
     }
 
@@ -5464,7 +5464,7 @@ bool ACTR::FChangeTagTmpl(TAG *ptagTmplNew)
     // events in this GG as we go
     for (iaev = _pggaev->IvMac() - 1; iaev >= 0; iaev--)
     {
-        _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+        _pggaev.GetFixed(iaev, &aev);
         if (aev.aet == aetCost)
         {
             _pggaev->Get(iaev, &aevcost);
@@ -5527,12 +5527,12 @@ void ACTR::AssertValid(ulong grfobj)
         }
 
         AssertIn(_rtelCur.irpt, 0, irptMac + 1); // Supply a debug readable view of the event stream
-        _pggaev->GetFixed(0, BlobPtr::Make(aev));
+        _pggaev.GetFixed(0, &aev);
         Assert(aetAdd == aev.aet, "BUG: No add event at front of list");
 
         for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
         {
-            _pggaev->GetFixed(iaev, BlobPtr::Make(aev));
+            _pggaev.GetFixed(iaev, &aev);
             Assert(rtel <= aev.rtel, "Illegal ordering in event list");
             AssertIn(aev.aet, 0, aetLim);
 

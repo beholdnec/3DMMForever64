@@ -260,7 +260,6 @@ const BOM kbomCrpsm = 0xFF500000L;
 
 #ifdef CHUNK_BIG_INDEX
 
-typedef CRPBG CRP;
 typedef CRPSM CRPOTH;
 const long kcbMaxCrp = kcbMaxCrpbg;
 typedef long CKID;
@@ -269,7 +268,6 @@ const BOM kbomCrpsm = kbomCrpbgGrfcrp;
 
 #else //! CHUNK_BIG_INDEX
 
-typedef CRPSM CRP;
 typedef CRPBG CRPOTH;
 const long kcbMaxCrp = kcbMaxCrpsm;
 typedef ushort CKID;
@@ -342,7 +340,7 @@ CFL::~CFL(void)
     _csto.pglfsm.Release();
     ReleasePpo(&_cstoExtra.pfil);
     _cstoExtra.pglfsm.Release();
-    ReleasePpo(&_pggcrp);
+    _pggcrp.Release();
 #ifndef CHUNK_BIG_INDEX
     _pglrtie.Release();
 #endif //! CHUNK_BIG_INDEX
@@ -398,7 +396,7 @@ bool CFL::FReopen(void)
 {
     AssertThis(0);
     CSTO csto, cstoExtra;
-    PGG pggcrp;
+    GGPtr<CRP> pggcrp;
 #ifndef CHUNK_BIG_INDEX
     GLPtr<RTIE> pglrtie;
 #endif // CHUNK_BIG_INDEX
@@ -409,7 +407,7 @@ bool CFL::FReopen(void)
         return fFalse;
 
     pggcrp = _pggcrp;
-    _pggcrp = pvNil;
+    _pggcrp = {};
 
 #ifndef CHUNK_BIG_INDEX
     pglrtie = _pglrtie;
@@ -438,7 +436,7 @@ bool CFL::FReopen(void)
         SwapVars(&_cstoExtra, &cstoExtra);
         _fFreeMapNotRead = FPure(fFreeMapNotRead);
     }
-    ReleasePpo(&pggcrp);
+    pggcrp.Release();
 #ifndef CHUNK_BIG_INDEX
     pglrtie.Release();
 #endif // CHUNK_BIG_INDEX
@@ -489,7 +487,7 @@ PCFL CFL::PcflCreate(FNI *pfni, ulong grfcfl)
     if ((pcfl = NewObj CFL()) == pvNil)
         goto LFail;
 
-    if ((pcfl->_pggcrp = GG::PggNew(size(CRP))) == pvNil ||
+    if (!(pcfl->_pggcrp = GGPtr<CRP>::New()) ||
         (pcfl->_csto.pfil = FIL::PfilCreate(pfni, grffil)) == pvNil || !pcfl->_csto.pfil->FSetFpMac(size(CFP)))
     {
         ReleasePpo(&pcfl);
@@ -678,7 +676,7 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
     if ((pcfl = NewObj CFL()) == pvNil)
         goto LFail;
 
-    if (pvNil == (pcfl->_pggcrp = GG::PggNew(size(CRP))))
+    if (!(pcfl->_pggcrp = GGPtr<CRP>::New()))
         goto LFail;
 
     if (fCopyData)
@@ -1038,7 +1036,7 @@ void CFL::AssertValid(ulong grfcfl)
     fFirstCrp = fTrue;
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        _pggcrp->GetFixed(icrp, BlobPtr::Make(crp));
+        _pggcrp.GetFixed(icrp, &crp);
         cbVar = _pggcrp->Cb(icrp);
         cbRgch = crp.CbRgch(cbVar);
 
@@ -1342,7 +1340,7 @@ bool CFL::_FReadIndex(void)
     // used for old index stuff
     bool fOldIndex;
 
-    Assert(_pggcrp == pvNil && !_csto.pglfsm && _cstoExtra.pfil == pvNil && !_cstoExtra.pglfsm,
+    Assert(!_pggcrp && !_csto.pglfsm && _cstoExtra.pfil == pvNil && !_cstoExtra.pglfsm,
            "cfl has wrong non-nil entries");
 
     // verify that this is a chunky file
@@ -1381,7 +1379,7 @@ bool CFL::_FReadIndex(void)
     }
 
     // read and validate the index
-    if ((_pggcrp = GG::PggRead(_csto.pfil, cfp.fpIndex, cfp.cbIndex, &bo, &osk)) == pvNil)
+    if (!(_pggcrp = GGPtr<CRP>::Read(_csto.pfil, cfp.fpIndex, cfp.cbIndex, &bo, &osk)))
     {
         return fFalse;
     }
@@ -1512,7 +1510,7 @@ bool CFL::_FReadIndex(void)
             LBadFile:
                 _pggcrp->Unlock();
                 Bug("corrupt crp");
-                ReleasePpo(&_pggcrp);
+                _pggcrp.Release();
                 return fFalse;
             }
         }
@@ -1521,11 +1519,11 @@ bool CFL::_FReadIndex(void)
     if (size(CRP) != cbFixed)
     {
         // need to convert the index (from big to small or small to big)
-        PGG pggcrp;
+        GGPtr<CRP> pggcrp;
         CRPOTH *pcrpOld;
         CRP crp;
 
-        if (pvNil == (pggcrp = GG::PggNew(size(CRP), _pggcrp->IvMac())))
+        if (!(pggcrp = GGPtr<CRP>::New(_pggcrp->IvMac())))
             goto LFail;
 
         for (ccrp = _pggcrp->IvMac(), icrp = 0; icrp < ccrp; icrp++)
@@ -1543,14 +1541,14 @@ bool CFL::_FReadIndex(void)
 
             if (!pggcrp->FInsert(icrp, _pggcrp->Cb(icrp), _pggcrp->QvGet(icrp), &crp))
             {
-                ReleasePpo(&pggcrp);
+                pggcrp.Release();
             LFail:
                 _pggcrp->Unlock();
                 return fFalse;
             }
         }
         _pggcrp->Unlock();
-        ReleasePpo(&_pggcrp);
+        _pggcrp.Release();
 
         _pggcrp = pggcrp;
     }
@@ -2795,7 +2793,7 @@ void CFL::Move(CTG ctg, CNO cno, CTG ctgNew, CNO cnoNew)
         // index.  In ship, we'll stop once we changed ccrpRef KIDs.
         Debug(ccrpRef++;) for (icrp = _pggcrp->IvMac(); icrp-- > 0 && ccrpRef > 0;)
         {
-            _pggcrp->GetFixed(icrp, BlobPtr::Make(crp));
+            _pggcrp.GetFixed(icrp, &crp);
             qkid = (KID *)_pggcrp->QvGet(icrp);
             for (ikid = 0; ikid < crp.ckid;)
             {

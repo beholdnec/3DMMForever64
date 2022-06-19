@@ -348,8 +348,8 @@ bool ACTR::_FReadEvents(PCFL pcfl, CNO cno)
 
     if (!pcfl->FFind(kctgGgae, cno, &blck))
         return fFalse;
-    _pggaev = GG::PggRead(&blck, &bo);
-    if (pvNil == _pggaev)
+    _pggaev = GGPtr<AEV>::Read(&blck, &bo);
+    if (! _pggaev)
         return fFalse;
     if (kboOther == bo)
         _SwapBytesPggaev(_pggaev);
@@ -359,7 +359,7 @@ bool ACTR::_FReadEvents(PCFL pcfl, CNO cno)
 /***************************************************************************
     SwapBytes all events in pggaev
 ***************************************************************************/
-void ACTR::_SwapBytesPggaev(PGG pggaev)
+void ACTR::_SwapBytesPggaev(GGPtr<AEV> pggaev)
 {
     AssertPo(pggaev, 0);
 
@@ -462,7 +462,7 @@ void ACTR::_CloseTags(void)
 
     TAGM::CloseTag(&_tagTmpl);
 
-    if (pvNil == _pggaev)
+    if (!_pggaev)
         return;
 
     _pggaev->Lock();
@@ -488,7 +488,7 @@ GLPtr<TAG> ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
     short bo;
     PTAG ptag;
     GLPtr<TAG> pgltag;
-    PGG pggaev = pvNil;
+    GGPtr<AEV> pggaev;
     long iaev;
     KID kid;
 
@@ -547,8 +547,8 @@ GLPtr<TAG> ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
         goto LFail;
     if (!pcfl->FFind(kctgGgae, kid.cki.cno, &blck))
         goto LFail;
-    pggaev = GG::PggRead(&blck, &bo);
-    if (pvNil == pggaev)
+    pggaev = GGPtr<AEV>::Read(&blck, &bo);
+    if (!pggaev)
         goto LFail;
     if (kboOther == bo)
         _SwapBytesPggaev(pggaev);
@@ -566,20 +566,20 @@ GLPtr<TAG> ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
     }
     pggaev->Unlock();
     *pfError = fFalse;
-    ReleasePpo(&pggaev);
+    pggaev.Release();
     return pgltag;
 LFail:
     *pfError = fTrue;
     pgltag.Release();
-    ReleasePpo(&pggaev);
-    return GLPtr<TAG>();
+    pggaev.Release();
+    return {};
 }
 
 /***************************************************************************
     If the iaev'th event of pggaev has a tag, sets *pptag to point to it.
     WARNING: unless you locked pggaev, *pptag is a qtag!
 ***************************************************************************/
-bool ACTR::_FIsIaevTag(PGG pggaev, long iaev, PTAG *pptag, PAEV *pqaev)
+bool ACTR::_FIsIaevTag(GGPtr<AEV> pggaev, long iaev, PTAG *pptag, PAEV *pqaev)
 {
     AssertPo(pggaev, 0);
     AssertIn(iaev, 0, pggaev->IvMac());
