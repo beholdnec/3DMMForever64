@@ -867,7 +867,7 @@ void CEX::FlushCid(long cid)
 
     for (icmd = _pglcmd->IvMac(); icmd-- > 0;)
     {
-        _pglcmd->Get(icmd, BlobPtr::Make(cmd));
+        _pglcmd.Get(icmd, &cmd);
         if (cmd.cid == cid)
         {
             _pglcmd->Delete(icmd);
@@ -1085,7 +1085,7 @@ ulong CEX::GrfedsForCmd(PCMD pcmd)
     // pipe it through the command handlers, then to the target
     for (icmhe = 0, ccmhe = _pglcmhe->IvMac(); icmhe < ccmhe; icmhe++)
     {
-        _pglcmhe->Get(icmhe, BlobPtr::Make(cmhe));
+        _pglcmhe.Get(icmhe, &cmhe);
         grfeds = fedsNil;
         if (_FEnableCmd(cmhe.pcmh, pcmd, &grfeds))
             goto LDone;
@@ -1155,7 +1155,7 @@ bool CEX::FGetNextKey(PCMD pcmd)
     if ((iv = _pglcmd->IvMac()) > 0)
     {
         // get next cmd
-        _pglcmd->Get(iv - 1, BlobPtr::Make(*pcmd));
+        _pglcmd.Get(iv - 1, pcmd);
         if (pcmd->cid == cidKey)
         {
             AssertDo(_pglcmd.FPop(pvNil), 0);
@@ -1274,7 +1274,7 @@ void CEX::MarkMem(void)
 
     for (icmd = _pglcmd->IvMac(); icmd-- != 0;)
     {
-        _pglcmd->Get(icmd, BlobPtr::Make(cmd));
+        _pglcmd.Get(icmd, &cmd);
         if (cmd.pgg != pvNil)
             MarkMemObj(cmd.pgg);
     }

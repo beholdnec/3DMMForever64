@@ -1267,7 +1267,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
         Assert(fAl, "why did GL have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, BlobPtr::Make(iv));
+            pglivFree.Get(iiv, &iv);
             AssertIn(iv, 0, pglb->IvMac());
             pglb->Delete(iv);
         }
@@ -1424,7 +1424,7 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
         Assert(fAg, "why did GG have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, BlobPtr::Make(iv));
+            pglivFree.Get(iiv, &iv);
             AssertIn(iv, 0, pggb->IvMac());
             pggb->Delete(iv);
         }
@@ -1569,7 +1569,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
         Assert(fAst, "why did GST have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, BlobPtr::Make(iv));
+            pglivFree.Get(iiv, &iv);
             AssertIn(iv, 0, pgstb->IvMac());
             pgstb->Delete(iv);
         }
@@ -2110,7 +2110,7 @@ PCFL CHCM::PcflCompile(PBSF pbsfSrc, PSTN pstnFile, PFNI pfniDst, PMSNK pmsnk)
 
         for (icki = _pglckiLoner->IvMac(); icki-- > 0;)
         {
-            _pglckiLoner->Get(icki, BlobPtr::Make(cki));
+            _pglckiLoner.Get(icki, &cki);
             _pcfl->SetLoner(cki.ctg, cki.cno, fTrue);
         }
     }

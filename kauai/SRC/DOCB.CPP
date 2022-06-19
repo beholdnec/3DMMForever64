@@ -131,7 +131,7 @@ void DOCB::CloseAllDdg(void)
         AddRef(); // so we aren't freed in the loop
         while (_pglpddg->IvMac() > 0)
         {
-            _pglpddg->Get(0, BlobPtr::Make(pddg));
+            _pglpddg.Get(0, &pddg);
             if (pvNil != (pdmd = pddg->Pdmd()))
                 ReleasePpo(&pdmd); // close the MDI window
             else
@@ -258,7 +258,7 @@ bool DOCB::FQueryCloseDmd(PDMD pdmd)
 
     for (ipddg = _pglpddg->IvMac(); ipddg-- != 0;)
     {
-        _pglpddg->Get(ipddg, BlobPtr::Make(pddg));
+        _pglpddg.Get(ipddg, &pddg);
         AssertBasePo(pddg, 0);
         pdmdT = pddg->Pdmd();
         if (pdmdT != pdmd && pdmdT != pvNil)
@@ -409,7 +409,7 @@ bool DOCB::_FFindDdg(PDDG pddg, long *pipddg)
     cpddg = _pglpddg->IvMac();
     for (ipddg = 0; ipddg < cpddg; ipddg++)
     {
-        _pglpddg->Get(ipddg, BlobPtr::Make(pddgT));
+        _pglpddg.Get(ipddg, &pddgT);
         if (pddgT == pddg)
         {
             *pipddg = ipddg;
@@ -600,7 +600,7 @@ bool DOCB::FUndo()
     if (!_pglpundb || _ipundbLimDone <= 0)
         return fFalse;
 
-    _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(pundb));
+    _pglpundb.Get(_ipundbLimDone - 1, &pundb);
     if (!pundb->FUndo(this))
         return fFalse;
     _ipundbLimDone--;
@@ -618,7 +618,7 @@ bool DOCB::FRedo()
     if (!_pglpundb || _ipundbLimDone >= _pglpundb->IvMac())
         return fFalse;
 
-    _pglpundb->Get(_ipundbLimDone, BlobPtr::Make(pundb));
+    _pglpundb.Get(_ipundbLimDone, &pundb);
     if (!pundb->FDo(this))
         return fFalse;
     _ipundbLimDone++;
@@ -647,14 +647,14 @@ bool DOCB::FAddUndo(PUNDB pundb)
     ClearRedo();
     if (_cundbMax <= _pglpundb->IvMac())
     {
-        _pglpundb->Get(0, BlobPtr::Make(pundbT));
+        _pglpundb.Get(0, &pundbT);
         _pglpundb->Delete(0);
         ReleasePpo(&pundbT);
     }
 
     while (!(fRet = _pglpundb.FPush(&pundb)) && _pglpundb->IvMac() > 0)
     {
-        _pglpundb->Get(0, BlobPtr::Make(pundbT));
+        _pglpundb.Get(0, &pundbT);
         _pglpundb->Delete(0);
         ReleasePpo(&pundbT);
     }
@@ -722,7 +722,7 @@ void DOCB::SetCundbMax(long cundbMax)
     while (_pglpundb->IvMac() > cundbMax)
     {
         Assert(_ipundbLimDone == _pglpundb->IvMac(), 0);
-        _pglpundb->Get(0, BlobPtr::Make(pundb));
+        _pglpundb.Get(0, &pundb);
         _pglpundb->Delete(0);
         _ipundbLimDone--;
         ReleasePpo(&pundb);
@@ -801,7 +801,7 @@ void DOCB::AssertValid(ulong grfdocb)
     {
         for (ipddg = _pglpddg->IvMac(); ipddg-- != 0;)
         {
-            _pglpddg->Get(ipddg, BlobPtr::Make(pddg));
+            _pglpddg.Get(ipddg, &pddg);
             AssertBasePo(pddg, 0);
         }
     }
@@ -812,7 +812,7 @@ void DOCB::AssertValid(ulong grfdocb)
         AssertIn(_pglpundb->IvMac(), 0, _cundbMax + 1);
         for (ipundb = _pglpundb->IvMac(); ipundb-- != 0;)
         {
-            _pglpundb->Get(ipundb, BlobPtr::Make(pundb));
+            _pglpundb.Get(ipundb, &pundb);
             AssertPo(pundb, 0);
         }
     }

@@ -2461,7 +2461,7 @@ void TXRD::CommitUndo(void)
     // see if this one can be combined with the last one
     if (_ipundbLimDone > 0)
     {
-        _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(prtunPrev));
+        _pglpundb.Get(_ipundbLimDone - 1, (PUNDB*)&prtunPrev);
         if (prtunPrev->FIs(kclsRTUN) && prtunPrev->FCombine(_prtun))
         {
             ClearRedo();

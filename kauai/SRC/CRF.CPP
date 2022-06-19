@@ -184,7 +184,7 @@ CRF::~CRF(void)
     {
         while (_pglcre->IvMac() > 0)
         {
-            _pglcre->Get(0, BlobPtr::Make(cre));
+            _pglcre.Get(0, &cre);
             cre.pbaco->AddRef(); // so it doesn't go away when being detached
             cre.pbaco->Detach();
             cre.pbaco->_pcrf = pvNil; // we're going away!
@@ -230,7 +230,7 @@ void CRF::SetCbMax(long cbMax)
 
         for (icre = _pglcre->IvMac(); icre-- > 0;)
         {
-            _pglcre->Get(icre, BlobPtr::Make(cre));
+            _pglcre.Get(icre, &cre);
             AssertPo(cre.pbaco, 0);
             if (cre.pbaco->CactRef() == 0)
             {
@@ -270,10 +270,10 @@ tribool CRF::TLoad(CTG ctg, CNO cno, PFNRPO pfnrpo, RSC rsc, long crep)
     // see if it's in the cache
     if (_FFindCre(ctg, cno, pfnrpo, &icre))
     {
-        _pglcre->Get(icre, BlobPtr::Make(cre));
+        _pglcre.Get(icre, &cre);
         cre.pbaco->SetCrep(LwMax(cre.pbaco->_crep, crep));
         cre.cactRelease = _cactRelease++;
-        _pglcre->Put(icre, BlobPtr::Make(cre));
+        _pglcre.Put(icre, &cre);
         return tYes;
     }
 
@@ -354,7 +354,7 @@ PBACO CRF::PbacoFetch(CTG ctg, CNO cno, PFNRPO pfnrpo, bool *pfError, RSC rsc)
     // see if it's in the cache
     if (_FFindCre(ctg, cno, pfnrpo, &icre))
     {
-        _pglcre->Get(icre, BlobPtr::Make(cre));
+        _pglcre.Get(icre, &cre);
         AssertPo(cre.pbaco, 0);
         cre.pbaco->AddRef();
         return cre.pbaco;
@@ -427,7 +427,7 @@ PBACO CRF::PbacoFind(CTG ctg, CNO cno, PFNRPO pfnrpo, RSC rsc)
         return pvNil;
     }
 
-    _pglcre->Get(icre, BlobPtr::Make(cre));
+    _pglcre.Get(icre, &cre);
     AssertPo(cre.pbaco, 0);
     cre.pbaco->AddRef();
     return cre.pbaco;
@@ -451,7 +451,7 @@ bool CRF::FSetCrep(long crep, CTG ctg, CNO cno, PFNRPO pfnrpo, RSC rsc)
         return fFalse;
     }
 
-    _pglcre->Get(icre, BlobPtr::Make(cre));
+    _pglcre.Get(icre, &cre);
     AssertPo(cre.pbaco, 0);
     cre.pbaco->SetCrep(crep);
     return fTrue;
@@ -495,7 +495,7 @@ void CRF::BacoDetached(PBACO pbaco)
         Bug("why isn't the BACO in the CRF?");
         return;
     }
-    _pglcre->Get(icre, BlobPtr::Make(cre));
+    _pglcre.Get(icre, &cre);
     _cbCur -= cre.cb;
     AssertIn(_cbCur, 0, kcbMax);
     _pglcre->Delete(icre);
@@ -523,9 +523,9 @@ void CRF::BacoReleased(PBACO pbaco)
         Bug("why isn't the BACO in the CRF?");
         return;
     }
-    _pglcre->Get(icre, BlobPtr::Make(cre));
+    _pglcre.Get(icre, &cre);
     cre.cactRelease = _cactRelease++;
-    _pglcre->Put(icre, BlobPtr::Make(cre));
+    _pglcre.Put(icre, &cre);
 
     if (pbaco->_crep <= crepToss || _cbCur > _cbMax)
     {
@@ -683,7 +683,7 @@ bool CRF::_FPurgeCb(long cbPurge, long crepLast)
 
         for (icre = 0; icre < icreMac; icre++)
         {
-            _pglcre->Get(icre, BlobPtr::Make(cre));
+            _pglcre.Get(icre, &cre);
             AssertPo(cre.pbaco, 0);
             if (cre.pbaco->CactRef() > 0 || (crep = cre.pbaco->_crep) > crepBest)
             {
@@ -706,7 +706,7 @@ bool CRF::_FPurgeCb(long cbPurge, long crepLast)
         if (ivNil == icreBest)
             return fFalse;
 
-        _pglcre->Get(icreBest, BlobPtr::Make(cre));
+        _pglcre.Get(icreBest, &cre);
         Assert(cre.pbaco->_fAttached, "BACO not attached!");
         cre.pbaco->Detach();
 
@@ -746,7 +746,7 @@ void CRF::MarkMem(void)
 
     for (icre = _pglcre->IvMac(); icre-- > 0;)
     {
-        _pglcre->Get(icre, BlobPtr::Make(cre));
+        _pglcre.Get(icre, &cre);
         AssertPo(cre.pbaco, 0);
         Assert(cre.pbaco->_fAttached, "baco claims to not be attached!");
         cre.pbaco->_fAttached = fTrue; // safety to avoid infinite recursion
@@ -768,7 +768,7 @@ CRM::~CRM(void)
     {
         for (ipcrf = _pglpcrf->IvMac(); ipcrf-- > 0;)
         {
-            _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+            _pglpcrf.Get(ipcrf, &pcrf);
             AssertPo(pcrf, 0);
             ReleasePpo(&pcrf);
         }
@@ -810,7 +810,7 @@ tribool CRM::TLoad(CTG ctg, CNO cno, PFNRPO pfnrpo, RSC rsc, long crep)
 
     for (ipcrf = 0; ipcrf < cpcrf; ipcrf++)
     {
-        _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+        _pglpcrf.Get(ipcrf, &pcrf);
         AssertPo(pcrf, 0);
         t = pcrf->TLoad(ctg, cno, pfnrpo, rsc, crep);
         if (t != tNo)
@@ -838,7 +838,7 @@ PBACO CRM::PbacoFetch(CTG ctg, CNO cno, PFNRPO pfnrpo, bool *pfError, RSC rsc)
 
     for (ipcrf = 0; ipcrf < cpcrf; ipcrf++)
     {
-        _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+        _pglpcrf.Get(ipcrf, &pcrf);
         AssertPo(pcrf, 0);
         pbaco = pcrf->PbacoFetch(ctg, cno, pfnrpo, &fError, rsc);
         if (pvNil != pbaco || fError)
@@ -881,7 +881,7 @@ bool CRM::FSetCrep(long crep, CTG ctg, CNO cno, PFNRPO pfnrpo, RSC rsc)
 
     for (ipcrf = 0; ipcrf < cpcrf; ipcrf++)
     {
-        _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+        _pglpcrf.Get(ipcrf, &pcrf);
         AssertPo(pcrf, 0);
         if (pcrf->FSetCrep(crep, ctg, cno, pfnrpo, rsc))
             return fTrue;
@@ -902,7 +902,7 @@ PCRF CRM::PcrfFindChunk(CTG ctg, CNO cno, RSC rsc)
 
     for (ipcrf = 0; ipcrf < cpcrf; ipcrf++)
     {
-        _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+        _pglpcrf.Get(ipcrf, &pcrf);
         AssertPo(pcrf, 0);
 
         if (pcrf->Pcfl()->FFind(ctg, cno) && (rscNil == rsc || pcrf->Pcfl()->FFind(kctgRsc, rsc)))
@@ -952,7 +952,7 @@ PCRF CRM::PcrfGet(long icrf)
     if (!FIn(icrf, 0, _pglpcrf->IvMac()))
         return pvNil;
 
-    _pglpcrf->Get(icrf, BlobPtr::Make(pcrf));
+    _pglpcrf.Get(icrf, &pcrf);
     AssertPo(pcrf, 0);
     return pcrf;
 }
@@ -982,7 +982,7 @@ void CRM::MarkMem(void)
 
     for (ipcrf = 0, cpcrf = _pglpcrf->IvMac(); ipcrf < cpcrf; ipcrf++)
     {
-        _pglpcrf->Get(ipcrf, BlobPtr::Make(pcrf));
+        _pglpcrf.Get(ipcrf, &pcrf);
         AssertPo(pcrf, 0);
         MarkMemObj(pcrf);
     }

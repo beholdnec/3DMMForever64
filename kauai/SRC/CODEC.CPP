@@ -54,7 +54,7 @@ CODM::~CODM(void)
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
+            _pglpcodc.Get(ipcodc, &pcodc);
             ReleasePpo(&pcodc);
         }
         _pglpcodc.Release();
@@ -89,7 +89,7 @@ void CODM::MarkMem(void)
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
+            _pglpcodc.Get(ipcodc, &pcodc);
             MarkMemObj(pcodc);
         }
         MarkMemObj(_pglpcodc);
@@ -190,7 +190,7 @@ bool CODM::_FFindCodec(bool fEncode, long cfmt, PCODC *ppcodc)
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
+            _pglpcodc.Get(ipcodc, &pcodc);
             if (pcodc->FCanDo(fEncode, cfmt))
             {
                 *ppcodc = pcodc;

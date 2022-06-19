@@ -534,7 +534,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
     if (fSeq)
     {
         imidtrMin = 0;
-        pglmidtr->Get(0, BlobPtr::Make(midtr));
+        pglmidtr.Get(0, &midtr);
     }
 
     for (;;)
@@ -546,7 +546,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             tsMin = kluMax;
             for (imidtr = 0; imidtr < pglmidtr->IvMac(); imidtr++)
             {
-                pglmidtr->Get(imidtr, BlobPtr::Make(midtr));
+                pglmidtr.Get(imidtr, &midtr);
                 if (midtr.midevCur.ts < tsMin)
                 {
                     tsMin = midtr.midevCur.ts;
@@ -555,7 +555,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             }
 
             Assert(imidtrMin != ivNil, 0);
-            pglmidtr->Get(imidtrMin, BlobPtr::Make(midtr));
+            pglmidtr.Get(imidtrMin, &midtr);
         }
 
         // get the time of this event
@@ -595,7 +595,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
         if (midtr.pmstp->FGetEvent(&midtr.midevCur))
         {
             if (!fSeq)
-                pglmidtr->Put(imidtrMin, BlobPtr::Make(midtr));
+                pglmidtr.Put(imidtrMin, &midtr);
         }
         else
         {
@@ -608,7 +608,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             {
                 tsTempo = tsLast;
                 tsRawTempo = 0;
-                pglmidtr->Get(0, BlobPtr::Make(midtr));
+                pglmidtr.Get(0, &midtr);
             }
         }
     }
@@ -628,7 +628,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
     ReleasePpo(&flo.pfil);
     if (pglmidtr)
     {
-        while (pglmidtr->FPop(BlobPtr::Make(midtr)))
+        while (pglmidtr.FPop(&midtr))
             ReleasePpo(&midtr.pmstp);
         pglmidtr.Release();
     }

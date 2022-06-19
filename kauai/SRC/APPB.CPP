@@ -928,7 +928,7 @@ void APPB::_MarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
     {
         for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
         {
-            _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
+            _pglmkrgn.Get(imkrgn, &mkrgn);
             if (mkrgn.hwnd == hwnd)
             {
                 // already something marked dirty, union in the new stuff
@@ -1010,7 +1010,7 @@ void APPB::_UnmarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
     {
         if (imkrgn-- <= 0)
             return;
-        _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
+        _pglmkrgn.Get(imkrgn, &mkrgn);
         if (mkrgn.hwnd == hwnd)
             break;
     }
@@ -1103,7 +1103,7 @@ void APPB::InvalMarked(HWND hwnd)
 
     for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
     {
-        _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
+        _pglmkrgn.Get(imkrgn, &mkrgn);
         if (mkrgn.hwnd == hwnd)
         {
             if (!mkrgn.pregn->FEmpty(&rc))
@@ -1310,7 +1310,7 @@ bool APPB::_FFindProp(long prid, PROP *pprop, long *piprop)
     for (ivMin = 0, ivLim = _pglprop->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        _pglprop->Get(iv, BlobPtr::Make(prop));
+        _pglprop.Get(iv, &prop);
         if (prop.prid < prid)
             ivMin = iv + 1;
         else if (prop.prid > prid)
@@ -1660,7 +1660,7 @@ void APPB::BadModalCmd(PCMD pcmd)
         return;
     }
 
-    _pglmodcx->Get(--imodcx, BlobPtr::Make(modcx));
+    _pglmodcx.Get(--imodcx, &modcx);
     if (pvNil != pcmd->pgg)
         pcmd->pgg->AddRef();
     modcx.pcex->EnqueueCmd(pcmd);

@@ -905,7 +905,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
         {
             // Get a valid lin.
             if (ilinMac > 0)
-                _pgllin->Get(ilinMac - 1, BlobPtr::Make(lin));
+                _pgllin.Get(ilinMac - 1, &lin);
             else
                 ClearPb(&lin, size(LIN));
         }
@@ -987,7 +987,7 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
     _ilinInval = ilinOld;
     for (ccp = dypDel = 0; linOld.cpMin + ccp <= cp + ccpDel && ilinOld < _pgllin->IvMac();)
     {
-        _pgllin->Get(ilinOld, BlobPtr::Make(lin));
+        _pgllin.Get(ilinOld, &lin);
         dypDel += lin.dyp;
         ccp += lin.ccp;
         _pgllin->Delete(ilinOld);
@@ -1014,7 +1014,7 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
         AssertIn(dypCur, linOld.dypTot, kcbMax);
         while (cpNext < cpCur && ilin < _pgllin->IvMac())
         {
-            _pgllin->Get(ilin, BlobPtr::Make(lin));
+            _pgllin.Get(ilin, &lin);
             _pgllin->Delete(ilin);
             cpNext += lin.ccp;
             dypDel += lin.dyp;
@@ -1045,10 +1045,10 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
         if (!_pgllin.FInsert(ilin, &lin))
         {
             AssertIn(ilin, 0, _pgllin->IvMac());
-            _pgllin->Get(ilin, BlobPtr::Make(linT));
+            _pgllin.Get(ilin, &linT);
             cpNext += linT.ccp;
             dypDel += linT.dyp;
-            _pgllin->Put(ilin, BlobPtr::Make(lin));
+            _pgllin.Put(ilin, &lin);
         }
 
         dypIns += lin.dyp;

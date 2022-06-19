@@ -570,9 +570,9 @@ void MPQUE::_PauseQueue(long isndinMin)
 
     if (_isndinCur == isndinMin && _pglsndin->IvMac() > _isndinCur)
     {
-        _pglsndin->Get(_isndinCur, BlobPtr::Make(sndin));
+        _pglsndin.Get(_isndinCur, &sndin);
         sndin.dtsStart = TsCurrentSystem() - _tsStart;
-        _pglsndin->Put(_isndinCur, BlobPtr::Make(sndin));
+        _pglsndin.Put(_isndinCur, &sndin);
 
         _Queue(_isndinCur);
     }
@@ -679,7 +679,7 @@ bool MPQUE::_FStartQueue(void)
     // set up the midi stream parser (_mstp).
     for (; _isndinCur < _pglsndin->IvMac(); _isndinCur++)
     {
-        _pglsndin->Get(_isndinCur, BlobPtr::Make(sndin));
+        _pglsndin.Get(_isndinCur, &sndin);
         AssertPo(sndin.pbaco, 0);
         if (0 <= sndin.cactPause)
             break;
@@ -747,10 +747,10 @@ bool MPQUE::_FGetEvt(void)
     }
 
     // see if we should repeat the current midi stream
-    _pglsndin->Get(_isndinCur, BlobPtr::Make(sndin));
+    _pglsndin.Get(_isndinCur, &sndin);
     if (--sndin.cactPlay == 0)
         return fFalse;
-    _pglsndin->Put(_isndinCur, BlobPtr::Make(sndin));
+    _pglsndin.Put(_isndinCur, &sndin);
 
     _tsStart = TsCurrentSystem();
     if (ts != kluMax && ts > _tsStart)

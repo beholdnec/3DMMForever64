@@ -1105,7 +1105,7 @@ void CFL::AssertValid(ulong grfcfl)
         fpOld = _csto.fpMac;
         for (ifsm = _csto.pglfsm->IvMac(); ifsm-- != 0;)
         {
-            _csto.pglfsm->Get(ifsm, BlobPtr::Make(fsm));
+            _csto.pglfsm.Get(ifsm, &fsm);
             Assert(fsm.fp >= fpBase && fsm.fp < fpOld, "bad fp in fsm");
             Assert(fsm.cb + fsm.fp > fsm.fp && fsm.cb + fsm.fp < fpOld, "bad cb in fsm");
             fpOld = fsm.fp;
@@ -1122,7 +1122,7 @@ void CFL::AssertValid(ulong grfcfl)
         fpOld = _cstoExtra.fpMac;
         for (ifsm = _cstoExtra.pglfsm->IvMac(); ifsm-- != 0;)
         {
-            _cstoExtra.pglfsm->Get(ifsm, BlobPtr::Make(fsm));
+            _cstoExtra.pglfsm.Get(ifsm, &fsm);
             Assert(fsm.fp >= 0 && fsm.fp < fpOld, "bad fp in fsm");
             Assert(fsm.cb + fsm.fp > fsm.fp && fsm.cb + fsm.fp < fpOld, "bad cb in fsm");
             fpOld = fsm.fp;
@@ -3087,7 +3087,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
         if (!pglfsm || (ifsm = pglfsm->IvMac()) == 0)
             return;
         ifsm--;
-        pglfsm->Get(ifsm, BlobPtr::Make(fsm));
+        pglfsm.Get(ifsm, &fsm);
         if (fsm.fp + fsm.cb >= pcsto->fpMac)
         {
             // fsm extends to the new end of the file, so delete the fsm
@@ -3110,7 +3110,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     for (ifsmMin = 0, ifsmLim = pglfsm->IvMac(); ifsmMin < ifsmLim;)
     {
         ifsm = (ifsmMin + ifsmLim) / 2;
-        pglfsm->Get(ifsm, BlobPtr::Make(fsm));
+        pglfsm.Get(ifsm, &fsm);
         Assert(fp + cb <= fsm.fp || fp >= fsm.fp + fsm.cb, "freeing space that overlaps free space");
         if (fsm.fp < fp)
             ifsmMin = ifsm + 1;
@@ -3122,7 +3122,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     if (ifsmMin > 0)
     {
         // check for adjacency to previous free block
-        pglfsm->Get(ifsmMin - 1, BlobPtr::Make(fsm));
+        pglfsm.Get(ifsmMin - 1, &fsm);
         Assert(fsm.fp < fp, "bad ifsmMin");
         if (fsm.fp + fsm.cb >= fp)
         {
@@ -3132,7 +3132,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
             if (ifsmMin < ifsmLim)
             {
                 // check for adjacency to next free block
-                pglfsm->Get(ifsmMin, BlobPtr::Make(fsmT));
+                pglfsm.Get(ifsmMin, &fsmT);
                 if (fsmT.fp <= fsm.fp + fsm.cb)
                 {
                     // merge the two
@@ -3141,21 +3141,21 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
                     pglfsm->Delete(ifsmMin);
                 }
             }
-            pglfsm->Put(ifsmMin - 1, BlobPtr::Make(fsm));
+            pglfsm.Put(ifsmMin - 1, &fsm);
             return;
         }
     }
 
     if (ifsmMin < ifsmLim)
     {
-        pglfsm->Get(ifsmMin, BlobPtr::Make(fsm));
+        pglfsm.Get(ifsmMin, &fsm);
         Assert(fsm.fp > fp, "bad ifsmMin");
         if (fsm.fp <= fp + cb)
         {
             Assert(fsm.fp == fp + cb, "overlap");
             fsm.cb = fsm.fp + fsm.cb - fp;
             fsm.fp = fp;
-            pglfsm->Put(ifsmMin, BlobPtr::Make(fsm));
+            pglfsm.Put(ifsmMin, &fsm);
             return;
         }
     }
@@ -4088,7 +4088,7 @@ bool CFL::_FFindCtgRti(CTG ctg, long rti, CNO cnoMin, CNO *pcno)
         _FFindRtie(ctg, cnoMin, pvNil, &irtie);
         for (; irtie < crtie; irtie++)
         {
-            _pglrtie->Get(irtie, BlobPtr::Make(rtie));
+            _pglrtie.Get(irtie, &rtie);
             if (rtie.ctg != ctg)
                 break; // done
             if (rtie.rti == rti)
@@ -4235,7 +4235,7 @@ bool CFL::_FFindRtie(CTG ctg, CNO cno, RTIE *prtie, long *pirtie)
     for (ivMin = 0, ivLim = _pglrtie->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        _pglrtie->Get(iv, BlobPtr::Make(rtie));
+        _pglrtie.Get(iv, &rtie);
         if (rtie.ctg < ctg)
             ivMin = iv + 1;
         else if (rtie.ctg > ctg)

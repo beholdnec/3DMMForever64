@@ -796,9 +796,9 @@ void MSMIX::_Restart(bool fNew)
 
         if (fNew)
         {
-            _pglmsos->Get(0, BlobPtr::Make(msos));
+            _pglmsos.Get(0, &msos);
             msos.tsStart = tsCur - msos.dtsStart;
-            _pglmsos->Put(0, BlobPtr::Make(msos));
+            _pglmsos.Put(0, &msos);
         }
         _SubmitBuffers(tsCur);
     }
@@ -1117,7 +1117,7 @@ void MSMIX::_Notify(void *pvData, PMDWS pmdws)
         _fPlaying = fFalse;
         if (0 < _pglmsos->IvMac())
         {
-            _pglmsos->Get(0, BlobPtr::Make(msos));
+            _pglmsos.Get(0, &msos);
             _pglmsos->Delete(0);
 
             _mutx.Leave();
@@ -1184,7 +1184,7 @@ ulong MSMIX::_LuThread(void)
             {
                 if (imsos == 0 && _fPlaying)
                     break;
-                _pglmsos->Get(imsos, BlobPtr::Make(msos));
+                _pglmsos.Get(imsos, &msos);
 
                 cactSkip = (tsCur - msos.tsStart) / msos.dts;
                 if (cactSkip > 0)
@@ -1208,7 +1208,7 @@ ulong MSMIX::_LuThread(void)
                     // adjust the values in the MSOS
                     dtsSeek = (tsCur - msos.tsStart) % msos.dts;
                     msos.tsStart = tsCur - dtsSeek;
-                    _pglmsos->Put(imsos, BlobPtr::Make(msos));
+                    _pglmsos.Put(imsos, &msos);
                 }
 
                 dtsNextStop = LuMin(dtsNextStop, msos.dts - (tsCur - msos.tsStart));
@@ -1519,7 +1519,7 @@ void WMS::MarkMem(void)
     _mutx.Enter();
     for (ipmsir = _pglpmsir->IvMac(); ipmsir-- > 0;)
     {
-        _pglpmsir->Get(ipmsir, BlobPtr::Make(pmsir));
+        _pglpmsir.Get(ipmsir, &pmsir);
         AssertVarMem(pmsir);
         MarkPv(pmsir);
     }
@@ -1734,7 +1734,7 @@ long WMS::_CmhSubmitBuffers(void)
 
     while (_ipmsirCur < _pglpmsir->IvMac())
     {
-        _pglpmsir->Get(_ipmsirCur, BlobPtr::Make(pmsir));
+        _pglpmsir.Get(_ipmsirCur, &pmsir);
         if (pmsir->ibNext >= pmsir->cb)
         {
             // see if the sound should be repeated
@@ -1957,7 +1957,7 @@ void WMS::_DoCallBacks()
     AssertIn(_ipmsirCur, 0, _pglpmsir->IvMac() + 1);
     while (0 < _ipmsirCur)
     {
-        _pglpmsir->Get(0, BlobPtr::Make(pmsir));
+        _pglpmsir.Get(0, &pmsir);
 
         if (_cmhOut > 0)
         {
@@ -2294,7 +2294,7 @@ ulong OMS::_LuThread(void)
 
             // ran out of events in the current buffer - see if we should
             // repeat it
-            _pglmsb->Get(0, BlobPtr::Make(msb));
+            _pglmsb.Get(0, &msb);
             if (msb.cactPlay == 1)
             {
                 _imsbCur = 1;
@@ -2306,7 +2306,7 @@ ulong OMS::_LuThread(void)
                 if (msb.cactPlay > 0)
                     msb.cactPlay--;
                 msb.ibStart = 0;
-                _pglmsb->Put(0, BlobPtr::Make(msb));
+                _pglmsb.Put(0, &msb);
             }
         }
         else if (_fStop)
@@ -2325,7 +2325,7 @@ ulong OMS::_LuThread(void)
         else
         {
             // start playing the new buffers
-            _pglmsb->Get(0, BlobPtr::Make(msb));
+            _pglmsb.Get(0, &msb);
             _pmev = (PMEV)PvAddBv(msb.pvData, msb.ibStart);
             _pmevLim = (PMEV)PvAddBv(msb.pvData, msb.cb);
             if (_pmev >= _pmevLim)
@@ -2354,7 +2354,7 @@ void OMS::_ReleaseBuffers(void)
 
     while (_imsbCur > 0)
     {
-        _pglmsb->Get(0, BlobPtr::Make(msb));
+        _pglmsb.Get(0, &msb);
         _pglmsb->Delete(0);
         _imsbCur--;
 
