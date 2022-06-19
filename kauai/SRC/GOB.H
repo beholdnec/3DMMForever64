@@ -141,7 +141,7 @@ class GOB : public GOB_PAR
     PGOB _pgobSib;
 
     // variables
-    PGL _pglrtvm;
+    GLPtr<RTVM> _pglrtvm;
 
     void _SetRcCur(void);
     HWND _HwndGetDptFromCoo(PT *pdpt, long coo);
@@ -247,7 +247,7 @@ class GOB : public GOB_PAR
     void MapRc(RC *prc, long cooSrc, long cooDst);
 
     // variables
-    virtual PGL *Ppglrtvm(void);
+    virtual GLPtr<RTVM> *Ppglrtvm(void);
 
     PGPT Pgpt(void)
     {

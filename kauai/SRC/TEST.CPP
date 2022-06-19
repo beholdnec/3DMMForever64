@@ -214,10 +214,10 @@ void TestGl(void)
     short sw;
     long isw;
     short *qsw;
-    PGL pglsw;
+    GLPtr<short> pglsw;
 
-    pglsw = GL::PglNew(size(short));
-    if (pvNil == pglsw)
+    pglsw = GLPtr<short>::New();
+    if (!pglsw)
     {
         Bug("PglNew failed");
         return;
@@ -225,7 +225,7 @@ void TestGl(void)
 
     for (sw = 0; sw < 10; sw++)
     {
-        AssertDo(pglsw->FAdd(&sw, &isw), 0);
+        AssertDo(pglsw.FAdd(&sw, &isw), 0);
         AssertDo(isw == sw, 0);
     }
     AssertDo(pglsw->IvMac() == 10, 0);
@@ -234,7 +234,7 @@ void TestGl(void)
     {
         qsw = pglsw->QvGet(isw).Cast<short>();
         AssertDo(*qsw == isw, 0);
-        pglsw->Get(isw, &sw);
+        pglsw.Get(isw, &sw);
         AssertDo(sw == isw, 0);
     }
 
@@ -244,10 +244,10 @@ void TestGl(void)
 
     for (isw = 0; isw < 5; isw++)
     {
-        pglsw->Get(isw, &sw);
+        pglsw.Get(isw, &sw);
         AssertDo(sw == isw * 2 + 1, 0);
         sw = (short)isw * 100;
-        pglsw->Put(isw, &sw);
+        pglsw.Put(isw, &sw);
         qsw = pglsw->QvGet(isw).Cast<short>();
         AssertDo(*qsw == isw * 100, 0);
         *qsw = (short)isw;
@@ -260,17 +260,17 @@ void TestGl(void)
     for (isw = 5; isw-- != 0;)
     {
         sw = (short)isw;
-        pglsw->FInsert(isw, &sw);
+        pglsw.FInsert(isw, &sw);
     }
 
     AssertDo(pglsw->IvMac() == 10, 0);
     for (isw = 10; isw-- != 0;)
     {
-        pglsw->Get(isw, &sw);
+        pglsw.Get(isw, &sw);
         AssertDo(sw == isw / 2, 0);
     }
 
-    ReleasePpo(&pglsw);
+    pglsw.Release();
 }
 
 /***************************************************************************

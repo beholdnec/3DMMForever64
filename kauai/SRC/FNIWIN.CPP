@@ -807,7 +807,6 @@ FNE::FNE(void)
 {
     AssertBaseThis(0);
     _prgftg = _rgftg;
-    _pglfes = pvNil;
     _fesCur.hn = hBadWin;
     _fInited = fFalse;
     AssertThis(0);
@@ -836,10 +835,10 @@ void FNE::_Free(void)
     {
         if (hBadWin != _fesCur.hn)
             FindClose(_fesCur.hn);
-    } while (pvNil != _pglfes && _pglfes->FPop(&_fesCur));
+    } while (_pglfes && _pglfes.FPop(&_fesCur));
     _fesCur.hn = hBadWin;
     _fInited = fFalse;
-    ReleasePpo(&_pglfes);
+    _pglfes.Release();
     AssertThis(0);
 }
 
@@ -999,7 +998,7 @@ bool FNE::FNextFni(FNI *pfni, ulong *pgrffneOut, ulong grffneIn)
     Bug("How did we fall through to here?");
 
 LPop:
-    if (pvNil == _pglfes || _pglfes->IvMac() == 0)
+    if (!_pglfes || _pglfes->IvMac() == 0)
     {
     LDone:
         _Free();
@@ -1025,14 +1024,14 @@ LGotOne:
 
     if (_fRecurse && pfni->_ftg == kftgDir)
     {
-        if ((pvNil != _pglfes || pvNil != (_pglfes = GL::PglNew(size(FES), 5))) && _pglfes->FPush(&_fesCur))
+        if ((_pglfes || (_pglfes = GLPtr<FES>::New(5))) && _pglfes.FPush(&_fesCur))
         {
             // set up the new fes
             _fesCur.fni = *pfni;
             stn = PszLit("*");
             if (!_fesCur.fni._FChangeLeaf(&stn))
             {
-                AssertDo(_pglfes->FPop(&_fesCur), 0);
+                AssertDo(_pglfes.FPop(&_fesCur), 0);
             }
             else
             {
@@ -1061,7 +1060,7 @@ bool FNE::_FPop(void)
         FindClose(_fesCur.hn);
         _fesCur.hn = hBadWin;
     }
-    return pvNil != _pglfes && _pglfes->FPop(&_fesCur);
+    return _pglfes && _pglfes.FPop(&_fesCur);
 }
 
 #ifdef DEBUG
@@ -1079,7 +1078,7 @@ void FNE::AssertValid(ulong grf)
         Assert((_cftg <= kcftgFneBase) == (_prgftg == _rgftg), "wrong _prgftg");
     }
     else
-        Assert(_pglfes == pvNil, 0);
+        Assert(!_pglfes, 0);
 }
 
 /***************************************************************************

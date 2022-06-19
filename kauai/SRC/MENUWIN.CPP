@@ -156,18 +156,18 @@ bool MUB::FAddListCid(long cid, long lw0, PSTN pstn)
     bool fSeparator;
     bool fRet = true;
 
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return fTrue;
 
     hmenuPrev = hNil;
     dimni = 0;
     for (imlst = 0; imlst < _pglmlst->IvMac(); imlst++)
     {
-        _pglmlst->Get(imlst, &mlst);
+        _pglmlst.Get(imlst, &mlst);
         if (mlst.hmenu == hmenuPrev)
         {
             mlst.imniBase += dimni;
-            _pglmlst->Put(imlst, &mlst);
+            _pglmlst.Put(imlst, &mlst);
         }
         else
         {
@@ -177,19 +177,19 @@ bool MUB::FAddListCid(long cid, long lw0, PSTN pstn)
         if (cid != mlst.cid)
             goto LAdjustSeparator;
 
-        if (pvNil == mlst.pgllw)
+        if (!mlst.pgllw)
         {
-            if (pvNil == (mlst.pgllw = GL::PglNew(size(long))))
+            if (!(mlst.pgllw = GLPtr<long>::New()))
             {
                 fRet = fFalse;
                 goto LAdjustSeparator;
             }
-            _pglmlst->Put(imlst, &mlst);
+            _pglmlst.Put(imlst, &mlst);
             mlst.pgllw->SetMinGrow(10);
         }
 
         ilw = mlst.pgllw->IvMac();
-        if (!mlst.pgllw->FPush(&lw0))
+        if (!mlst.pgllw.FPush(&lw0))
         {
             fRet = fFalse;
             goto LAdjustSeparator;
@@ -203,7 +203,7 @@ bool MUB::FAddListCid(long cid, long lw0, PSTN pstn)
         dimni++;
 
     LAdjustSeparator:
-        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && pvNil != mlst.pgllw && mlst.pgllw->IvMac() > 0;
+        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && mlst.pgllw && mlst.pgllw->IvMac() > 0;
         if (fSeparator && !mlst.fSeparator)
         {
             // add a separator
@@ -215,7 +215,7 @@ bool MUB::FAddListCid(long cid, long lw0, PSTN pstn)
             {
                 mlst.imniBase++;
                 mlst.fSeparator = true;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni++;
             }
         }
@@ -228,7 +228,7 @@ bool MUB::FAddListCid(long cid, long lw0, PSTN pstn)
             {
                 mlst.imniBase--;
                 mlst.fSeparator = fFalse;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni--;
             }
         }
@@ -255,26 +255,26 @@ bool MUB::FRemoveListCid(long cid, long lw0, PSTN pstn)
     bool fSeparator, fSetWcid;
     bool fRet = fTrue;
 
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return fTrue;
 
     hmenuPrev = hNil;
     dimni = 0;
     for (imlst = 0; imlst < _pglmlst->IvMac(); imlst++)
     {
-        _pglmlst->Get(imlst, &mlst);
+        _pglmlst.Get(imlst, &mlst);
         if (mlst.hmenu == hmenuPrev)
         {
             mlst.imniBase += dimni;
             Assert(mlst.imniBase >= FPure(mlst.fSeparator), "bad imniBase");
-            _pglmlst->Put(imlst, &mlst);
+            _pglmlst.Put(imlst, &mlst);
         }
         else
         {
             hmenuPrev = mlst.hmenu;
             dimni = 0;
         }
-        if (cid != mlst.cid || pvNil == mlst.pgllw)
+        if (cid != mlst.cid || !mlst.pgllw)
             goto LAdjustSeparator;
 
         fSetWcid = fFalse;
@@ -282,7 +282,7 @@ bool MUB::FRemoveListCid(long cid, long lw0, PSTN pstn)
         {
             if (pvNil == pstn)
             {
-                mlst.pgllw->Get(ilw, &lw);
+                mlst.pgllw.Get(ilw, &lw);
                 if (lw != lw0)
                     goto LSetWcid;
             }
@@ -314,7 +314,7 @@ bool MUB::FRemoveListCid(long cid, long lw0, PSTN pstn)
         }
 
     LAdjustSeparator:
-        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && pvNil != mlst.pgllw && mlst.pgllw->IvMac() > 0;
+        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && mlst.pgllw && mlst.pgllw->IvMac() > 0;
         if (fSeparator && !mlst.fSeparator)
         {
             // add a separator
@@ -326,7 +326,7 @@ bool MUB::FRemoveListCid(long cid, long lw0, PSTN pstn)
             {
                 mlst.imniBase++;
                 mlst.fSeparator = fTrue;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni++;
             }
         }
@@ -339,7 +339,7 @@ bool MUB::FRemoveListCid(long cid, long lw0, PSTN pstn)
             {
                 mlst.imniBase--;
                 mlst.fSeparator = fFalse;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni--;
             }
         }
@@ -361,26 +361,26 @@ bool MUB::FRemoveAllListCid(long cid)
     bool fSeparator;
     bool fRet = fTrue;
 
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return fTrue;
 
     hmenuPrev = hNil;
     dimni = 0;
     for (imlst = 0; imlst < _pglmlst->IvMac(); imlst++)
     {
-        _pglmlst->Get(imlst, &mlst);
+        _pglmlst.Get(imlst, &mlst);
         if (mlst.hmenu == hmenuPrev)
         {
             mlst.imniBase += dimni;
             Assert(mlst.imniBase >= FPure(mlst.fSeparator), "bad imniBase");
-            _pglmlst->Put(imlst, &mlst);
+            _pglmlst.Put(imlst, &mlst);
         }
         else
         {
             hmenuPrev = mlst.hmenu;
             dimni = 0;
         }
-        if (cid == mlst.cid && pvNil != mlst.pgllw)
+        if (cid == mlst.cid && mlst.pgllw)
         {
             for (ilw = 0; ilw < mlst.pgllw->IvMac(); ilw++)
             {
@@ -394,7 +394,7 @@ bool MUB::FRemoveAllListCid(long cid)
             }
         }
 
-        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && pvNil != mlst.pgllw && mlst.pgllw->IvMac() > 0;
+        fSeparator = mlst.imniBase > FPure(mlst.fSeparator) && mlst.pgllw && mlst.pgllw->IvMac() > 0;
         if (fSeparator && !mlst.fSeparator)
         {
             // add a separator
@@ -406,7 +406,7 @@ bool MUB::FRemoveAllListCid(long cid)
             {
                 mlst.imniBase++;
                 mlst.fSeparator = fTrue;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni++;
             }
         }
@@ -419,7 +419,7 @@ bool MUB::FRemoveAllListCid(long cid)
             {
                 mlst.imniBase--;
                 mlst.fSeparator = fFalse;
-                _pglmlst->Put(imlst, &mlst);
+                _pglmlst.Put(imlst, &mlst);
                 dimni--;
             }
         }
@@ -445,20 +445,20 @@ bool MUB::FChangeListCid(long cid, long lwOld, PSTN pstnOld, long lwNew, PSTN ps
     SZ sz;
     bool fRet = fTrue;
 
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return fTrue;
 
     for (imlst = 0; imlst < _pglmlst->IvMac(); imlst++)
     {
-        _pglmlst->Get(imlst, &mlst);
-        if (cid != mlst.cid || pvNil == mlst.pgllw)
+        _pglmlst.Get(imlst, &mlst);
+        if (cid != mlst.cid || !mlst.pgllw)
             continue;
 
         for (ilw = 0; ilw < mlst.pgllw->IvMac(); ilw++)
         {
             if (pvNil == pstnOld)
             {
-                mlst.pgllw->Get(ilw, &lw);
+                mlst.pgllw.Get(ilw, &lw);
                 if (lw != lwOld)
                     continue;
             }
@@ -475,7 +475,7 @@ bool MUB::FChangeListCid(long cid, long lwOld, PSTN pstnOld, long lwNew, PSTN ps
                                   pstnNew->Psz()) &&
                        fRet;
             }
-            mlst.pgllw->Put(ilw, &lwNew);
+            mlst.pgllw.Put(ilw, &lwNew);
         }
     }
 
@@ -497,7 +497,7 @@ bool MUB::_FGetCmdForWcid(long wcid, PCMD pcmd)
         SZ sz;
         STN stn;
 
-        mlst.pgllw->Get(wcid - mlst.wcidList, &lw);
+        mlst.pgllw.Get(wcid - mlst.wcidList, &lw);
         cch = GetMenuString(mlst.hmenu, mlst.imniBase + wcid - mlst.wcidList, sz, kcchMaxSz, MF_BYPOSITION);
         stn = sz;
         if (cch == 0 || (pcmd->pgg = GG::PggNew(0, 1, stn.CbData())) == pvNil)
@@ -521,13 +521,13 @@ bool MUB::_FFindMlst(long wcid, MLST *pmlst, long *pimlst)
     long imlst;
     MLST mlst;
 
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return fFalse;
 
     for (imlst = _pglmlst->IvMac(); imlst-- > 0;)
     {
-        _pglmlst->Get(imlst, &mlst);
-        if (wcid < mlst.wcidList || pvNil == mlst.pgllw)
+        _pglmlst.Get(imlst, &mlst);
+        if (wcid < mlst.wcidList || !mlst.pgllw)
             continue;
         if (wcid < mlst.pgllw->IvMac() + mlst.wcidList)
         {
@@ -599,16 +599,16 @@ bool MUB::_FInitLists(void)
                 mlst.wcidList = wcidList;
                 wcidList += dwcidList;
                 mlst.cid = cid;
-                if (pvNil == (mlst.pgllw = GL::PglNew(size(long), vntl.OnnMac())))
+                if (!(mlst.pgllw = GLPtr<long>::New(vntl.OnnMac())))
                     return fFalse;
 
                 for (onn = 0; onn < vntl.OnnMac(); onn++)
                 {
                     vntl.GetStn(onn, &stn);
-                    if (!mlst.pgllw->FPush(&onn) ||
+                    if (!mlst.pgllw.FPush(&onn) ||
                         !InsertMenu(hmenu, ++imni, MF_BYPOSITION | MF_STRING, mlst.wcidList + onn, stn.Psz()))
                     {
-                        ReleasePpo(&mlst.pgllw);
+                        mlst.pgllw.Release();
                         return fFalse;
                     }
                     cmni++;
@@ -622,15 +622,15 @@ bool MUB::_FInitLists(void)
                 wcidList += dwcidList;
                 mlst.cid = cid;
                 mlst.fSeparator = fFalse;
-                mlst.pgllw = pvNil;
+                mlst.pgllw = GLPtr<long>();
                 if (!DeleteMenu(hmenu, imni, MF_BYPOSITION))
                     return fFalse;
                 imni--;
                 cmni--;
             LInsertMlst:
-                if (pvNil == _pglmlst && pvNil == (_pglmlst = GL::PglNew(size(MLST), 1)) || !_pglmlst->FPush(&mlst))
+                if (!_pglmlst && !(_pglmlst = GLPtr<MLST>::New(1)) || !_pglmlst.FPush(&mlst))
                 {
-                    ReleasePpo(&mlst.pgllw);
+                    mlst.pgllw.Release();
                     return fFalse;
                 }
                 break;
@@ -652,13 +652,13 @@ void MUB::MarkMem(void)
     MLST mlst;
 
     MUB_PAR::MarkMem();
-    if (pvNil == _pglmlst)
+    if (!_pglmlst)
         return;
 
     MarkMemObj(_pglmlst);
     for (imlst = _pglmlst->IvMac(); imlst-- > 0;)
     {
-        _pglmlst->Get(imlst, &mlst);
+        _pglmlst.Get(imlst, &mlst);
         MarkMemObj(mlst.pgllw);
     }
 }

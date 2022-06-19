@@ -174,7 +174,7 @@ bool TMAP::FWrite(PBLCK pblck)
  *	output:
  *			returns the pointer to the new TMAP
  */
-PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
+PTMAP TMAP::PtmapReadNative(FNI *pfni, GLPtr<CLR> pglclr)
 {
     byte *prgb = pvNil;
     PTMAP ptmap = pvNil;
@@ -184,8 +184,8 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
     long iprgb;
     long dist, min;
     CLR clr, clrSrc;
-    PGL pglclrSrc;
-    PGL pglCache;
+    GLPtr<CLR> pglclrSrc;
+    GLPtr<long> pglCache;
 
     AssertPo(pfni, 0);
 
@@ -194,7 +194,7 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
         Assert(!fUpsideDown, 0);
         AssertPo(pglclrSrc, 0);
 
-        if (pglclr != pvNil)
+        if (pglclr)
         {
             AssertIn(pglclr->IvMac(), 0, 257);
 
@@ -202,24 +202,24 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
             // Do a closest color match
             //
 
-            pglCache = GL::PglNew(size(long), pglclrSrc->IvMac());
+            pglCache = GLPtr<long>::New(pglclrSrc->IvMac());
 
-            if (pglCache != pvNil)
+            if (pglCache)
             {
 
                 iclrBest = ivNil;
                 for (igl = 0; igl < pglclrSrc->IvMac(); igl++)
                 {
-                    AssertDo(pglCache->FAdd(&iclrBest), "Ensured by creation");
+                    AssertDo(pglCache.FAdd(&iclrBest), "Ensured by creation");
                 }
             }
 
             for (iprgb = 0; iprgb < (dxp * dyp); iprgb++)
             {
 
-                if (pglCache != pvNil)
+                if (pglCache)
                 {
-                    pglCache->Get(prgb[iprgb], &iclrBest);
+                    pglCache.Get(prgb[iprgb], &iclrBest);
 
                     if (iclrBest != ivNil)
                     {
@@ -228,7 +228,7 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
                     }
                 }
 
-                pglclrSrc->Get(prgb[iprgb], &clrSrc);
+                pglclrSrc.Get(prgb[iprgb], &clrSrc);
 
                 iclrBest = ivNil;
                 min = klwMax;
@@ -236,7 +236,7 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
                 for (igl = 0; igl < pglclr->IvMac(); igl++)
                 {
 
-                    pglclr->Get(igl, &clr);
+                    pglclr.Get(igl, &clr);
                     dist = CALCDIST(clrSrc.bRed, clrSrc.bGreen, clrSrc.bBlue, clr.bRed, clr.bGreen, clr.bBlue);
 
                     if (dist <= min)
@@ -250,19 +250,19 @@ PTMAP TMAP::PtmapReadNative(FNI *pfni, PGL pglclr)
                 {
                     AssertIn(iclrBest, 0, pglclr->IvMac());
 
-                    if (pglCache != pvNil)
+                    if (pglCache)
                     {
-                        pglCache->Put(prgb[iprgb], &iclrBest);
+                        pglCache.Put(prgb[iprgb], &iclrBest);
                     }
 
                     prgb[iprgb] = (BYTE)iclrBest;
                 }
             }
 
-            ReleasePpo(&pglCache);
+            pglCache.Release();
         }
 
-        ReleasePpo(&pglclrSrc);
+        pglclrSrc.Release();
 
         ptmap = TMAP::PtmapNew(prgb, dxp, dyp);
     }

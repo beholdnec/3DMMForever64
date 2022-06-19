@@ -70,7 +70,7 @@ class TXDD : public TXDD_PAR
     PBSF _pbsf;
     long _clnDisp;
     long _clnDispWhole;
-    PGL _pglichStarts;
+    GLPtr<long> _pglichStarts;
 
     // the selection
     long _ichAnchor;

@@ -1299,7 +1299,7 @@ EDML::EDML(PEDPAR pedpar) : EDPL(pedpar)
 
 EDML::~EDML(void)
 {
-    ReleasePpo(&_pglich);
+    _pglich.Release();
 }
 
 /***************************************************************************
@@ -1327,11 +1327,11 @@ bool EDML::_FInit(void)
 {
     long ich;
 
-    if (pvNil == (_pglich = GL::PglNew(size(long))))
+    if (!(_pglich = GLPtr<long>::New()))
         return fFalse;
     _pglich->SetMinGrow(20);
     ich = 0;
-    return _pglich->FPush(&ich);
+    return _pglich.FPush(&ich);
 }
 
 /***************************************************************************
@@ -1352,14 +1352,14 @@ bool EDML::_FLockLn(long ln, achar **pprgch, long *pcch)
         return fFalse;
     }
 
-    _pglich->Get(ln, &ich);
+    _pglich.Get(ln, &ich);
     if (ln + 1 == _pglich->IvMac())
         *pcch = IchMac() - ich;
     else
     {
         long ichT;
 
-        _pglich->Get(ln + 1, pcch);
+        _pglich.Get(ln + 1, pcch);
         ichT = LwMax(ich, _IchPrev(*pcch));
         if (ichT < *pcch && ((fchControl | fchMayBreak) & GrfchFromCh(_ChFetch(ichT))))
         {
@@ -1400,7 +1400,7 @@ long EDML::_LnFromIch(long ich)
     for (lnMin = 0, lnLim = _pglich->IvMac(); lnMin < lnLim;)
     {
         ln = (lnMin + lnLim) / 2;
-        _pglich->Get(ln, &ichT);
+        _pglich.Get(ln, &ichT);
         if (ich < ichT)
             lnLim = ln;
         else if (ich > ichT)
@@ -1422,7 +1422,7 @@ long EDML::_IchMinLn(long ln)
 
     if (ln >= _pglich->IvMac())
         return IchMac() + 1;
-    _pglich->Get(ln, &ich);
+    _pglich.Get(ln, &ich);
     return ich;
 }
 
@@ -1551,7 +1551,7 @@ long EDML::_LnReformat(long lnMin, long *pclnDel, long *pclnIns)
     {
         if (fchBreak & GrfchFromCh(_ChFetch(ichPrev)))
         {
-            if (!_pglich->FInsert(ln, &ich))
+            if (!_pglich.FInsert(ln, &ich))
             {
                 Warn("format failed");
                 break;
@@ -1614,7 +1614,7 @@ void EDML::AssertValid(ulong grf)
         ichPrev = ichMac + 1;
         for (ln = _pglich->IvMac(); ln-- > 0;)
         {
-            _pglich->Get(ln, &ich);
+            _pglich.Get(ln, &ich);
             AssertIn(ich, 0, ichPrev);
             ichPrev = ich;
         }
@@ -1796,7 +1796,7 @@ long EDMW::_LnReformat(long lnMin, long *pclnDel, long *pclnIns)
 
         while (lnCur < _pglich->IvMac())
         {
-            _pglich->Get(lnCur, &iv);
+            _pglich.Get(lnCur, &iv);
             if (ich < iv)
                 break;
             if (ich == iv)
@@ -1806,7 +1806,7 @@ long EDMW::_LnReformat(long lnMin, long *pclnDel, long *pclnIns)
             clnDel++;
         }
 
-        if (!_pglich->FInsert(lnCur, &ich))
+        if (!_pglich.FInsert(lnCur, &ich))
         {
             Warn("memory failure in EDMW::_LnReformat");
             break;

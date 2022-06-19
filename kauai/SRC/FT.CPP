@@ -1463,10 +1463,10 @@ DOCPIC *DOCPIC::PdocpicNew(void)
     DOCPIC *pdocpic;
     long i, j;
     CLR clr;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
     RC rc(0, 0, 16, 16);
 
-    if (pvNil == (pglclr = GL::PglNew(size(CLR), 256)))
+    if (!(pglclr = GLPtr<CLR>::New(256)))
         return pvNil;
     for (i = 0; i < 256; i++)
     {
@@ -1483,11 +1483,11 @@ DOCPIC *DOCPIC::PdocpicNew(void)
             clr.bBlue = byte(255 - i);
             break;
         }
-        pglclr->FPush(&clr);
+        pglclr.FPush(&clr);
         _cact = (_cact + 1) % 3;
     }
     GPT::SetActiveColors(pglclr, fpalIdentity);
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 
     if (pvNil == (pgpt = GPT::PgptNewPic(&rc)))
         return pvNil;
@@ -1696,12 +1696,12 @@ DOCGPT *DOCGPT::PdocgptNew(void)
     RC rcT;
     ACR acr;
     CLR clr;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
     static long _cact = 0;
     PT pt(0, 0);
     ACR acr63(63), acr127(127), acr191(191);
 
-    if (pvNil == (pglclr = GL::PglNew(size(CLR), 256)))
+    if (!(pglclr = GLPtr<CLR>::New(256)))
         return pvNil;
     for (i = 0; i < 256; i++)
     {
@@ -1724,11 +1724,11 @@ DOCGPT *DOCGPT::PdocgptNew(void)
             clr.bGreen = byte(kbMax);
             clr.bBlue = byte(0);
         }
-        pglclr->FPush(&clr);
+        pglclr.FPush(&clr);
         _cact = (_cact + 1) % 3;
     }
     GPT::SetActiveColors(pglclr, fpalIdentity);
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 
     pdocgpt = pvNil;
     pgpt = pvNil;
@@ -1789,24 +1789,24 @@ DOCGPT *DOCGPT::PdocgptNew(void)
         pgpt = pvNil;
     }
 
-    if (pvNil == (pglclr = GL::PglNew(size(CLR), 256)))
+    if (!(pglclr = GLPtr<CLR>::New(256)))
         goto LFail;
     for (i = 0; i < 128; i++)
     {
         ClearPb(&clr, size(clr));
         clr.bGreen = byte(i * 2);
-        pglclr->FPush(&clr);
+        pglclr.FPush(&clr);
     }
     for (; i < 256; i++)
     {
         ClearPb(&clr, size(clr));
         clr.bGreen = 255;
         clr.bRed = clr.bBlue = (byte)((i - 128) * 2);
-        pglclr->FPush(&clr);
+        pglclr.FPush(&clr);
     }
 
     pdocgpt->_pgpt->SetOffscreenColors(pglclr);
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 
 LFail:
     ReleasePpo(&pgnv);

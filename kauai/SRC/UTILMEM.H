@@ -308,7 +308,7 @@ inline long LwThreadCur(void)
 class BlobPtr
 {
 public:
-    BlobPtr() : _ptr(NULL), _size(0) { }
+    BlobPtr() : _ptr(pvNil), _size(0) { }
 
     BlobPtr(void* ptr, size_t size) : _ptr(ptr), _size(size) { }
 
@@ -325,6 +325,11 @@ public:
         return reinterpret_cast<T*>(_ptr);
     }
 
+    explicit operator bool() const
+    {
+        return _ptr != NULL;
+    }
+
     void* Ptr() const
     {
         return _ptr;
@@ -338,6 +343,114 @@ public:
 private:
     void* _ptr;
     size_t _size;
+};
+
+/****************************************
+    GLPtr provides a template-typed wrapper around a PGL.
+****************************************/
+// XXX: In order to escape from #include hell, typedef FP is duplicated here.
+// The original comes from FILE.H.
+typedef long FP;
+template<typename T>
+class GLPtr
+{
+public:
+    GLPtr() = default;
+
+    PGL operator->() const
+    {
+        return _pgl;
+    }
+
+    bool operator==(const GLPtr& rhs) const
+    {
+        return _pgl == rhs._pgl;
+    }
+
+    explicit operator bool() const
+    {
+        return _pgl != pvNil;
+    }
+
+    static GLPtr Wrap(PGL pgl)
+    {
+        return GLPtr(pgl);
+    }
+
+    static GLPtr New(long cvInit = 0)
+    {
+        return GLPtr(GL::PglNew(sizeof(T), cvInit));
+    }
+
+    static GLPtr Read(PBLCK pblck, short* pbo = pvNil, short* posk = pvNil)
+    {
+        return GLPtr(GL::PglRead(pblck, pbo, posk));
+    }
+
+    static GLPtr Read(class FIL* pfil, FP fp, long cb, short* pbo = pvNil, short* posk = pvNil)
+    {
+        // FIXME: assert cb valid?
+        return GLPtr(GL::PglRead(pfil, fp, cb, pbo, posk));
+    }
+
+    GLPtr Dup() const
+    {
+        return GLPtr(_pgl->PglDup());
+    }
+
+    void Release()
+    {
+        ReleasePpo(&_pgl);
+    }
+
+    void Get(long iv, T* pv) const
+    {
+        _pgl->Get(iv, BlobPtr::Make(*pv));
+    }
+
+    void Put(long iv, T* pv) const
+    {
+        _pgl->Put(iv, BlobPtr::Make(*pv));
+    }
+
+    bool FAdd(T* pv, long* piv = pvNil) const
+    {
+        return _pgl->FAdd(BlobPtr::Make(*pv), piv);
+    }
+
+    bool FInsert(long iv, T* pv = pvNil, long cv = 1)
+    {
+        return _pgl->FInsert(iv, BlobPtr::Make(*pv), cv);
+    }
+
+    bool FPush(T* pv) const
+    {
+        return _pgl->FPush(BlobPtr::Make(*pv));
+    }
+
+    bool FPop(T* pv) const
+    {
+        return _pgl->FPop(BlobPtr::Make(*pv));
+    }
+
+    bool FEnqueue(T* pv) const
+    {
+        return _pgl->FEnqueue(BlobPtr::Make(*pv));
+    }
+
+    bool FDequeue(T* pv) const
+    {
+        return _pgl->FDequeue(BlobPtr::Make(*pv));
+    }
+
+private:
+    explicit GLPtr(PGL pgl) : _pgl(pgl)
+    {
+        // FIXME: should this be _pgl->CbEntry() == sizeof(T)?
+        AssertH(_pgl == pvNil || _pgl->CbEntry() >= sizeof(T));
+    }
+
+    PGL _pgl = pvNil;
 };
 
 #endif //! UTILMEM_H

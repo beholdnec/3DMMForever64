@@ -97,7 +97,7 @@ PGOB SCEG::_PgobFromHid(long hid)
     Return the address of the variable table for the GOB associated with
     this script interpreter.
 ***************************************************************************/
-PGL *SCEG::_PpglrtvmThis(void)
+GLPtr<RTVM> *SCEG::_PpglrtvmThis(void)
 {
     PGOB pgob = _PgobThis();
 
@@ -110,7 +110,7 @@ PGL *SCEG::_PpglrtvmThis(void)
     Return the address of the variable table for the WOKS associated with
     this script interpreter.
 ***************************************************************************/
-PGL *SCEG::_PpglrtvmGlobal(void)
+GLPtr<RTVM> *SCEG::_PpglrtvmGlobal(void)
 {
     AssertThis(0);
 
@@ -120,7 +120,7 @@ PGL *SCEG::_PpglrtvmGlobal(void)
 /***************************************************************************
     Return the address of the variable table for the GOB with given hid.
 ***************************************************************************/
-PGL *SCEG::_PpglrtvmRemote(long lw)
+GLPtr<RTVM> *SCEG::_PpglrtvmRemote(long lw)
 {
     PGOB pgob = _PgobFromHid(lw);
 
@@ -677,10 +677,10 @@ bool SCEG::_FExecOp(long op)
         if (!_fError)
         {
             ACR acr;
-            PGL pglclr = _PglclrGet((CNO)lw4);
+            GLPtr<CLR> pglclr = _PglclrGet((CNO)lw4);
             acr.SetFromLw(lw3);
             vpappb->SetGft(lw1, lw2, LuMulDiv(dtim, kdtsSecond, kdtimSecond), pglclr, acr);
-            ReleasePpo(&pglclr);
+            pglclr.Release();
         }
         break;
 
@@ -1176,31 +1176,31 @@ void SCEG::_DoEditControl(long hid, long stid, bool fGet)
 ***************************************************************************/
 void SCEG::_SetColorTable(CNO cno)
 {
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
 
-    if (pvNil == (pglclr = _PglclrGet(cno)))
+    if (!(pglclr = _PglclrGet(cno)))
         return;
 
     GPT::SetActiveColors(pglclr, fpalIdentity);
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 }
 
 /***************************************************************************
     Read the indicated color table and return a reference to it.
 ***************************************************************************/
-PGL SCEG::_PglclrGet(CNO cno)
+GLPtr<CLR> SCEG::_PglclrGet(CNO cno)
 {
     PCABO pcabo;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
 
     if (cnoNil == cno)
-        return pvNil;
+        return {};
 
     pcabo = (PCABO)_prca->PbacoFetch(kctgColorTable, cno, FReadColorTable);
     if (pvNil == pcabo)
-        return pvNil;
+        return {};
 
-    pglclr = (PGL)pcabo->po;
+    pglclr = GLPtr<CLR>::Wrap((PGL)pcabo->po);
     AssertPo(pglclr, 0);
     pglclr->AddRef();
     pcabo->SetCrep(crepTossFirst);

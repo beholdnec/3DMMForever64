@@ -78,10 +78,10 @@ class TDT : public TDT_PAR
   protected:
     virtual bool _FInit(PCFL pcfl, CTG ctgTmpl, CNO cnoTmpl);
     bool _FInitLists(void);
-    PGL _PglibactParBuild(void);
-    PGL _PglibsetBuild(void);
+    GLPtr<short> _PglibactParBuild(void);
+    GLPtr<short> _PglibsetBuild(void);
     PGG _PggcmidBuild(void);
-    PGL _Pglbmat34Build(long tda);
+    GLPtr<BMAT34> _Pglbmat34Build(long tda);
     PGG _PggcelBuild(long tda);
     virtual PACTN _PactnFetch(long tda);
     PACTN _PactnBuild(long tda);
@@ -99,7 +99,7 @@ class TDT : public TDT_PAR
 
     static PTDT PtdtNew(PSTN pstn, long tdts, PTAG ptagTdf);
     ~TDT(void);
-    static PGL PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError);
+    static GLPtr<TAG> PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError);
     PTDT PtdtDup(void);
 
     void GetInfo(PSTN pstn, long *ptdts, PTAG ptagTdf);

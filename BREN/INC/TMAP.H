@@ -89,7 +89,7 @@ class TMAP : public TMAP_PAR
     }
 
     //	Reads a .bmp file.
-    static PTMAP PtmapReadNative(FNI *pfni, PGL pglclr = pvNil);
+    static PTMAP PtmapReadNative(FNI *pfni, GLPtr<CLR> pglclr = GLPtr<CLR>());
 
     // Writes a standalone TMAP-chunk file (not a .chk)
     bool FWriteTmapChkFile(PFNI pfniDst, bool fCompress, PMSNK pmsnkErr = pvNil);

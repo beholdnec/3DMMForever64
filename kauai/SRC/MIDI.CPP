@@ -407,7 +407,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
     long imidtr, imidtrMin;
     ulong tsMin;
     PMIDS pmids = pvNil;
-    PGL pglmidtr = pvNil;
+    GLPtr<MIDTR> pglmidtr;
 
     // open the file and set up the source flo
     if (pvNil == (flo.pfil = FIL::PfilOpen(pfni)))
@@ -431,7 +431,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
     }
 
     // allocate the list of tracks to parse
-    if (pvNil == (pglmidtr = GL::PglNew(size(MIDTR))))
+    if (!(pglmidtr = GLPtr<MIDTR>::New()))
         goto LFail;
 
     // build the track list...
@@ -481,7 +481,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
         }
 
         // add the track to the list
-        if (!pglmidtr->FAdd(&midtr))
+        if (!pglmidtr.FAdd(&midtr))
         {
             ReleasePpo(&midtr.pmstp);
             goto LFail;
@@ -534,7 +534,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
     if (fSeq)
     {
         imidtrMin = 0;
-        pglmidtr->Get(0, &midtr);
+        pglmidtr->Get(0, BlobPtr::Make(midtr));
     }
 
     for (;;)
@@ -546,7 +546,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             tsMin = kluMax;
             for (imidtr = 0; imidtr < pglmidtr->IvMac(); imidtr++)
             {
-                pglmidtr->Get(imidtr, &midtr);
+                pglmidtr->Get(imidtr, BlobPtr::Make(midtr));
                 if (midtr.midevCur.ts < tsMin)
                 {
                     tsMin = midtr.midevCur.ts;
@@ -555,7 +555,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             }
 
             Assert(imidtrMin != ivNil, 0);
-            pglmidtr->Get(imidtrMin, &midtr);
+            pglmidtr->Get(imidtrMin, BlobPtr::Make(midtr));
         }
 
         // get the time of this event
@@ -595,7 +595,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
         if (midtr.pmstp->FGetEvent(&midtr.midevCur))
         {
             if (!fSeq)
-                pglmidtr->Put(imidtrMin, &midtr);
+                pglmidtr->Put(imidtrMin, BlobPtr::Make(midtr));
         }
         else
         {
@@ -608,7 +608,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
             {
                 tsTempo = tsLast;
                 tsRawTempo = 0;
-                pglmidtr->Get(0, &midtr);
+                pglmidtr->Get(0, BlobPtr::Make(midtr));
             }
         }
     }
@@ -626,11 +626,11 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
 
     // clean up stuff
     ReleasePpo(&flo.pfil);
-    if (pvNil != pglmidtr)
+    if (pglmidtr)
     {
-        while (pglmidtr->FPop(&midtr))
+        while (pglmidtr->FPop(BlobPtr::Make(midtr)))
             ReleasePpo(&midtr.pmstp);
-        ReleasePpo(&pglmidtr);
+        pglmidtr.Release();
     }
 
     AssertNilOrPo(pmids, 0);

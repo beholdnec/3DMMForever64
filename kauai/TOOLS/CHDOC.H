@@ -336,7 +336,7 @@ class SEL : public SEL_PAR
     KID _kid;
     long _ln;
     long _lnLim;         // this is lnNil if we haven't yet calculated the lim
-    PGL _pglctg;         // the ctgs to filter on
+    GLPtr<CTG> _pglctg;         // the ctgs to filter on
     bool _fHideList : 1; // whether to hide the ctgs in the list or show them
     bool _fHideKids : 1; // whether to hide the kids
 

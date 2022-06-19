@@ -177,7 +177,7 @@ PACTR ACTR::PactrRead(PCRF pcrf, CNO cnoActr)
         goto LFail;
     if (!pactr->_FOpenTags(pcrf))
         goto LFail;
-    if (pvNil == (pactr->_pglsmm = GL::PglNew(size(SMM), kcsmmGrow)))
+    if (!(pactr->_pglsmm = GLPtr<SMM>::New(kcsmmGrow)))
         goto LFail;
     pactr->_pglsmm->SetMinGrow(kcsmmGrow);
 
@@ -324,8 +324,8 @@ bool ACTR::_FReadRoute(PCFL pcfl, CNO cno)
 
     if (!pcfl->FFind(kctgPath, cno, &blck))
         return fFalse;
-    _pglrpt = GL::PglRead(&blck, &bo);
-    if (pvNil == _pglrpt)
+    _pglrpt = GLPtr<RPT>::Read(&blck, &bo);
+    if (!_pglrpt)
         return fFalse;
     AssertBomRglw(kbomRpt, size(RPT));
     if (kboOther == bo)
@@ -478,7 +478,7 @@ void ACTR::_CloseTags(void)
 /***************************************************************************
     Get all the tags that the actor uses
 ***************************************************************************/
-PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
+GLPtr<TAG> ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
 {
     AssertPo(pcfl, 0);
     AssertVarMem(pfError);
@@ -487,13 +487,13 @@ PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
     BLCK blck;
     short bo;
     PTAG ptag;
-    PGL pgltag;
+    GLPtr<TAG> pgltag;
     PGG pggaev = pvNil;
     long iaev;
     KID kid;
 
-    pgltag = GL::PglNew(size(TAG), 0);
-    if (pvNil == pgltag)
+    pgltag = GLPtr<TAG>::New(0);
+    if (!pgltag)
         goto LFail;
 
     // Read the ACTF so we can insert tagTmpl:
@@ -502,7 +502,7 @@ PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
 
     if (actf.tagTmpl.sid == ksidUseCrf)
     {
-        PGL pgltagTmpl;
+        GLPtr<TAG> pgltagTmpl;
 
         // Actor is a TDT.  Tag might be wrong if this actor was imported,
         // so look for child TMPL.
@@ -518,28 +518,28 @@ PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
         pgltagTmpl = TMPL::PgltagFetch(pcfl, actf.tagTmpl.ctg, actf.tagTmpl.cno, pfError);
         if (*pfError)
         {
-            ReleasePpo(&pgltagTmpl);
+            pgltagTmpl.Release();
             goto LFail;
         }
-        if (pvNil != pgltagTmpl)
+        if (pgltagTmpl)
         {
             long itag;
             TAG tag;
 
             for (itag = 0; itag < pgltagTmpl->IvMac(); itag++)
             {
-                pgltagTmpl->Get(itag, &tag);
-                if (!pgltag->FAdd(&tag))
+                pgltagTmpl.Get(itag, &tag);
+                if (!pgltag.FAdd(&tag))
                 {
-                    ReleasePpo(&pgltagTmpl);
+                    pgltagTmpl.Release();
                     goto LFail;
                 }
             }
-            ReleasePpo(&pgltagTmpl);
+            pgltagTmpl.Release();
         }
     }
 
-    if (!pgltag->FInsert(0, &actf.tagTmpl))
+    if (!pgltag.FInsert(0, &actf.tagTmpl))
         goto LFail;
 
     // Pull all tags out of the event list:
@@ -557,7 +557,7 @@ PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
     {
         if (_FIsIaevTag(pggaev, iaev, &ptag))
         {
-            if (!pgltag->FAdd(ptag))
+            if (!pgltag.FAdd(ptag))
             {
                 pggaev->Unlock();
                 goto LFail;
@@ -570,9 +570,9 @@ PGL ACTR::PgltagFetch(PCFL pcfl, CNO cno, bool *pfError)
     return pgltag;
 LFail:
     *pfError = fTrue;
-    ReleasePpo(&pgltag);
+    pgltag.Release();
     ReleasePpo(&pggaev);
-    return pvNil;
+    return GLPtr<TAG>();
 }
 
 /***************************************************************************

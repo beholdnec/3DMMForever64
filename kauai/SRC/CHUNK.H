@@ -80,7 +80,7 @@ class CFL : public CFL_PAR
     {
         PFIL pfil;  // the file
         FP fpMac;   // logical end of file (for writing new chunks)
-        PGL pglfsm; // free space map
+        GLPtr<struct FSM> pglfsm; // free space map
     };
 
     PGG _pggcrp;     // the index
@@ -105,7 +105,7 @@ class CFL : public CFL_PAR
         long rti;
     };
 
-    PGL _pglrtie;
+    GLPtr<RTIE> _pglrtie;
 
     bool _FFindRtie(CTG ctg, CNO cno, RTIE *prtie = pvNil, long *pirtie = pvNil);
 #endif //! CHUNK_BIG_INDEX
@@ -309,7 +309,7 @@ class CGE : public CGE_PAR
 
     long _es;    // current state
     PCFL _pcfl;  // the chunky file
-    PGL _pgldps; // our stack of DPSs
+    GLPtr<DPS> _pgldps; // our stack of DPSs
     DPS _dps;    // the current DPS
 
   public:

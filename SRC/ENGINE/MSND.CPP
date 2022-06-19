@@ -714,7 +714,7 @@ PMSQ MSQ::PmsqNew(void)
     if (pvNil == (pmsq = NewObj MSQ(khidMsq)))
         return pvNil;
 
-    if (pvNil == (pmsq->_pglsqe = GL::PglNew(size(SQE), kcsqeGrow)))
+    if (!(pmsq->_pglsqe = GLPtr<SQE>::New(kcsqeGrow)))
     {
         ReleasePpo(&pmsq);
         return pvNil;
@@ -781,13 +781,13 @@ bool MSQ::FEnqueue(PMSND pmsnd, long objID, bool fLoop, bool fQueue, long vlm, l
 
     if (fLowPri)
     {
-        if (!_pglsqe->FPush(&sqe))
+        if (!_pglsqe.FPush(&sqe))
         {
             ReleasePpo(&sqe.pmsnd);
             return fFalse;
         }
     }
-    else if (!_pglsqe->FEnqueue(&sqe))
+    else if (!_pglsqe.FEnqueue(&sqe))
     {
         ReleasePpo(&sqe.pmsnd);
         return fFalse;
@@ -821,7 +821,7 @@ void MSQ::PlayMsq(void)
     {
         vpsndm->BeginSynch();
 
-        while (_pglsqe->FDequeue(&sqe))
+        while (_pglsqe.FDequeue(&sqe))
         {
             sqe.pmsnd->Play(sqe.objID, sqe.fLoop, sqe.fQueue, sqe.vlmMod, sqe.spr, sqe.fActr, sqe.dtsStart);
             ReleasePpo(&sqe.pmsnd);
@@ -853,7 +853,7 @@ void MSQ::FlushMsq(void)
     AssertThis(0);
     SQE sqe;
 
-    while (_pglsqe->FDequeue(&sqe))
+    while (_pglsqe.FDequeue(&sqe))
     {
         ReleasePpo(&sqe.pmsnd);
     }
@@ -884,7 +884,7 @@ MSQ::~MSQ(void)
     AssertBaseThis(0);
     StopAll();
     FlushMsq();
-    ReleasePpo(&_pglsqe);
+    _pglsqe.Release();
     ReleasePpo(&_pclok);
 }
 

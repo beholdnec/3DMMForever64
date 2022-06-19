@@ -93,8 +93,8 @@ class APP : public APP_PAR
     PSTDIO _pstdio;               // Current studio
     PTATR _ptatr;                 // Current theater
     PCRM _pcrmAll;                // The app CRM -- all crfs are loaded into this.
-    PGL _pglicrfBuilding;         // List of crfs in _pcrmAll belonging to Building.
-    PGL _pglicrfStudio;           // List of crfs in _pcrmAll belonging to Studio.
+    GLPtr<long> _pglicrfBuilding;         // List of crfs in _pcrmAll belonging to Building.
+    GLPtr<long> _pglicrfStudio;           // List of crfs in _pcrmAll belonging to Studio.
     bool _fDontMinimize : 1,      // "/M" command-line switch
         _fSlowCPU : 1,            // running on slow CPU
         _fSwitchedResolution : 1, // we successfully switched to 640x480 mode
@@ -178,7 +178,7 @@ class APP : public APP_PAR
     bool _FReadStringTables(void);
     bool _FSetWindowTitle(void);
     bool _FInitCrm(void);
-    bool _FAddToCrm(PGST pgstFiles, PCRM pcrm, PGL pglFiles);
+    bool _FAddToCrm(PGST pgstFiles, PCRM pcrm, GLPtr<long> pglFiles);
     bool _FInitBuilding(void);
     bool _FInitStudio(PFNI pfniUserDoc, bool fFailIfDocOpenFailed = fTrue);
     void _GetWindowProps(long *pxp, long *pyp, long *pdxp, long *pdyp, DWORD *pdwStyle);

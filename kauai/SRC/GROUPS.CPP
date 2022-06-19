@@ -315,23 +315,27 @@ BlobPtr GLB::QvGet(long iv)
 /***************************************************************************
     Get the data for the iv'th element in the GLB.
 ***************************************************************************/
-void GLB::Get(long iv, void *pv)
+void GLB::Get(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
-    AssertPvCb(pv, _cbEntry);
-    CopyPb(QvGet(iv).Ptr(), pv, _cbEntry);
+    AssertPvCb(pv.Ptr(), _cbEntry);
+    Assert(pv.Size() <= _cbEntry, "getting too many bytes");
+    //CopyPb(QvGet(iv).Ptr(), pv, _cbEntry);
+    CopyPb(QvGet(iv).Ptr(), pv.Ptr(), pv.Size());
 }
 
 /***************************************************************************
     Put data into the iv'th element in the GLB.
 ***************************************************************************/
-void GLB::Put(long iv, void *pv)
+void GLB::Put(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
-    AssertPvCb(pv, _cbEntry);
-    CopyPb(pv, QvGet(iv).Ptr(), _cbEntry);
+    AssertPvCb(pv.Ptr(), _cbEntry);
+    Assert(pv.Size() <= _cbEntry, "put too many bytes");
+    //CopyPb(pv, QvGet(iv).Ptr(), _cbEntry);
+    CopyPb(pv.Ptr(), QvGet(iv).Ptr(), pv.Size());
     AssertThis(0);
 }
 
@@ -556,12 +560,13 @@ LFail:
 /***************************************************************************
     Insert some items into a list at position iv.  iv should be <= IvMac().
 ***************************************************************************/
-bool GL::FInsert(long iv, void *pv, long cv)
+bool GL::FInsert(long iv, BlobPtr pv, long cv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac + 1);
     AssertIn(cv, 1, kcbMax);
-    AssertNilOrPvCb(pv, LwMul(cv, _cbEntry));
+    AssertNilOrPvCb(pv.Ptr(), LwMul(cv, _cbEntry));
+    Assert(pv.Size() >= _cbEntry * cv, "not enough data to insert");
 
     byte *qb;
     long cbTot, cbIns, ibIns;
@@ -575,8 +580,8 @@ bool GL::FInsert(long iv, void *pv, long cv)
     qb = _Qb1(ibIns);
     if (iv < _ivMac)
         BltPb(qb, qb + cbIns, cbTot - cbIns - ibIns);
-    if (pvNil != pv)
-        CopyPb(pv, qb, cbIns);
+    if (pv)
+        CopyPb(pv.Ptr(), qb, cbIns);
     _ivMac += cv;
 
     AssertThis(0);
@@ -634,7 +639,7 @@ void GL::Move(long ivSrc, long ivTarget)
     Add an element to the end of the list.  Returns the location in *piv.
     On failure, returns false and *piv is undefined.
 ***************************************************************************/
-bool GL::FAdd(void *pv, long *piv)
+bool GL::FAdd(BlobPtr pv, long *piv)
 {
     AssertThis(0);
     AssertNilOrVarMem(piv);
@@ -652,17 +657,17 @@ bool GL::FAdd(void *pv, long *piv)
 /***************************************************************************
     Stack operation.  Returns fFalse on stack underflow.
 ***************************************************************************/
-bool GL::FPop(void *pv)
+bool GL::FPop(BlobPtr pv)
 {
     AssertThis(0);
-    AssertNilOrPvCb(pv, _cbEntry);
+    AssertNilOrPvCb(pv.Ptr(), _cbEntry);
 
     if (_ivMac == 0)
     {
-        TrashPvCb(pv, _cbEntry);
+        TrashPvCb(pv.Ptr(), _cbEntry);
         return fFalse;
     }
-    if (pv != pvNil)
+    if (pv)
         Get(_ivMac - 1, pv);
     _ivMac--;
     TrashPvCb(_Qb1(LwMul(_ivMac, _cbEntry)), _cbEntry);
@@ -953,10 +958,10 @@ bool AL::FEnsureSpace(long cvAdd, ulong grfgrp)
 /***************************************************************************
     Add an element to the list.
 ***************************************************************************/
-bool AL::FAdd(void *pv, long *piv)
+bool AL::FAdd(BlobPtr pv, long *piv)
 {
     AssertThis(fobjAssertFull);
-    AssertPvCb(pv, _cbEntry);
+    AssertPvCb(pv.Ptr(), _cbEntry);
     AssertNilOrVarMem(piv);
 
     long iv;

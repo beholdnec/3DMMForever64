@@ -72,7 +72,7 @@ RTCLASS(TMPL)
 /***************************************************************************
     Create a new action
 ***************************************************************************/
-PACTN ACTN::PactnNew(PGG pggcel, PGL pglbmat34, ulong grfactn)
+PACTN ACTN::PactnNew(PGG pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn)
 {
     AssertPo(pggcel, 0);
     AssertPo(pglbmat34, 0);
@@ -90,8 +90,8 @@ PACTN ACTN::PactnNew(PGG pggcel, PGL pglbmat34, ulong grfactn)
         goto LFail;
 
     // Duplicate pglbmat34 into pactn->_pglbmat34
-    pactn->_pglbmat34 = pglbmat34->PglDup();
-    if (pvNil == pactn->_pglbmat34)
+    pactn->_pglbmat34 = pglbmat34.Dup();
+    if (!pactn->_pglbmat34)
         goto LFail;
 
     AssertPo(pactn, 0);
@@ -186,8 +186,8 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
         return fFalse;
-    _pglbmat34 = GL::PglRead(&blck, &bo);
-    if (pvNil == _pglbmat34)
+    _pglbmat34 = GLPtr<BMAT34>::Read(&blck, &bo);
+    if (!_pglbmat34)
         return fFalse;
     AssertBomRglw(kbomBmat34, size(BMAT34));
     if (kboOther == bo)
@@ -200,8 +200,8 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     {
         if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
             return fFalse;
-        _pgltagSnd = GL::PglRead(&blck, &bo);
-        if (pvNil == _pgltagSnd)
+        _pgltagSnd = GLPtr<TAG>::Read(&blck, &bo);
+        if (!_pgltagSnd)
             return fFalse;
         AssertBomRglw(kbomTag, size(TAG));
         if (kboOther == bo)
@@ -220,7 +220,7 @@ ACTN::~ACTN(void)
 {
     AssertBaseThis(0);
     ReleasePpo(&_pggcel);
-    ReleasePpo(&_pglbmat34);
+    _pglbmat34.Release();
 }
 
 /***************************************************************************
@@ -262,11 +262,11 @@ void ACTN::GetSnd(long icel, PTAG ptag)
     CEL cel;
 
     ptag->ctg = ctgNil;
-    if (pvNil != _pgltagSnd)
+    if (_pgltagSnd)
     {
         GetCel(icel, &cel);
         if (cel.chidSnd >= 0) // negative means no sound
-            _pgltagSnd->Get(cel.chidSnd, ptag);
+            _pgltagSnd.Get(cel.chidSnd, ptag);
     }
 }
 
@@ -279,7 +279,7 @@ void ACTN::GetMatrix(long imat34, BMAT34 *pbmat34)
     AssertIn(imat34, 0, _pglbmat34->IvMac());
     AssertVarMem(pbmat34);
 
-    _pglbmat34->Get(imat34, pbmat34);
+    _pglbmat34.Get(imat34, pbmat34);
 }
 
 #ifdef DEBUG
@@ -432,8 +432,8 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
         return fFalse;
-    _pglibactPar = GL::PglRead(&blck, &bo);
-    if (pvNil == _pglibactPar)
+    _pglibactPar = GLPtr<short>::Read(&blck, &bo);
+    if (!_pglibactPar)
         return fFalse;
     Assert(_pglibactPar->CbEntry() == size(short), "Bad _pglibactPar!");
     if (kboOther == bo)
@@ -444,8 +444,8 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
         return fFalse;
-    _pglibset = GL::PglRead(&blck, &bo);
-    if (pvNil == _pglibset)
+    _pglibset = GLPtr<short>::Read(&blck, &bo);
+    if (!_pglibset)
         return fFalse;
     Assert(_pglibset->CbEntry() == size(short), "Bad TMPL _pglibset!");
     if (kboOther == bo)
@@ -461,7 +461,7 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     _cbset = -1;
     for (ibact = 0; ibact < _pglibset->IvMac(); ibact++)
     {
-        _pglibset->Get(ibact, &ibset);
+        _pglibset.Get(ibact, &ibset);
         if (ibset > _cbset)
             _cbset = ibset;
     }
@@ -557,8 +557,8 @@ LBuildGgcm:
 TMPL::~TMPL(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pglibactPar);
-    ReleasePpo(&_pglibset);
+    _pglibactPar.Release();
+    _pglibset.Release();
     ReleasePpo(&_pggcmid);
 }
 
@@ -567,7 +567,7 @@ TMPL::~TMPL(void)
     return value of pvNil does not mean an error occurred, but simply that
     this TMPL has no embedded tags.
 ***************************************************************************/
-PGL TMPL::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
+GLPtr<TAG> TMPL::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
 {
     AssertPo(pcfl, 0);
     AssertVarMem(pfError);
@@ -578,7 +578,7 @@ PGL TMPL::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
     if (pcfl->FGetKidChidCtg(ctg, cno, 0, kctgTdt, &kid))
         return TDT::PgltagFetch(pcfl, ctg, cno, pfError);
     else
-        return pvNil; // standard TMPLs have no embedded tags
+        return {}; // standard TMPLs have no embedded tags
 }
 
 /***************************************************************************

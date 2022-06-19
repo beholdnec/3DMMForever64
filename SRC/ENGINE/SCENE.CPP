@@ -527,14 +527,14 @@ PSCEN SCEN::PscenNew(PMVIE pmvie)
         goto LFail;
     }
 
-    pscen->_pglpactr = GL::PglNew(size(PACTR), 0);
-    if (pscen->_pglpactr == pvNil)
+    pscen->_pglpactr = GLPtr<PACTR>::New(0);
+    if (!pscen->_pglpactr)
     {
         goto LFail;
     }
 
-    pscen->_pglptbox = GL::PglNew(size(PTBOX), 0);
-    if (pscen->_pglptbox == pvNil)
+    pscen->_pglptbox = GLPtr<PTBOX>::New(0);
+    if (!pscen->_pglptbox)
     {
         goto LFail;
     }
@@ -665,14 +665,14 @@ SCEN::~SCEN(void)
     // themselves as our reference was released above in the
     // the _pggsevStart.
     //
-    ReleasePpo(&_pglpactr);
+    _pglpactr.Release();
 
     //
     // Remove the GL of tboxes.  We do not Release the tboxes
     // themselves as our reference was released above in the
     // the _pggsevStart.
     //
-    ReleasePpo(&_pglptbox);
+    _pglptbox.Release();
 
     //
     // Release the background
@@ -750,13 +750,13 @@ void SCEN::MarkMem(void)
 
     for (iactr = 0; iactr < _pglpactr->IvMac(); iactr++)
     {
-        _pglpactr->Get(iactr, &pactr);
+        _pglpactr.Get(iactr, &pactr);
         MarkMemObj(pactr);
     }
 
     for (itbox = 0; itbox < _pglptbox->IvMac(); itbox++)
     {
-        _pglptbox->Get(itbox, &ptbox);
+        _pglptbox.Get(itbox, &ptbox);
         MarkMemObj(ptbox);
     }
 
@@ -1136,7 +1136,7 @@ void SCEN::_DoPrerenderingWork(bool fStartNow)
     cactrPrerendered = 0;
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (pactr->FMustRender(nfrmNextChange))
         {
             pactr->Hide();
@@ -1163,7 +1163,7 @@ void SCEN::_DoPrerenderingWork(bool fStartNow)
     // actors.
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (pactr->FMustRender(nfrmNextChange))
         {
             pactr->Show();
@@ -1206,7 +1206,7 @@ void SCEN::_EndPrerendering(void)
     Pmvie()->Pbwld()->Unprerender();
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (pactr->FPrerendered())
         {
             pactr->Show();
@@ -1261,7 +1261,7 @@ bool SCEN::FReplayFrm(ulong grfscen)
 
         for (iactr = 0; iactr < _pglpactr->IvMac(); iactr++)
         {
-            _pglpactr->Get(iactr, &pactr);
+            _pglpactr.Get(iactr, &pactr);
             AssertPo(pactr, 0);
 
             if (!pactr->FReplayFrame(grfscen))
@@ -1296,7 +1296,7 @@ void SCEN::InvalFrmRange(void)
 
     for (ipo = 0; ipo < _pglpactr->IvMac(); ipo++)
     {
-        _pglpactr->Get(ipo, &pactr);
+        _pglpactr.Get(ipo, &pactr);
 
         if (pactr->FGetLifetime(&nfrmStart, &nfrmLast))
         {
@@ -1315,7 +1315,7 @@ void SCEN::InvalFrmRange(void)
 
     for (ipo = 0; ipo < _pglptbox->IvMac(); ipo++)
     {
-        _pglptbox->Get(ipo, &ptbox);
+        _pglptbox.Get(ipo, &ptbox);
 
         if (ptbox->FGetLifetime(&nfrmStart, &nfrmLast))
         {
@@ -1418,7 +1418,7 @@ bool SCEN::_FPlaySev(PSEV psev, void *qvVar, ulong grfscen)
 
         AssertPo(pactr, 0);
 
-        if (_pglpactr->FPush(&pactr) == fFalse)
+        if (_pglpactr.FPush(&pactr) == fFalse)
         {
             return (fFalse);
         }
@@ -1430,7 +1430,7 @@ bool SCEN::_FPlaySev(PSEV psev, void *qvVar, ulong grfscen)
         //
         if (!pactr->FGotoFrame(_nfrmCur))
         {
-            _pglpactr->FPop(&pactr);
+            _pglpactr.FPop(&pactr);
             return (fFalse);
         }
 
@@ -1463,7 +1463,7 @@ bool SCEN::_FPlaySev(PSEV psev, void *qvVar, ulong grfscen)
         // Insert at the end, because tbox ordering is important
         // since the client uses itbox to find text boxes.
         //
-        if (!_pglptbox->FInsert(_pglptbox->IvMac(), &ptbox))
+        if (!_pglptbox.FInsert(_pglptbox->IvMac(), &ptbox))
         {
             return (fFalse);
         }
@@ -2228,7 +2228,7 @@ void SCEN::PlayBkgdSnd(void)
  *  fFalse if an error occurs
  *
  ****************************************************/
-bool SCEN::FQuerySnd(long sty, PGL *ppgltagSnd, long *pvlm, bool *pfLoop)
+bool SCEN::FQuerySnd(long sty, GLPtr<TAG> *ppgltagSnd, long *pvlm, bool *pfLoop)
 {
     AssertThis(0);
     AssertVarMem(ppgltagSnd);
@@ -2239,7 +2239,7 @@ bool SCEN::FQuerySnd(long sty, PGL *ppgltagSnd, long *pvlm, bool *pfLoop)
     bool fFound;
     long itag;
 
-    *ppgltagSnd = pvNil;
+    *ppgltagSnd = GLPtr<TAG>();
 
     if (!FGetSnd(sty, &fFound, &psse))
     {
@@ -2249,8 +2249,8 @@ bool SCEN::FQuerySnd(long sty, PGL *ppgltagSnd, long *pvlm, bool *pfLoop)
     {
         return fTrue; // no sounds (*ppglTagSnd is nil)
     }
-    *ppgltagSnd = GL::PglNew(size(TAG), psse->ctagc);
-    if (pvNil == *ppgltagSnd)
+    *ppgltagSnd = GLPtr<TAG>::New(psse->ctagc);
+    if (!*ppgltagSnd)
     {
         ReleasePpsse(&psse);
         return fFalse;
@@ -2258,7 +2258,7 @@ bool SCEN::FQuerySnd(long sty, PGL *ppgltagSnd, long *pvlm, bool *pfLoop)
     AssertDo((*ppgltagSnd)->FSetIvMac(psse->ctagc), "PglNew should have ensured space");
     for (itag = 0; itag < psse->ctagc; itag++)
     {
-        (*ppgltagSnd)->Put(itag, psse->Ptag(itag));
+        (*ppgltagSnd).Put(itag, psse->Ptag(itag));
     }
     *pvlm = psse->vlm;
     *pfLoop = psse->fLoop;
@@ -2354,7 +2354,7 @@ void SCEN::UpdateSndFrame(void)
     {
         PACTR pactr;
 
-        _pglpactr->Get(iv, &pactr);
+        _pglpactr.Get(iv, &pactr);
         AssertPo(pactr, 0);
 
         if (pactr->FSoundInFrm())
@@ -2554,7 +2554,7 @@ bool SCEN::FAddActrCore(ACTR *pactr)
         //
         for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
         {
-            _pglpactr->Get(ipactr, &pactrOld);
+            _pglpactr.Get(ipactr, &pactrOld);
 
             if (pactrOld->Arid() == pactr->Arid())
             {
@@ -2575,7 +2575,7 @@ bool SCEN::FAddActrCore(ACTR *pactr)
                 // Replace starting actor
                 //
                 _pggsevStart->Put(isev, &pactr);
-                _pglpactr->Put(ipactr, &pactr);
+                _pglpactr.Put(ipactr, &pactr);
 
                 SelectActr(pactr);
                 pactrOld->Hide();
@@ -2713,7 +2713,7 @@ void SCEN::RemActrCore(long arid)
         //
         for (isev = 0; isev < _pglpactr->IvMac(); isev++)
         {
-            _pglpactr->Get(isev, &pactrTmp);
+            _pglpactr.Get(isev, &pactrTmp);
 
             if (pactrTmp->Arid() != arid)
             {
@@ -2786,7 +2786,7 @@ bool SCEN::FRemActr(long arid)
     //
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (pactr->Arid() == arid)
         {
             break;
@@ -2852,7 +2852,7 @@ ACTR *SCEN::PactrFromPt(long xp, long yp, long *pibset)
     //
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (pactr->FIsMyBody(pbody))
         {
             return pactr;
@@ -3152,7 +3152,7 @@ TBOX *SCEN::PtboxFromItbox(long itbox)
     for (ipo = 0; ipo < _pglptbox->IvMac(); ipo++)
     {
 
-        _pglptbox->Get(ipo, &ptbox);
+        _pglptbox.Get(ipo, &ptbox);
 
         itbox--;
         if (itbox == -1)
@@ -3814,8 +3814,8 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
     //
     // Initialize roll call	for actors
     //
-    pscen->_pglpactr = GL::PglNew(size(PACTR), 0);
-    if (pscen->_pglpactr == pvNil)
+    pscen->_pglpactr = GLPtr<PACTR>::New(0);
+    if (!pscen->_pglpactr)
     {
         goto LFail0;
     }
@@ -3823,8 +3823,8 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
     //
     // Initialize roll call	for text boxes
     //
-    pscen->_pglptbox = GL::PglNew(size(PTBOX), 0);
-    if (pscen->_pglptbox == pvNil)
+    pscen->_pglptbox = GLPtr<PTBOX>::New(0);
+    if (!pscen->_pglptbox)
     {
         goto LFail0;
     }
@@ -4518,7 +4518,7 @@ bool SCEN::FResolveAllSndTags(CNO cnoScen)
     {
         PACTR pactr;
 
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (!pactr->FResolveAllSndTags(cnoScen))
             goto LFail;
     }
@@ -4575,7 +4575,7 @@ void SCEN::RemActrsFromRollCall(bool fDelIfOnlyRef)
 
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         Pmvie()->RemFromRollCall(pactr, fDelIfOnlyRef);
     }
 }
@@ -4601,8 +4601,7 @@ bool SCEN::FAddActrsToRollCall(void)
 
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         AssertPo(pactr, 0);
         pactr->GetName(&stn);
 
@@ -4612,7 +4611,7 @@ bool SCEN::FAddActrsToRollCall(void)
             for (; ipactr > 0;)
             {
                 ipactr--;
-                _pglpactr->Get(ipactr, &pactr);
+                _pglpactr.Get(ipactr, &pactr);
                 Pmvie()->RemFromRollCall(pactr);
             }
 
@@ -4879,7 +4878,7 @@ bool SCEN::_FForceActorsToFrm(long nfrm, bool *pfSoundInFrame)
 
     for (iactr = 0; iactr < _pglpactr->IvMac(); iactr++)
     {
-        _pglpactr->Get(iactr, &pactr);
+        _pglpactr.Get(iactr, &pactr);
         AssertPo(pactr, 0);
 
         if (!pactr->FGotoFrame(nfrm, pfSoundInFrame))
@@ -4912,7 +4911,7 @@ bool SCEN::_FForceTboxesToFrm(long nfrm)
 
     for (itbox = 0; itbox < _pglptbox->IvMac(); itbox++)
     {
-        _pglptbox->Get(itbox, &ptbox);
+        _pglptbox.Get(itbox, &ptbox);
         AssertPo(ptbox, 0);
 
         if (!ptbox->FGotoFrame(nfrm))
@@ -4945,7 +4944,7 @@ void SCEN::HideTboxes(void)
 
     for (iptbox = 0; iptbox < _pglptbox->IvMac(); iptbox++)
     {
-        _pglptbox->Get(iptbox, &ptbox);
+        _pglptbox.Get(iptbox, &ptbox);
         AssertPo(ptbox, 0);
         if (ptbox->FGetLifetime(&nfrmStart, &nfrmLast))
         {
@@ -4973,7 +4972,7 @@ void SCEN::HideActors(void)
 
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         AssertPo(pactr, 0);
         pactr->Hide();
     }
@@ -4998,7 +4997,7 @@ void SCEN::ShowActors(void)
 
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         AssertPo(pactr, 0);
         pactr->Show();
     }
@@ -5071,7 +5070,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
     PGG pggsev;
     TAG tag;
     TAG tagBkgd;
-    PGL pgltagSrc;
+    GLPtr<TAG> pgltagSrc;
     TAG tagSrc;
     long itagSrc;
     CHID chid;
@@ -5140,26 +5139,26 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
 
                 if (fError)
                 {
-                    ReleasePpo(&pgltagSrc);
+                    pgltagSrc.Release();
                     ReleasePpo(&pggsev);
                     return fFalse;
                 }
 
-                if (pgltagSrc != pvNil)
+                if (pgltagSrc)
                 {
 
                     for (itagSrc = 0; itagSrc < pgltagSrc->IvMac(); itagSrc++)
                     {
-                        pgltagSrc->Get(itagSrc, &tagSrc);
+                        pgltagSrc.Get(itagSrc, &tagSrc);
                         if (!ptagl->FInsertTag(&tagSrc))
                         {
-                            ReleasePpo(&pgltagSrc);
+                            pgltagSrc.Release();
                             ReleasePpo(&pggsev);
                             return fFalse;
                         }
                     }
 
-                    ReleasePpo(&pgltagSrc);
+                    pgltagSrc.Release();
                 }
             }
             break;
@@ -5328,7 +5327,7 @@ PACTR SCEN::PactrFromArid(long arid)
     //
     for (iactr = 0; iactr < _pglpactr->IvMac(); iactr++)
     {
-        _pglpactr->Get(iactr, &pactr);
+        _pglpactr.Get(iactr, &pactr);
 
         if (pactr->Arid() == arid)
         {
@@ -5370,7 +5369,7 @@ bool SCEN::FChopCore()
     //
     for (ipo = 0; ipo < _pglpactr->IvMac();)
     {
-        _pglpactr->Get(ipo, &pactr);
+        _pglpactr.Get(ipo, &pactr);
         AssertPo(pactr, 0);
         pactr->DeleteFwdCore(fTrue, &fAlive);
 
@@ -5389,7 +5388,7 @@ bool SCEN::FChopCore()
     //
     for (ipo = 0; ipo < _pglptbox->IvMac();)
     {
-        _pglptbox->Get(ipo, &ptbox);
+        _pglptbox.Get(ipo, &ptbox);
         AssertPo(ptbox, 0);
 
         if (ptbox->FGetLifetime(&nfrmStart, &nfrmLast) && (nfrmStart > _nfrmCur))
@@ -5522,7 +5521,7 @@ bool SCEN::FChopBackCore()
     //
     for (ipo = 0; ipo < _pglpactr->IvMac();)
     {
-        _pglpactr->Get(ipo, &pactr);
+        _pglpactr.Get(ipo, &pactr);
         AssertPo(pactr, 0);
         pactr->DeleteBackCore(&fAlive);
 
@@ -5541,7 +5540,7 @@ bool SCEN::FChopBackCore()
     //
     for (ipo = 0; ipo < _pglptbox->IvMac();)
     {
-        _pglptbox->Get(ipo, &ptbox);
+        _pglptbox.Get(ipo, &ptbox);
         AssertPo(ptbox, 0);
 
         if (ptbox->FGetLifetime(&nfrmStart, &nfrmLast) && (nfrmLast < _nfrmCur))
@@ -5702,14 +5701,14 @@ bool SCEN::FStartPlaying()
     //
     for (ipactr = 0; ipactr < _pglpactr->IvMac(); ipactr++)
     {
-        _pglpactr->Get(ipactr, &pactr);
+        _pglpactr.Get(ipactr, &pactr);
         if (!pactr->FGetLifetime(&nfrmFirst, &nfrmLast))
             return fFalse;
     }
 
     for (iptbox = 0; iptbox < _pglptbox->IvMac(); iptbox++)
     {
-        _pglptbox->Get(iptbox, &ptbox);
+        _pglptbox.Get(iptbox, &ptbox);
         if ((ptbox->FStory() && ptbox->FIsVisible()) ||
             (!ptbox->FStory() && ptbox->FGetLifetime(&nfrmFirst, &nfrmLast) && (nfrmFirst == _nfrmCur)))
         {
@@ -5748,7 +5747,7 @@ void SCEN::StopPlaying()
 
     for (itbox = 0; itbox < _pglptbox->IvMac(); itbox++)
     {
-        _pglptbox->Get(itbox, &ptbox);
+        _pglptbox.Get(itbox, &ptbox);
         AssertPo(ptbox, 0);
         ptbox->CleanDdg();
     }

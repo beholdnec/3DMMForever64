@@ -501,7 +501,7 @@ TXTG::TXTG(PTXTB ptxtb, PGCB pgcb) : TXTG_PAR(ptxtb, pgcb)
 TXTG::~TXTG(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pgllin);
+    _pgllin.Release();
     ReleasePpo(&_pgnv);
 }
 
@@ -541,7 +541,7 @@ bool TXTG::_FInit(void)
 
     if (!TXTG_PAR::_FInit())
         return fFalse;
-    if (pvNil == (_pgllin = GL::PglNew(size(LIN))))
+    if (!(_pgllin = GLPtr<LIN>::New()))
         return fFalse;
 
     // Allocate the GNV for formatting. Use an offscreen one iff _fMark
@@ -666,7 +666,7 @@ void TXTG::_FetchLin(long ilin, LIN *plin, long *pilinActual)
     for (; ilinLim <= ilin && cpLim < cpMac; ilinLim++)
     {
         _CalcLine(cpLim, dypTot, plin);
-        fAdd = fAdd && _pgllin->FAdd(plin);
+        fAdd = fAdd && _pgllin.FAdd(plin);
         cpLim += plin->ccp;
         dypTot += plin->dyp;
     }
@@ -782,7 +782,7 @@ void TXTG::_FindCp(long cpFind, LIN *plin, long *pilin, bool fCalcLines)
     for (fAdd = fTrue; cpFind >= cpLim; ilinMac++)
     {
         _CalcLine(cpLim, dypTot, &lin);
-        fAdd = fAdd && _pgllin->FAdd(&lin);
+        fAdd = fAdd && _pgllin.FAdd(&lin);
         cpLim += lin.ccp;
         dypTot += lin.dyp;
     }
@@ -905,7 +905,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
         {
             // Get a valid lin.
             if (ilinMac > 0)
-                _pgllin->Get(ilinMac - 1, &lin);
+                _pgllin->Get(ilinMac - 1, BlobPtr::Make(lin));
             else
                 ClearPb(&lin, size(LIN));
         }
@@ -917,7 +917,7 @@ void TXTG::_FindDyp(long dypFind, LIN *plin, long *pilin, bool fCalcLines)
         for (fAdd = fTrue; dypFind >= dypTot && cpLim < cpMac; ilinMac++)
         {
             _CalcLine(cpLim, dypTot, &lin);
-            fAdd = fAdd && _pgllin->FAdd(&lin);
+            fAdd = fAdd && _pgllin.FAdd(&lin);
             cpLim += lin.ccp;
             dypTot += lin.dyp;
         }
@@ -987,7 +987,7 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
     _ilinInval = ilinOld;
     for (ccp = dypDel = 0; linOld.cpMin + ccp <= cp + ccpDel && ilinOld < _pgllin->IvMac();)
     {
-        _pgllin->Get(ilinOld, &lin);
+        _pgllin->Get(ilinOld, BlobPtr::Make(lin));
         dypDel += lin.dyp;
         ccp += lin.ccp;
         _pgllin->Delete(ilinOld);
@@ -1014,7 +1014,7 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
         AssertIn(dypCur, linOld.dypTot, kcbMax);
         while (cpNext < cpCur && ilin < _pgllin->IvMac())
         {
-            _pgllin->Get(ilin, &lin);
+            _pgllin->Get(ilin, BlobPtr::Make(lin));
             _pgllin->Delete(ilin);
             cpNext += lin.ccp;
             dypDel += lin.dyp;
@@ -1042,13 +1042,13 @@ void TXTG::_Reformat(long cp, long ccpIns, long ccpDel, long *pyp, long *pdypIns
         }
 
         _CalcLine(cpCur, dypCur, &lin);
-        if (!_pgllin->FInsert(ilin, &lin))
+        if (!_pgllin.FInsert(ilin, &lin))
         {
             AssertIn(ilin, 0, _pgllin->IvMac());
-            _pgllin->Get(ilin, &linT);
+            _pgllin->Get(ilin, BlobPtr::Make(linT));
             cpNext += linT.ccp;
             dypDel += linT.dyp;
-            _pgllin->Put(ilin, &lin);
+            _pgllin->Put(ilin, BlobPtr::Make(lin));
         }
 
         dypIns += lin.dyp;

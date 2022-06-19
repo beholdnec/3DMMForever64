@@ -90,11 +90,11 @@ void DOCB::Release(void)
     Assert(!_fFreeing, "we're recursing into the DOCB::Release!");
     _fFreeing = fTrue;
 
-    if (pvNil != _pglpundb)
+    if (_pglpundb)
     {
-        while (_pglpundb->FPop(&pundb))
+        while (_pglpundb.FPop(&pundb))
             ReleasePpo(&pundb);
-        ReleasePpo(&_pglpundb);
+        _pglpundb.Release();
         _ipundbLimDone = 0;
     }
 
@@ -121,7 +121,7 @@ void DOCB::CloseAllDdg(void)
     PDDG pddg;
     PDMD pdmd;
 
-    if (pvNil != _pglpddg)
+    if (_pglpddg)
     {
         // the pddg's are removed from _hplpddg in RemoveDdg
         // Note that freeing one DMD may end up nuking more than
@@ -131,7 +131,7 @@ void DOCB::CloseAllDdg(void)
         AddRef(); // so we aren't freed in the loop
         while (_pglpddg->IvMac() > 0)
         {
-            _pglpddg->Get(0, &pddg);
+            _pglpddg->Get(0, BlobPtr::Make(pddg));
             if (pvNil != (pdmd = pddg->Pdmd()))
                 ReleasePpo(&pdmd); // close the MDI window
             else
@@ -151,7 +151,7 @@ DOCB::~DOCB(void)
 
     Assert(_fFreeing, "Release not called first!");
     Assert(pvNil == _pdocbChd, "docb still has children");
-    Assert(pvNil == _pglpddg || _pglpddg->IvMac() == 0, "doc is still being displayed by a window");
+    Assert(!_pglpddg || _pglpddg->IvMac() == 0, "doc is still being displayed by a window");
 
     if (vpclip->FDocIsClip(this))
     {
@@ -172,8 +172,8 @@ DOCB::~DOCB(void)
         *ppdocb = _pdocbSib;
     else
         Bug("corrupt docb tree");
-
-    ReleasePpo(&_pglpddg);
+    
+    _pglpddg.Release();
 }
 
 /***************************************************************************
@@ -250,7 +250,7 @@ bool DOCB::FQueryCloseDmd(PDMD pdmd)
     PDMD pdmdT;
     long ipddg;
 
-    if (pvNil == _pglpddg || _pglpddg->IvMac() == 0)
+    if (!_pglpddg || _pglpddg->IvMac() == 0)
     {
         Bug("why are there no DDGs for this doc if there's a DMD?");
         return fTrue;
@@ -258,7 +258,7 @@ bool DOCB::FQueryCloseDmd(PDMD pdmd)
 
     for (ipddg = _pglpddg->IvMac(); ipddg-- != 0;)
     {
-        _pglpddg->Get(ipddg, &pddg);
+        _pglpddg->Get(ipddg, BlobPtr::Make(pddg));
         AssertBasePo(pddg, 0);
         pdmdT = pddg->Pdmd();
         if (pdmdT != pdmd && pdmdT != pvNil)
@@ -384,11 +384,11 @@ bool DOCB::FAddDdg(PDDG pddg)
     AssertPo(pddg, 0);
     bool fT;
 
-    if (pvNil == _pglpddg && pvNil == (_pglpddg = GL::PglNew(size(PDDG), 1)))
+    if (!_pglpddg && !(_pglpddg = GLPtr<PDDG>::New(1)))
     {
         return fFalse;
     }
-    fT = _pglpddg->FAdd(&pddg);
+    fT = _pglpddg.FAdd(&pddg);
     AssertThis(fobjAssertFull);
     return fT;
 }
@@ -403,13 +403,13 @@ bool DOCB::_FFindDdg(PDDG pddg, long *pipddg)
     long ipddg, cpddg;
     PDDG pddgT;
 
-    if (_pglpddg == pvNil)
+    if (!_pglpddg)
         goto LFail;
 
     cpddg = _pglpddg->IvMac();
     for (ipddg = 0; ipddg < cpddg; ipddg++)
     {
-        _pglpddg->Get(ipddg, &pddgT);
+        _pglpddg->Get(ipddg, BlobPtr::Make(pddgT));
         if (pddgT == pddg)
         {
             *pipddg = ipddg;
@@ -462,9 +462,9 @@ PDDG DOCB::PddgGet(long iddg)
     AssertIn(iddg, 0, klwMax);
     PDDG pddg;
 
-    if (pvNil == _pglpddg || iddg >= _pglpddg->IvMac())
+    if (!_pglpddg || iddg >= _pglpddg->IvMac())
         return pvNil;
-    _pglpddg->Get(iddg, &pddg);
+    _pglpddg.Get(iddg, &pddg);
     AssertPo(pddg, 0);
     return pddg;
 }
@@ -597,10 +597,10 @@ bool DOCB::FUndo()
     AssertThis(fobjAssertFull);
     PUNDB pundb;
 
-    if (pvNil == _pglpundb || _ipundbLimDone <= 0)
+    if (!_pglpundb || _ipundbLimDone <= 0)
         return fFalse;
 
-    _pglpundb->Get(_ipundbLimDone - 1, &pundb);
+    _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(pundb));
     if (!pundb->FUndo(this))
         return fFalse;
     _ipundbLimDone--;
@@ -615,10 +615,10 @@ bool DOCB::FRedo()
     AssertThis(fobjAssertFull);
     PUNDB pundb;
 
-    if (pvNil == _pglpundb || _ipundbLimDone >= _pglpundb->IvMac())
+    if (!_pglpundb || _ipundbLimDone >= _pglpundb->IvMac())
         return fFalse;
 
-    _pglpundb->Get(_ipundbLimDone, &pundb);
+    _pglpundb->Get(_ipundbLimDone, BlobPtr::Make(pundb));
     if (!pundb->FDo(this))
         return fFalse;
     _ipundbLimDone++;
@@ -639,7 +639,7 @@ bool DOCB::FAddUndo(PUNDB pundb)
     if (_cundbMax == 0)
         return fTrue;
 
-    if (pvNil == _pglpundb && pvNil == (_pglpundb = GL::PglNew(size(PUNDB), 1)))
+    if (!_pglpundb && !(_pglpundb = GLPtr<PUNDB>::New(1)))
     {
         return fFalse;
     }
@@ -647,14 +647,14 @@ bool DOCB::FAddUndo(PUNDB pundb)
     ClearRedo();
     if (_cundbMax <= _pglpundb->IvMac())
     {
-        _pglpundb->Get(0, &pundbT);
+        _pglpundb->Get(0, BlobPtr::Make(pundbT));
         _pglpundb->Delete(0);
         ReleasePpo(&pundbT);
     }
 
-    while (!(fRet = _pglpundb->FPush(&pundb)) && _pglpundb->IvMac() > 0)
+    while (!(fRet = _pglpundb.FPush(&pundb)) && _pglpundb->IvMac() > 0)
     {
-        _pglpundb->Get(0, &pundbT);
+        _pglpundb->Get(0, BlobPtr::Make(pundbT));
         _pglpundb->Delete(0);
         ReleasePpo(&pundbT);
     }
@@ -673,10 +673,10 @@ void DOCB::ClearUndo(void)
 {
     PUNDB pundb;
 
-    if (pvNil == _pglpundb)
+    if (!_pglpundb)
         return;
 
-    while (_pglpundb->FPop(&pundb))
+    while (_pglpundb.FPop(&pundb))
         ReleasePpo(&pundb);
     _ipundbLimDone = 0;
 }
@@ -688,12 +688,12 @@ void DOCB::ClearRedo(void)
 {
     PUNDB pundb;
 
-    if (pvNil == _pglpundb)
+    if (!_pglpundb)
         return;
 
     while (_ipundbLimDone < _pglpundb->IvMac())
     {
-        AssertDo(_pglpundb->FPop(&pundb), 0);
+        AssertDo(_pglpundb.FPop(&pundb), 0);
         ReleasePpo(&pundb);
     }
 }
@@ -709,20 +709,20 @@ void DOCB::SetCundbMax(long cundbMax)
     PUNDB pundb;
 
     _cundbMax = cundbMax;
-    if (pvNil == _pglpundb || _pglpundb->IvMac() <= cundbMax)
+    if (!_pglpundb || _pglpundb->IvMac() <= cundbMax)
         return;
 
     ipundbLimNew = LwMax(_ipundbLimDone, cundbMax);
     while (_pglpundb->IvMac() > ipundbLimNew)
     {
-        AssertDo(_pglpundb->FPop(&pundb), 0);
+        AssertDo(_pglpundb.FPop(&pundb), 0);
         ReleasePpo(&pundb);
     }
 
     while (_pglpundb->IvMac() > cundbMax)
     {
         Assert(_ipundbLimDone == _pglpundb->IvMac(), 0);
-        _pglpundb->Get(0, &pundb);
+        _pglpundb->Get(0, BlobPtr::Make(pundb));
         _pglpundb->Delete(0);
         _ipundbLimDone--;
         ReleasePpo(&pundb);
@@ -753,7 +753,7 @@ long DOCB::CundbUndo(void)
 ***************************************************************************/
 long DOCB::CundbRedo(void)
 {
-    if (pvNil == _pglpundb)
+    if (!_pglpundb)
         return 0;
     return _pglpundb->IvMac() - _ipundbLimDone;
 }
@@ -797,22 +797,22 @@ void DOCB::AssertValid(ulong grfdocb)
     if (!(grfdocb & fobjAssertFull))
         return;
 
-    if (pvNil != _pglpddg)
+    if (_pglpddg)
     {
         for (ipddg = _pglpddg->IvMac(); ipddg-- != 0;)
         {
-            _pglpddg->Get(ipddg, &pddg);
+            _pglpddg->Get(ipddg, BlobPtr::Make(pddg));
             AssertBasePo(pddg, 0);
         }
     }
 
-    if (pvNil != _pglpundb)
+    if (_pglpundb)
     {
         AssertIn(_ipundbLimDone, 0, _pglpundb->IvMac() + 1);
         AssertIn(_pglpundb->IvMac(), 0, _cundbMax + 1);
         for (ipundb = _pglpundb->IvMac(); ipundb-- != 0;)
         {
-            _pglpundb->Get(ipundb, &pundb);
+            _pglpundb->Get(ipundb, BlobPtr::Make(pundb));
             AssertPo(pundb, 0);
         }
     }
@@ -834,13 +834,13 @@ void DOCB::MarkMem(void)
     AssertThis(fobjAssertFull);
     DOCB_PAR::MarkMem();
     MarkMemObj(_pglpddg);
-    if (pvNil != _pglpundb)
+    if (_pglpundb)
     {
         MarkMemObj(_pglpundb);
 
         for (ipundb = _pglpundb->IvMac(); ipundb-- != 0;)
         {
-            _pglpundb->Get(ipundb, &pundb);
+            _pglpundb.Get(ipundb, &pundb);
             MarkMemObj(pundb);
         }
     }
@@ -1534,7 +1534,7 @@ bool DMW::FAddDsg(PDSG pdsg, PDSG pdsgSplit, ulong grfdsg, long rel)
         if (pvNil == _paldsed && pvNil == (_paldsed = AL::PalNew(size(DSED), 1)))
             return fFalse;
         dsed.pdsg = pdsg;
-        if (!_paldsed->FAdd(&dsed, &_idsedRoot))
+        if (!_paldsed->FAdd(BlobPtr::Make(dsed), &_idsedRoot))
             return fFalse;
         pdsg->_dsno = _idsedRoot + 1;
         idsedEdge = _idsedRoot;
@@ -1551,8 +1551,8 @@ bool DMW::FAddDsg(PDSG pdsg, PDSG pdsgSplit, ulong grfdsg, long rel)
 
     if (!_paldsed->FEnsureSpace(2, fgrpNil))
         return fFalse;
-    AssertDo(_paldsed->FAdd(&dsed, &idsedEdge), 0);
-    AssertDo(_paldsed->FAdd(&dsed, &idsedNew), 0);
+    AssertDo(_paldsed->FAdd(BlobPtr::Make(dsed), &idsedEdge), 0);
+    AssertDo(_paldsed->FAdd(BlobPtr::Make(dsed), &idsedNew), 0);
 
     // fix the links on the one being split
     qdsed = _Qdsed(idsedSplit);
@@ -1643,7 +1643,7 @@ void DMW::_RemoveDsg(PDSG pdsg, long *pidsedStartLayout)
     // delete the node
     idsedDel = pdsg->_dsno - 1;
     pdsg->_dsno = dsnoNil;
-    _paldsed->Get(idsedDel, &dsed);
+    _paldsed->Get(idsedDel, BlobPtr::Make(dsed));
     _paldsed->Delete(idsedDel);
 
     if (ivNil == dsed.idsedPar)

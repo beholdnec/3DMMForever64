@@ -176,7 +176,7 @@ class FNE : public FNE_PAR
     long _cftg;
     bool _fRecurse : 1;
     bool _fInited : 1;
-    PGL _pglfes;
+    GLPtr<FES> _pglfes;
     FES _fesCur;
 
     void _Free(void);

@@ -60,14 +60,14 @@ SNDM::~SNDM(void)
     SNDMPE sndmpe;
     long isndmpe;
 
-    if (pvNil != _pglsndmpe)
+    if (_pglsndmpe)
     {
         for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
         {
-            _pglsndmpe->Get(isndmpe, &sndmpe);
+            _pglsndmpe.Get(isndmpe, &sndmpe);
             ReleasePpo(&sndmpe.psndv);
         }
-        ReleasePpo(&_pglsndmpe);
+        _pglsndmpe.Release();
     }
 }
 
@@ -94,7 +94,7 @@ void SNDM::MarkMem(void)
     MarkMemObj(_pglsndmpe);
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         MarkMemObj(sndmpe.psndv);
     }
 }
@@ -124,7 +124,7 @@ bool SNDM::_FInit(void)
 {
     AssertBaseThis(0);
 
-    if (pvNil == (_pglsndmpe = GL::PglNew(size(SNDMPE))))
+    if (!(_pglsndmpe = GLPtr<SNDMPE>::New()))
         return fFalse;
 
     _pglsndmpe->SetMinGrow(1);
@@ -147,7 +147,7 @@ bool SNDM::_FFindCtg(CTG ctg, SNDMPE *psndmpe, long *pisndmpe)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         if (sndmpe.ctg == ctg)
         {
             if (pvNil != psndmpe)
@@ -180,13 +180,13 @@ bool SNDM::FAddDevice(CTG ctg, PSNDV psndv)
     {
         ReleasePpo(&sndmpe.psndv);
         sndmpe.psndv = psndv;
-        _pglsndmpe->Put(isndmpe, &sndmpe);
+        _pglsndmpe.Put(isndmpe, &sndmpe);
     }
     else
     {
         sndmpe.ctg = ctg;
         sndmpe.psndv = psndv;
-        if (!_pglsndmpe->FInsert(isndmpe, &sndmpe))
+        if (!_pglsndmpe.FInsert(isndmpe, &sndmpe))
         {
             ReleasePpo(&psndv);
             return fFalse;
@@ -254,7 +254,7 @@ void SNDM::Activate(bool fActive)
     _fActive = FPure(fActive);
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Activate(fActive);
     }
 }
@@ -276,7 +276,7 @@ void SNDM::Suspend(bool fSuspend)
     Assert(_cactSuspend >= FPure(fSuspend), "bad _cactSuspend");
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Suspend(fSuspend);
     }
 }
@@ -292,7 +292,7 @@ void SNDM::SetVlm(long vlm)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->SetVlm(vlm);
     }
 }
@@ -310,7 +310,7 @@ long SNDM::VlmCur(void)
     vlm = 0;
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         vlm = LwMax(vlm, sndmpe.psndv->VlmCur());
     }
 
@@ -343,7 +343,7 @@ void SNDM::Stop(long sii)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Stop(sii);
     }
 }
@@ -359,7 +359,7 @@ void SNDM::StopAll(long sqn, long scl)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->StopAll(sqn, scl);
     }
 }
@@ -375,7 +375,7 @@ void SNDM::Pause(long sii)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Pause(sii);
     }
 }
@@ -391,7 +391,7 @@ void SNDM::PauseAll(long sqn, long scl)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->PauseAll(sqn, scl);
     }
 }
@@ -407,7 +407,7 @@ void SNDM::Resume(long sii)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Resume(sii);
     }
 }
@@ -423,7 +423,7 @@ void SNDM::ResumeAll(long sqn, long scl)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->ResumeAll(sqn, scl);
     }
 }
@@ -439,7 +439,7 @@ bool SNDM::FPlaying(long sii)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         if (sndmpe.psndv->FPlaying(sii))
             return fTrue;
     }
@@ -459,7 +459,7 @@ bool SNDM::FPlayingAll(long sqn, long scl)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         if (sndmpe.psndv->FPlayingAll(sqn, scl))
             return fTrue;
     }
@@ -478,7 +478,7 @@ void SNDM::Flush(void)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->Flush();
     }
 }
@@ -494,7 +494,7 @@ void SNDM::BeginSynch(void)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->BeginSynch();
     }
 }
@@ -510,7 +510,7 @@ void SNDM::EndSynch(void)
 
     for (isndmpe = 0; isndmpe < _pglsndmpe->IvMac(); isndmpe++)
     {
-        _pglsndmpe->Get(isndmpe, &sndmpe);
+        _pglsndmpe.Get(isndmpe, &sndmpe);
         sndmpe.psndv->EndSynch();
     }
 }
@@ -528,14 +528,14 @@ SNDMQ::~SNDMQ(void)
     long isnqd;
     SNQD snqd;
 
-    if (pvNil != _pglsnqd)
+    if (_pglsnqd)
     {
         for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
         {
-            _pglsnqd->Get(isnqd, &snqd);
+            _pglsnqd.Get(isnqd, &snqd);
             ReleasePpo(&snqd.psnque);
         }
-        ReleasePpo(&_pglsnqd);
+        _pglsnqd.Release();
     }
 }
 
@@ -562,7 +562,7 @@ void SNDMQ::MarkMem(void)
     MarkMemObj(_pglsnqd);
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         MarkMemObj(snqd.psnque);
     }
 }
@@ -575,7 +575,7 @@ bool SNDMQ::_FInit(void)
 {
     AssertBaseThis(0);
 
-    if (pvNil == (_pglsnqd = GL::PglNew(size(SNQD))))
+    if (!(_pglsnqd = GLPtr<SNQD>::New()))
         return fFalse;
 
     _fActive = fTrue;
@@ -599,7 +599,7 @@ bool SNDMQ::_FEnsureQueue(long sqn, SNQD *psnqd, long *pisnqd)
     isnqdEmpty = ivNil;
     for (isnqd = _pglsnqd->IvMac(); isnqd-- > 0;)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if (snqd.sqn == sqn && sqn != ksqnNone)
         {
             // we found it
@@ -617,14 +617,14 @@ bool SNDMQ::_FEnsureQueue(long sqn, SNQD *psnqd, long *pisnqd)
 
     if (ivNil != (isnqd = isnqdEmpty))
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         snqd.sqn = sqn;
-        _pglsnqd->Put(isnqd, &snqd);
+        _pglsnqd.Put(isnqd, &snqd);
         goto LFound;
     }
 
     snqd.sqn = sqn;
-    if (pvNil == (snqd.psnque = _PsnqueNew()) || !_pglsnqd->FAdd(&snqd, &isnqd))
+    if (pvNil == (snqd.psnque = _PsnqueNew()) || !_pglsnqd.FAdd(&snqd, &isnqd))
     {
         ReleasePpo(&snqd.psnque);
         TrashVar(psnqd);
@@ -715,7 +715,7 @@ void SNDMQ::Stop(long sii)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         snqd.psnque->Stop(sii);
     }
 }
@@ -731,7 +731,7 @@ void SNDMQ::StopAll(long sqn, long scl)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if (sqnNil == sqn || snqd.sqn == sqn)
             snqd.psnque->StopAll(scl);
     }
@@ -748,7 +748,7 @@ void SNDMQ::Pause(long sii)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         snqd.psnque->Pause(sii);
     }
 }
@@ -764,7 +764,7 @@ void SNDMQ::PauseAll(long sqn, long scl)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if (sqnNil == sqn || snqd.sqn == sqn)
             snqd.psnque->PauseAll(scl);
     }
@@ -781,7 +781,7 @@ void SNDMQ::Resume(long sii)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         snqd.psnque->Resume(sii);
     }
 }
@@ -797,7 +797,7 @@ void SNDMQ::ResumeAll(long sqn, long scl)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if (sqnNil == sqn || snqd.sqn == sqn)
             snqd.psnque->ResumeAll(scl);
     }
@@ -814,7 +814,7 @@ bool SNDMQ::FPlaying(long sii)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if (snqd.psnque->FPlaying(sii))
             return fTrue;
     }
@@ -834,7 +834,7 @@ bool SNDMQ::FPlayingAll(long sqn, long scl)
 
     for (isnqd = 0; isnqd < _pglsnqd->IvMac(); isnqd++)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         if ((sqnNil == sqn || snqd.sqn == sqn) && snqd.psnque->FPlayingAll(scl))
         {
             return fTrue;
@@ -856,7 +856,7 @@ void SNDMQ::Flush()
     // Don't free the last channel
     for (isnqd = _pglsnqd->IvMac(); isnqd-- > 0;)
     {
-        _pglsnqd->Get(isnqd, &snqd);
+        _pglsnqd.Get(isnqd, &snqd);
         snqd.psnque->Flush();
         if (!snqd.psnque->FPlayingAll() && _pglsnqd->IvMac() > 1)
         {
@@ -881,17 +881,17 @@ SNQUE::~SNQUE(void)
     AssertBaseThis(0);
 
     _Enter();
-    if (pvNil != _pglsndin)
+    if (_pglsndin)
     {
         long isndin;
         SNDIN sndin;
 
         for (isndin = _pglsndin->IvMac(); isndin-- > 0;)
         {
-            _pglsndin->Get(isndin, &sndin);
+            _pglsndin.Get(isndin, &sndin);
             ReleasePpo(&sndin.pbaco);
         }
-        ReleasePpo(&_pglsndin);
+        _pglsndin.Release();
     }
     _Leave();
 }
@@ -925,7 +925,7 @@ void SNQUE::MarkMem(void)
     MarkMemObj(_pglsndin);
     for (isndin = 0; isndin < _pglsndin->IvMac(); isndin++)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         MarkMemObj(sndin.pbaco);
     }
     _Leave();
@@ -939,7 +939,7 @@ bool SNQUE::_FInit(void)
 {
     AssertBaseThis(0);
 
-    if (pvNil == (_pglsndin = GL::PglNew(size(SNDIN))))
+    if (!(_pglsndin = GLPtr<SNDIN>::New()))
         return fFalse;
 
     AssertThis(0);
@@ -977,7 +977,7 @@ void SNQUE::_Flush(void)
     while (_isndinCur > 0)
     {
         _isndinCur--;
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         _pglsndin->Delete(_isndinCur);
         ReleasePpo(&sndin.pbaco);
     }
@@ -1008,7 +1008,7 @@ void SNQUE::Enqueue(long sii, PRCA prca, CTG ctg, CNO cno, long vlm, long cactPl
     sndin.spr = spr;
     sndin.scl = scl;
     sndin.cactPause = 0;
-    if (!_pglsndin->FAdd(&sndin, &isndin))
+    if (!_pglsndin.FAdd(&sndin, &isndin))
     {
         ReleasePpo(&sndin.pbaco);
         _Leave();
@@ -1036,7 +1036,7 @@ long SNQUE::SprCur(void)
         spr = klwMin;
     else
     {
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         spr = sndin.spr;
     }
 
@@ -1058,13 +1058,13 @@ void SNQUE::Stop(long sii)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (sndin.sii == sii)
         {
             if (0 <= sndin.cactPause)
             {
                 sndin.cactPause = -1;
-                _pglsndin->Put(isndin, &sndin);
+                _pglsndin.Put(isndin, &sndin);
                 _Queue(isndin);
             }
 
@@ -1091,11 +1091,11 @@ void SNQUE::StopAll(long scl)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (0 <= sndin.cactPause && (sclNil == scl || sndin.scl == scl))
         {
             sndin.cactPause = -1;
-            _pglsndin->Put(isndin, &sndin);
+            _pglsndin.Put(isndin, &sndin);
             isndinMin = isndin;
         }
     }
@@ -1120,13 +1120,13 @@ void SNQUE::Pause(long sii)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (sndin.sii == sii)
         {
             if (0 <= sndin.cactPause)
             {
                 sndin.cactPause++;
-                _pglsndin->Put(isndin, &sndin);
+                _pglsndin.Put(isndin, &sndin);
                 if (1 == sndin.cactPause)
                     _PauseQueue(isndin);
             }
@@ -1154,12 +1154,12 @@ void SNQUE::PauseAll(long scl)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (0 <= sndin.cactPause && (sclNil == scl || sndin.scl == scl))
         {
             if (0 == sndin.cactPause++)
                 isndinMin = isndin;
-            _pglsndin->Put(isndin, &sndin);
+            _pglsndin.Put(isndin, &sndin);
         }
     }
 
@@ -1183,13 +1183,13 @@ void SNQUE::Resume(long sii)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (sndin.sii == sii)
         {
             if (0 < sndin.cactPause)
             {
                 sndin.cactPause--;
-                _pglsndin->Put(isndin, &sndin);
+                _pglsndin.Put(isndin, &sndin);
                 if (0 == sndin.cactPause)
                     _ResumeQueue(isndin);
             }
@@ -1217,12 +1217,12 @@ void SNQUE::ResumeAll(long scl)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (0 < sndin.cactPause && (sclNil == scl || sndin.scl == scl))
         {
             if (0 == --sndin.cactPause)
                 isndinMin = isndin;
-            _pglsndin->Put(isndin, &sndin);
+            _pglsndin.Put(isndin, &sndin);
         }
     }
 
@@ -1246,7 +1246,7 @@ bool SNQUE::FPlaying(long sii)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (sndin.sii == sii)
         {
             _Leave();
@@ -1274,7 +1274,7 @@ bool SNQUE::FPlayingAll(long scl)
 
     for (isndin = _pglsndin->IvMac(); isndin-- > _isndinCur;)
     {
-        _pglsndin->Get(isndin, &sndin);
+        _pglsndin.Get(isndin, &sndin);
         if (0 <= sndin.cactPause && (sclNil == scl || sndin.scl == scl))
         {
             _Leave();

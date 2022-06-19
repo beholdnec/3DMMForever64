@@ -125,7 +125,7 @@ GOK::~GOK(void)
     ReleasePpo(&_prca);
     ReleasePpo(&_pscegAnim);
     ReleasePpo(&_pgorp);
-    ReleasePpo(&_pglcmflt);
+    _pglcmflt.Release();
 }
 
 /***************************************************************************
@@ -959,7 +959,7 @@ bool GOK::FCmdAll(PCMD pcmd)
     CMFLT cmflt;
     bool fFiltered;
 
-    if (pvNil == _pglcmflt)
+    if (!_pglcmflt)
         return fFalse;
 
     if (pvNil != pcmd->pcmh)
@@ -1041,7 +1041,7 @@ bool GOK::FFilterCidHid(long cid, long hid, CHID chidScript)
         }
 
         // release the filters and remove ourself from the command handler list
-        ReleasePpo(&_pglcmflt);
+        _pglcmflt.Release();
         vpcex->RemoveCmh(this, kcmhlGok);
         return fTrue;
     }
@@ -1055,17 +1055,17 @@ bool GOK::FFilterCidHid(long cid, long hid, CHID chidScript)
     if (_FFindCmflt(cid, hid, &cmflt, &icmflt))
     {
         cmflt.chidScript = chidScript;
-        _pglcmflt->Put(icmflt, &cmflt);
+        _pglcmflt.Put(icmflt, &cmflt);
         return fTrue;
     }
 
-    if (pvNil == _pglcmflt && pvNil == (_pglcmflt = GL::PglNew(size(CMFLT))))
+    if (!_pglcmflt && !(_pglcmflt = GLPtr<CMFLT>::New()))
         return fFalse;
 
     cmflt.cid = cid;
     cmflt.hid = hid;
     cmflt.chidScript = chidScript;
-    if (!_pglcmflt->FInsert(icmflt, &cmflt))
+    if (!_pglcmflt.FInsert(icmflt, &cmflt))
         return fFalse;
 
     vpcex->RemoveCmh(this, kcmhlGok);
@@ -1085,12 +1085,12 @@ bool GOK::_FFindCmflt(long cid, long hid, CMFLT *pcmflt, long *picmflt)
     CMFLT cmflt;
 
     ivMin = 0;
-    if (pvNil != _pglcmflt)
+    if (_pglcmflt)
     {
         for (ivLim = _pglcmflt->IvMac(); ivMin < ivLim;)
         {
             iv = (ivMin + ivLim) / 2;
-            _pglcmflt->Get(iv, &cmflt);
+            _pglcmflt.Get(iv, &cmflt);
             if (cmflt.cid < cid)
                 ivMin = iv + 1;
             else if (cmflt.cid > cid)

@@ -1156,22 +1156,22 @@ ulong _mpgfdgrfptInv[4] = {fptNegateXp, fptNil, fptNegateXp | fptTranspose, fptT
     If cbitPixel is not zero and not the depth of this device, this sets
     the palette and returns false.
 ***************************************************************************/
-bool GNV::_FInitPaletteTrans(PGL pglclr, PGL *ppglclrOld, PGL *ppglclrTrans, long cbitPixel)
+bool GNV::_FInitPaletteTrans(GLPtr<CLR> pglclr, GLPtr<CLR> *ppglclrOld, GLPtr<CLR> *ppglclrTrans, long cbitPixel)
 {
     AssertNilOrPo(pglclr, 0);
     AssertVarMem(ppglclrOld);
     AssertVarMem(ppglclrTrans);
-    long cclr = pvNil == pglclr ? 256 : pglclr->IvMac();
+    long cclr = !pglclr ? 256 : pglclr->IvMac();
 
-    *ppglclrOld = pvNil;
-    *ppglclrTrans = pvNil;
+    *ppglclrOld = {};
+    *ppglclrTrans = {};
 
     // get the current palette and set up the temporary transitionary palette
-    if (0 != cbitPixel && _pgpt->CbitPixel() != cbitPixel || pvNil == (*ppglclrOld = GPT::PglclrGetPalette()) ||
-        0 == (cclr = LwMin((*ppglclrOld)->IvMac(), cclr)) || pvNil == (*ppglclrTrans = GL::PglNew(size(CLR), cclr)))
+    if (0 != cbitPixel && _pgpt->CbitPixel() != cbitPixel || !(*ppglclrOld = GPT::PglclrGetPalette()) ||
+        0 == (cclr = LwMin((*ppglclrOld)->IvMac(), cclr)) || !(*ppglclrTrans = GLPtr<CLR>::New(cclr)))
     {
-        ReleasePpo(ppglclrOld);
-        if (pvNil != pglclr)
+        ppglclrOld->Release();
+        if (pglclr)
             GPT::SetActiveColors(pglclr, fpalIdentity);
         return fFalse;
     }
@@ -1186,7 +1186,7 @@ bool GNV::_FInitPaletteTrans(PGL pglclr, PGL *ppglclrOld, PGL *ppglclrTrans, lon
     and animate the palette to pglclrTrans.  If either source palette is nil,
     *pclrSub is used in place of the nil palette.  acrSub must be an RGB color.
 ***************************************************************************/
-void GNV::_PaletteTrans(PGL pglclrOld, PGL pglclrNew, long lwNum, long lwDen, PGL pglclrTrans, CLR *pclrSub)
+void GNV::_PaletteTrans(GLPtr<CLR> pglclrOld, GLPtr<CLR> pglclrNew, long lwNum, long lwDen, GLPtr<CLR> pglclrTrans, CLR *pclrSub)
 {
     AssertNilOrPo(pglclrOld, 0);
     AssertNilOrPo(pglclrNew, 0);
@@ -1199,9 +1199,9 @@ void GNV::_PaletteTrans(PGL pglclrOld, PGL pglclrNew, long lwNum, long lwDen, PG
     CLR clrSub;
 
     iclr = pglclrTrans->IvMac();
-    if (pvNil != pglclrOld)
+    if (pglclrOld)
         iclr = LwMin(pglclrOld->IvMac(), iclr);
-    if (pvNil != pglclrNew)
+    if (pglclrNew)
         iclr = LwMin(pglclrNew->IvMac(), iclr);
     if (pvNil != pclrSub)
         clrSub = *pclrSub;
@@ -1211,15 +1211,15 @@ void GNV::_PaletteTrans(PGL pglclrOld, PGL pglclrNew, long lwNum, long lwDen, PG
     while (iclr-- > 0)
     {
         clrOld = clrNew = clrSub;
-        if (pvNil != pglclrOld)
-            pglclrOld->Get(iclr, &clrOld);
-        if (pvNil != pglclrNew)
-            pglclrNew->Get(iclr, &clrNew);
+        if (pglclrOld)
+            pglclrOld.Get(iclr, &clrOld);
+        if (pglclrNew)
+            pglclrNew.Get(iclr, &clrNew);
 
         clrOld.bRed += (byte)LwMulDiv((long)clrNew.bRed - clrOld.bRed, lwNum, lwDen);
         clrOld.bGreen += (byte)LwMulDiv((long)clrNew.bGreen - clrOld.bGreen, lwNum, lwDen);
         clrOld.bBlue += (byte)LwMulDiv((long)clrNew.bBlue - clrOld.bBlue, lwNum, lwDen);
-        pglclrTrans->Put(iclr, &clrOld);
+        pglclrTrans.Put(iclr, &clrOld);
     }
 
     GPT::SetActiveColors(pglclrTrans, fpalIdentity | fpalAnimate);
@@ -1254,7 +1254,7 @@ bool GNV::_FEnsureTempGnv(PGNV *ppgnv, RC *prc)
     size.  gfd indicates which direction the wipe is.  If pglclr is not
     nil and acrFill is clear, the palette transition is gradual.
 ***************************************************************************/
-void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr)
+void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertPo(&acrFill, 0);
@@ -1269,8 +1269,8 @@ void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulon
     long cact;
     RC rcSrc, rcDst;
     RC rc1, rc2;
-    PGL pglclrOld = pvNil;
-    PGL pglclrTrans = pvNil;
+    GLPtr<CLR> pglclrOld;
+    GLPtr<CLR> pglclrTrans;
 
     Assert(prcSrc->Dyp() == prcDst->Dyp() && prcSrc->Dxp() == prcDst->Dxp(), "rc's are scaled");
 
@@ -1289,9 +1289,9 @@ void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulon
             if (kacrClear == acrFill)
                 continue;
         }
-        else if (pvNil != pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, 8))
+        else if (pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, 8))
         {
-            pglclr = pvNil; // so we don't try to transition
+            pglclr = {}; // so we don't try to transition
         }
 
         tsStart = TsCurrent();
@@ -1311,7 +1311,7 @@ void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulon
             rc1.xpRight = rcSrc.xpLeft + dxp;
             rc2.xpRight = rcDst.xpLeft + dxp;
 
-            if (cact == 1 && pglclr != pvNil)
+            if (cact == 1 && pglclr)
                 _PaletteTrans(pglclrOld, pglclr, dtsT, dts, pglclrTrans);
 
             if (!rc2.FEmpty())
@@ -1326,23 +1326,23 @@ void GNV::Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulon
             }
         }
 
-        if (pvNil != pglclr)
+        if (pglclr)
         {
             // set the palette
             GPT::SetActiveColors(pglclr, fpalIdentity);
-            pglclr = pvNil; // so we don't transition during the second wipe
+            pglclr = {}; // so we don't transition during the second wipe
         }
     }
 
-    ReleasePpo(&pglclrOld);
-    ReleasePpo(&pglclrTrans);
+    pglclrOld.Release();
+    pglclrTrans.Release();
 }
 
 /***************************************************************************
     Slide the source gnv onto this one.  The source and destination
     rectangles must be the same size.
 ***************************************************************************/
-void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr)
+void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertPo(&acrFill, 0);
@@ -1359,15 +1359,15 @@ void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulo
     RC rc1, rc2;
     PGNV pgnv;
     PT dpt;
-    PGL pglclrOld = pvNil;
-    PGL pglclrTrans = pvNil;
+    GLPtr<CLR> pglclrOld;
+    GLPtr<CLR> pglclrTrans;
 
     Assert(prcSrc->Dyp() == prcDst->Dyp() && prcSrc->Dxp() == prcDst->Dxp(), "rc's are scaled");
 
     // allocate the offscreen port and copy the destination into it.
     if (!_FEnsureTempGnv(&pgnv, prcDst))
     {
-        if (pvNil != pglclr)
+        if (pglclr)
             GPT::SetActiveColors(pglclr, fpalIdentity);
         CopyPixels(pgnvSrc, prcSrc, prcDst);
         GPT::Flush();
@@ -1388,9 +1388,9 @@ void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulo
             if (kacrClear == acrFill)
                 continue;
         }
-        else if (pvNil != pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans))
+        else if (pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans))
         {
-            pglclr = pvNil; // so we don't try to transition
+            pglclr = {}; // so we don't try to transition
         }
 
         tsStart = TsCurrent();
@@ -1427,7 +1427,7 @@ void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulo
                     pgnv->CopyPixels(pgnvSrc, &rc1, &rc2);
             }
 
-            if (pvNil != pglclr && 1 == cact)
+            if (pglclr && 1 == cact)
                 _PaletteTrans(pglclrOld, pglclr, dtsT, dts, pglclrTrans);
 
             if (dxp != dxpOld)
@@ -1438,7 +1438,7 @@ void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulo
             }
         }
 
-        if (pvNil != pglclr)
+        if (pglclr)
         {
             // set the palette
             GPT::SetActiveColors(pglclr, fpalIdentity);
@@ -1450,13 +1450,13 @@ void GNV::Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulo
                 CopyPixels(pgnv, prcDst, prcDst);
                 GPT::Flush();
             }
-            pglclr = pvNil; // so we don't transition during the second wipe
+            pglclr = {}; // so we don't transition during the second wipe
         }
     }
 
     ReleasePpo(&pgnv);
-    ReleasePpo(&pglclrOld);
-    ReleasePpo(&pglclrTrans);
+    pglclrOld.Release();
+    pglclrTrans.Release();
 }
 
 // klwPrime must be a prime and klwRoot must be a primitive root for klwPrime.
@@ -1504,7 +1504,7 @@ inline long _LwNextDissolve(long lw)
     just dissolve into the solid color.  Each portion is done in dts time.
 ***************************************************************************/
 void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts,
-                   PGL pglclr)
+                   GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertPo(&acrFill, 0);
@@ -1527,8 +1527,8 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
     byte *prgbDst = pvNil;
     byte *prgbSrc = pvNil;
     PGNV pgnv = pvNil;
-    PGL pglclrOld = pvNil;
-    PGL pglclrTrans = pvNil;
+    GLPtr<CLR> pglclrOld;
+    GLPtr<CLR> pglclrTrans;
 
     if (prcDst->FEmpty())
         return;
@@ -1568,7 +1568,7 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
             if (pvNil != prgbSrc && pvNil != pgnvSrc)
                 pgnvSrc->Pgpt()->Unlock();
 
-            if (pvNil != pglclr)
+            if (pglclr)
                 GPT::SetActiveColors(pglclr, fpalIdentity);
             if (pvNil != pgnvSrc)
                 CopyPixels(pgnvSrc, prcSrc, prcDst);
@@ -1624,9 +1624,9 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
         {
             if (pvNil == pgnvSrc)
                 goto LSetPalette;
-            if (pvNil != pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, fOnScreen ? 8 : 0))
+            if (pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, fOnScreen ? 8 : 0))
             {
-                pglclr = pvNil; // so we don't try to transition
+                pglclr = {}; // so we don't try to transition
             }
         }
 
@@ -1746,12 +1746,12 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
             GPT::Flush();
 
         LPaletteTrans:
-            if (cact == 1 && pglclr != pvNil)
+            if (cact == 1 && pglclr)
                 _PaletteTrans(pglclrOld, pglclr, dtsT, dts, pglclrTrans);
         }
 
     LSetPalette:
-        if (pvNil != pglclr)
+        if (pglclr)
         {
             // set the palette
             GPT::SetActiveColors(pglclr, fpalIdentity);
@@ -1763,7 +1763,7 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
                 CopyPixels(pgnv, prcDst, prcDst);
                 GPT::Flush();
             }
-            pglclr = pvNil; // so we don't transition during the second wipe
+            pglclr = {}; // so we don't transition during the second wipe
         }
     }
 
@@ -1772,8 +1772,8 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
     if (pvNil != prgbSrc && pvNil != pgnvSrc)
         pgnvSrc->Pgpt()->Unlock();
     ReleasePpo(&pgnv);
-    ReleasePpo(&pglclrOld);
-    ReleasePpo(&pglclrTrans);
+    pglclrOld.Release();
+    pglclrTrans.Release();
 }
 
 /***************************************************************************
@@ -1783,7 +1783,7 @@ void GNV::Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC 
     the maximum number of palette interpolations to do.  It doesn't make
     sense for this to be bigger than 256.  If it's zero, we'll use 256.
 ***************************************************************************/
-void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr)
+void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertIn(cactMax, 0, 257);
@@ -1796,8 +1796,8 @@ void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, 
     ulong tsStart;
     long cact, cactOld;
     CLR clr;
-    PGL pglclrOld = pvNil;
-    PGL pglclrTrans = pvNil;
+    GLPtr<CLR> pglclrOld;
+    GLPtr<CLR> pglclrTrans;
 
     cactMax = (cactMax <= 0) ? 256 : LwMin(cactMax, 256);
 
@@ -1821,13 +1821,13 @@ void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, 
         cactOld = cact;
         cact = LwMulDiv(cactMax, LwMin(TsCurrent() - tsStart, dts), dts);
         if (cactOld < cact)
-            _PaletteTrans(pglclrOld, pvNil, cact, cactMax, pglclrTrans, &clr);
+            _PaletteTrans(pglclrOld, {}, cact, cactMax, pglclrTrans, &clr);
     }
 
     CopyPixels(pgnvSrc, prcSrc, prcDst);
     GPT::Flush();
 
-    if (pvNil == pglclr)
+    if (!pglclr)
         pglclr = pglclrOld;
 
     tsStart = TsCurrent();
@@ -1836,12 +1836,12 @@ void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, 
         cactOld = cact;
         cact = LwMulDiv(cactMax, LwMin(TsCurrent() - tsStart, dts), dts);
         if (cactOld < cact)
-            _PaletteTrans(pvNil, pglclr, cact, cactMax, pglclrTrans, &clr);
+            _PaletteTrans({}, pglclr, cact, cactMax, pglclrTrans, &clr);
     }
 
     GPT::SetActiveColors(pglclr, fpalIdentity);
-    ReleasePpo(&pglclrOld);
-    ReleasePpo(&pglclrTrans);
+    pglclrOld.Release();
+    pglclrTrans.Release();
 }
 
 /***************************************************************************
@@ -1849,7 +1849,7 @@ void GNV::Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, 
     intermediate color of acrFill (if not clear).  xp, yp are the focus
     point of the iris (in destination coordinates).
 ***************************************************************************/
-void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr)
+void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertPo(&acrFill, 0);
@@ -1864,8 +1864,8 @@ void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc
     long cact;
     bool fOpen;
     PREGN pregn, pregnClip;
-    PGL pglclrOld = pvNil;
-    PGL pglclrTrans = pvNil;
+    GLPtr<CLR> pglclrOld;
+    GLPtr<CLR> pglclrTrans;
 
     GPT::Flush();
 
@@ -1892,9 +1892,9 @@ void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc
             if (kacrClear == acrFill)
                 continue;
         }
-        else if (pvNil != pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, 8))
+        else if (pglclr && !_FInitPaletteTrans(pglclr, &pglclrOld, &pglclrTrans, 8))
         {
-            pglclr = pvNil; // so we don't try to transition
+            pglclr = {}; // so we don't try to transition
         }
 
         fOpen = !(gfd & (1 << cact));
@@ -1918,7 +1918,7 @@ void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc
             if (!fOpen)
                 dtsT = dts - dtsT;
 
-            if (cact == 1 && pglclr != pvNil)
+            if (cact == 1 && pglclr)
                 _PaletteTrans(pglclrOld, pglclr, dtsT, dts, pglclrTrans);
 
             if (rc == rcOld)
@@ -1931,7 +1931,7 @@ void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc
                 _pgpt->ClipToRegn(&pregnClip);
                 ReleasePpo(&pregn);
             LFail:
-                if (pvNil != pglclr)
+                if (pglclr)
                     GPT::SetActiveColors(pglclr, fpalIdentity);
                 CopyPixels(pgnvSrc, prcSrc, prcDst);
                 return;
@@ -1947,17 +1947,17 @@ void GNV::Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc
             _pgpt->ClipToRegn(&pregn);
         }
 
-        if (pvNil != pglclr)
+        if (pglclr)
         {
             // set the palette
             GPT::SetActiveColors(pglclr, fpalIdentity);
-            pglclr = pvNil; // so we don't transition during the second iris
+            pglclr = {}; // so we don't transition during the second iris
         }
     }
 
     ReleasePpo(&pregn);
-    ReleasePpo(&pglclrOld);
-    ReleasePpo(&pglclrTrans);
+    pglclrOld.Release();
+    pglclrTrans.Release();
 }
 
 /***************************************************************************
@@ -2275,7 +2275,7 @@ POGN OGN::PognTraceRgpt(PT *prgpt, long cpt, ulong grfogn)
         // if all the points of the polygon are the same, doing this ensures
         // that we will encircle the pen
         aei.ptCur = prgpt[0] + prgptThis[0];
-        if (!aei.pogn->FPush(&aei.ptCur))
+        if (!aei.pogn->FPush(BlobPtr::Make(aei.ptCur)))
             goto LError;
         aei.iptPenCur = 1;
     }
@@ -2285,7 +2285,7 @@ POGN OGN::PognTraceRgpt(PT *prgpt, long cpt, ulong grfogn)
             IptFindLeftmost(prgpt, cpt, prgptThis[0].xp - prgptThis[1].xp, prgptThis[0].yp - prgptThis[1].yp);
     }
     aei.ptCur = prgpt[aei.iptPenCur] + prgptThis[0];
-    if (!aei.pogn->FPush(&aei.ptCur))
+    if (!aei.pogn->FPush(BlobPtr::Make(aei.ptCur)))
         goto LError;
 
     // Walk to end, adding vertices.
@@ -2350,7 +2350,7 @@ bool OGN::_FAddEdge(AEI *paei)
         {
             ipt = (ipt + 1) % paei->cpt;
             pt = paei->prgpt[ipt] + dpt;
-            if (!paei->pogn->FPush(&pt))
+            if (!paei->pogn->FPush(BlobPtr::Make(pt)))
                 return fFalse;
         } while (ipt != iptPenNew);
     }
@@ -2358,7 +2358,7 @@ bool OGN::_FAddEdge(AEI *paei)
     // Add vertex at endpoint.
     paei->iptPenCur = iptPenNew;
     paei->ptCur = prgptThis[iptEnd] + paei->prgpt[iptPenNew];
-    return paei->pogn->FPush(&paei->ptCur);
+    return paei->pogn->FPush(BlobPtr::Make(paei->ptCur));
 }
 
 /***************************************************************************

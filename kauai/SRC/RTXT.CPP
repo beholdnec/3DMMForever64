@@ -1001,7 +1001,7 @@ TXRD::TXRD(PDOCB pdocb, ulong grfdoc) : TXRD_PAR(pdocb, grfdoc)
 ***************************************************************************/
 TXRD::~TXRD(void)
 {
-    ReleasePpo(&_pglmpe);
+    _pglmpe.Release();
     ReleasePpo(&_pagcact);
     ReleasePpo(&_pcfl);
 }
@@ -1026,7 +1026,7 @@ void TXRD::AssertValid(ulong grfobj)
         mpePrev.spcp = (ulong)-1;
         for (impe = _pglmpe->IvMac(); impe-- > 0;)
         {
-            _pglmpe->Get(impe, &mpe);
+            _pglmpe.Get(impe, &mpe);
             Assert(mpe.spcp < mpePrev.spcp, "non-increasing mpe's");
             mpePrev = mpe;
         }
@@ -1090,7 +1090,7 @@ bool TXRD::_FInit(PFNI pfni, CTG ctg)
 
     if (!TXRD_PAR::_FInit())
         return fFalse;
-    if (pvNil == (_pglmpe = GL::PglNew(size(MPE))))
+    if (!(_pglmpe = GLPtr<MPE>::New()))
         return fFalse;
     _pglmpe->SetMinGrow(10);
     _onnDef = vpappb->OnnDefVariable();
@@ -1188,7 +1188,7 @@ bool TXRD::_FReadChunk(PCFL pcfl, CTG ctg, CNO cno, bool fCopyText)
 
     // get the text properties
     if (!pcfl->FGetKidChidCtg(ctg, cno, 0, kctgTxtProps, &kid) || !pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck) ||
-        pvNil == (_pglmpe = GL::PglRead(&blck, &bo)) || size(MPE) != _pglmpe->CbEntry())
+        !(_pglmpe = GLPtr<MPE>::Read(&blck, &bo)) || size(MPE) != _pglmpe->CbEntry())
     {
         return fFalse;
     }
@@ -1449,7 +1449,7 @@ bool TXRD::_FFindMpe(ulong spcp, MPE *pmpe, long *pcpLim, long *pimpe)
     for (impeMin = 0, impeLim = _pglmpe->IvMac(); impeMin < impeLim;)
     {
         impe = (impeMin + impeLim) / 2;
-        _pglmpe->Get(impe, &mpe);
+        _pglmpe.Get(impe, &mpe);
         if (mpe.spcp < spcp)
             impeMin = impe + 1;
         else if (mpe.spcp > spcp)
@@ -1469,7 +1469,7 @@ bool TXRD::_FFindMpe(ulong spcp, MPE *pmpe, long *pcpLim, long *pimpe)
 
     if (impeMin > 0)
     {
-        _pglmpe->Get(impeMin - 1, &mpe);
+        _pglmpe.Get(impeMin - 1, &mpe);
         if (_SprmFromSpcp(mpe.spcp) == sprm)
         {
         LSuccess:
@@ -1488,7 +1488,7 @@ bool TXRD::_FFindMpe(ulong spcp, MPE *pmpe, long *pcpLim, long *pimpe)
         *pcpLim = CpMac();
         if (impeMin < _pglmpe->IvMac())
         {
-            _pglmpe->Get(impeMin, &mpe);
+            _pglmpe.Get(impeMin, &mpe);
             if (_SprmFromSpcp(mpe.spcp) == sprm)
                 *pcpLim = _CpFromSpcp(mpe.spcp);
         }
@@ -1506,7 +1506,7 @@ bool TXRD::_FFetchProp(long impe, byte *psprm, long *plw, long *pcpMin, long *pc
     if (!FIn(impe, 0, _pglmpe->IvMac()))
         return fFalse;
 
-    _pglmpe->Get(impe, &mpe);
+    _pglmpe.Get(impe, &mpe);
     if (pvNil != psprm)
         *psprm = _SprmFromSpcp(mpe.spcp);
     if (pvNil != plw)
@@ -1520,7 +1520,7 @@ bool TXRD::_FFetchProp(long impe, byte *psprm, long *plw, long *pcpMin, long *pc
         {
             MPE mpeNext;
 
-            _pglmpe->Get(impe + 1, &mpeNext);
+            _pglmpe.Get(impe + 1, &mpeNext);
             if (_SprmFromSpcp(mpeNext.spcp) == _SprmFromSpcp(mpe.spcp))
                 *pcpLim = _CpFromSpcp(mpeNext.spcp);
         }
@@ -1895,7 +1895,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
             {
                 // add the mpe
                 _AddRefSprmLw(spvm.sprm, mpe.lw);
-                AssertDo(_pglmpe->FInsert(impe++, &mpe), 0);
+                AssertDo(_pglmpe.FInsert(impe++, &mpe), 0);
             }
             lwLast = mpe.lw;
         }
@@ -1914,7 +1914,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
                     mpeT.lw = mpe.lw | (mpeT.lw & ~spvm.lwMask);
                     mpeT.spcp = mpe.spcp;
                     _AddRefSprmLw(spvm.sprm, mpeT.lw);
-                    AssertDo(_pglmpe->FInsert(impe++, &mpeT), 0);
+                    AssertDo(_pglmpe.FInsert(impe++, &mpeT), 0);
                 }
                 lwLast = mpeT.lw;
             }
@@ -1925,7 +1925,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
                 lwLast = 0;
                 if (impe > 0)
                 {
-                    _pglmpe->Get(impe - 1, &mpeT);
+                    _pglmpe.Get(impe - 1, &mpeT);
                     if (_SprmFromSpcp(mpeT.spcp) == spvm.sprm)
                         lwLast = mpeT.lw;
                 }
@@ -1938,7 +1938,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
         {
             if (impe >= _pglmpe->IvMac())
                 goto LEndOfSprm;
-            _pglmpe->Get(impe, &mpeT);
+            _pglmpe.Get(impe, &mpeT);
             if (_SprmFromSpcp(mpeT.spcp) != spvm.sprm)
             {
             LEndOfSprm:
@@ -1968,7 +1968,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
             else
             {
                 _AddRefSprmLw(spvm.sprm, mpeT.lw);
-                _pglmpe->Put(impe++, &mpeT);
+                _pglmpe.Put(impe++, &mpeT);
                 lwLast = mpeT.lw;
             }
         }
@@ -1979,7 +1979,7 @@ void TXRD::_ApplyRgspvm(long cp, long ccp, SPVM *prgspvm, long cspvm)
             // add another mpe at cpLim with lwRevert
             mpeT.spcp = _SpcpFromSprmCp(spvm.sprm, cpLim);
             mpeT.lw = lwRevert;
-            AssertDo(_pglmpe->FInsert(impe, &mpeT), 0);
+            AssertDo(_pglmpe.FInsert(impe, &mpeT), 0);
         }
         else
             _ReleaseSprmLw(spvm.sprm, lwRevert);
@@ -2461,7 +2461,7 @@ void TXRD::CommitUndo(void)
     // see if this one can be combined with the last one
     if (_ipundbLimDone > 0)
     {
-        _pglpundb->Get(_ipundbLimDone - 1, &prtunPrev);
+        _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(prtunPrev));
         if (prtunPrev->FIs(kclsRTUN) && prtunPrev->FCombine(_prtun))
         {
             ClearRedo();
@@ -2863,7 +2863,7 @@ bool TXRD::FReplaceTxrd(PTXRD ptxrd, long cpSrc, long ccpSrc, long cpDst, long c
         ptxrd->_FFindMpe(_SpcpFromSprmCp(sprmMinObj, cpSrc), pvNil, pvNil, &impe);
         while (impe < ptxrd->_pglmpe->IvMac())
         {
-            ptxrd->_pglmpe->Get(impe++, &mpe);
+            ptxrd->_pglmpe.Get(impe++, &mpe);
             cp = _CpFromSpcp(mpe.spcp);
             if (!FIn(cp, cpSrc, cpSrc + ccpSrc))
                 continue;
@@ -2878,7 +2878,7 @@ bool TXRD::FReplaceTxrd(PTXRD ptxrd, long cpSrc, long ccpSrc, long cpDst, long c
             // insert the object sprm
             if (_FFindMpe(mpeNew.spcp, pvNil, pvNil, &impeNew))
                 impeNew++;
-            if (!_pglmpe->FInsert(impeNew, &mpeNew))
+            if (!_pglmpe.FInsert(impeNew, &mpeNew))
                 _ReleaseInAg(mpeNew.lw);
         }
     }
@@ -3005,7 +3005,7 @@ bool TXRD::FFetchObject(long cpMin, long *pcp, void **ppv, long *pcb)
         if (fRet)
             impe++;
         Assert(impe < _pglmpe->IvMac(), "bad cpLim from _FFindMpe");
-        _pglmpe->Get(impe, &mpe);
+        _pglmpe.Get(impe, &mpe);
         Assert(_CpFromSpcp(mpe.spcp) == *pcp, "_FFindMpe messed up");
     }
 
@@ -3070,7 +3070,7 @@ bool TXRD::FInsertObject(void *pv, long cb, long cp, long ccpDel, PCHP pchp, ulo
     // insert the object sprm
     if (_FFindMpe(mpe.spcp, pvNil, pvNil, &impe))
         impe++;
-    AssertDo(_pglmpe->FInsert(impe, &mpe), "should have been ensured");
+    AssertDo(_pglmpe.FInsert(impe, &mpe), "should have been ensured");
     CommitUndo();
     BumpCombineUndo();
 
@@ -3108,7 +3108,7 @@ bool TXRD::FApplyObjectProps(void *pv, long cb, long cp, ulong grfdoc)
         return fFalse;
     }
 
-    _pglmpe->Put(impe, &mpe);
+    _pglmpe.Put(impe, &mpe);
     _ReleaseSprmLw(sprmObject, lwOld);
     CommitUndo();
     BumpCombineUndo();

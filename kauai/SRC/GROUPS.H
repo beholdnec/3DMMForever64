@@ -132,12 +132,12 @@ class GLB : public GLB_PAR
         return _cbEntry;
     }
     BlobPtr QvGet(long iv);
-    void Get(long iv, void *pv);
-    void Put(long iv, void *pv);
+    void Get(long iv, BlobPtr pv);
+    void Put(long iv, BlobPtr pv);
     BlobPtr PvLock(long iv);
     void SetMinGrow(long cvAdd);
 
-    virtual bool FAdd(void *pv, long *piv = pvNil) = 0;
+    virtual bool FAdd(BlobPtr pv, long *piv = pvNil) = 0;
 };
 
 /****************************************
@@ -163,7 +163,7 @@ class GL : public GL_PAR
     PGL PglDup(void);
 
     // methods required by parent class
-    virtual bool FAdd(void *pv, long *piv = pvNil);
+    virtual bool FAdd(BlobPtr pv, long *piv = pvNil);
     virtual void Delete(long iv);
     virtual bool FWrite(PBLCK pblck, short bo = kboCur, short osk = koskCur);
     virtual long CbOnFile(void);
@@ -171,20 +171,20 @@ class GL : public GL_PAR
 
     // new methods
     void Delete(long iv, long cv);
-    bool FInsert(long iv, void *pv = pvNil, long cv = 1);
+    bool FInsert(long iv, BlobPtr pv = {}, long cv = 1);
     bool FSetIvMac(long ivMacNew);
     bool FEnsureSpace(long cvAdd, ulong grfgrp = fgrpNil);
     void Move(long ivSrc, long ivTarget);
-    bool FPush(void *pv)
+    bool FPush(BlobPtr pv)
     {
         return FInsert(_ivMac, pv);
     }
-    bool FPop(void *pv = pvNil);
-    bool FEnqueue(void *pv)
+    bool FPop(BlobPtr pv = {});
+    bool FEnqueue(BlobPtr pv)
     {
         return FInsert(0, pv);
     }
-    bool FDequeue(void *pv = pvNil)
+    bool FDequeue(BlobPtr pv)
     {
         return FPop(pv);
     }
@@ -224,7 +224,7 @@ class AL : public AL_PAR
     PAL PalDup(void);
 
     // methods required by parent class
-    virtual bool FAdd(void *pv, long *piv = pvNil);
+    virtual bool FAdd(BlobPtr pv, long *piv = pvNil);
     virtual void Delete(long iv);
     virtual bool FWrite(PBLCK pblck, short bo = kboCur, short osk = koskCur);
     virtual long CbOnFile(void);

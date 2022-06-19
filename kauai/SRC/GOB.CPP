@@ -173,7 +173,7 @@ GOB::~GOB(void)
         ReleasePpo(&_pgpt);
     if (_hwnd != hNil)
         _DestroyHwnd(_hwnd);
-    ReleasePpo(&_pglrtvm);
+    _pglrtvm.Release();
     ReleasePpo(&_pcurs);
 }
 
@@ -1774,7 +1774,7 @@ void GOB::SetCursCno(PRCA prca, CNO cno)
     Return the address of the variable list belonging to this gob.  When the
     gob is freed, the pointer is no longer valid.
 ***************************************************************************/
-PGL *GOB::Ppglrtvm(void)
+GLPtr<RTVM> *GOB::Ppglrtvm(void)
 {
     AssertThis(0);
     return &_pglrtvm;

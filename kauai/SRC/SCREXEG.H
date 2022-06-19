@@ -40,9 +40,9 @@ class SCEG : public SCEG_PAR
     virtual PGOB _PgobFromHid(long hid);
 
     virtual bool _FExecOp(long op);
-    virtual PGL *_PpglrtvmThis(void);
-    virtual PGL *_PpglrtvmGlobal(void);
-    virtual PGL *_PpglrtvmRemote(long lw);
+    virtual GLPtr<RTVM> *_PpglrtvmThis(void);
+    virtual GLPtr<RTVM> *_PpglrtvmGlobal(void);
+    virtual GLPtr<RTVM> *_PpglrtvmRemote(long lw);
 
     virtual short _SwCur(void);
     virtual short _SwMin(void);
@@ -50,7 +50,7 @@ class SCEG : public SCEG_PAR
     void _DoAlert(long op);
     void _SetColorTable(CHID chid);
     void _DoEditControl(long hid, long stid, bool fGet);
-    PGL _PglclrGet(CNO cno);
+    GLPtr<CLR> _PglclrGet(CNO cno);
     bool _FLaunch(long stid);
 
   public:

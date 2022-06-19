@@ -137,7 +137,7 @@ PBACT BODY::_pbactClosestClicked;
 /***************************************************************************
     Builds a tree of BACTs for the BODY.
 ***************************************************************************/
-BODY *BODY::PbodyNew(PGL pglibactPar, PGL pglibset)
+BODY *BODY::PbodyNew(GLPtr<short> pglibactPar, GLPtr<short> pglibset)
 {
     AssertPo(pglibactPar, 0);
     Assert(pglibactPar->CbEntry() == size(short), "bad pglibactPar");
@@ -175,7 +175,7 @@ BODY *BODY::PbodyNew(PGL pglibactPar, PGL pglibset)
 /***************************************************************************
     Build the BODY
 ***************************************************************************/
-bool BODY::_FInit(PGL pglibactPar, PGL pglibset)
+bool BODY::_FInit(GLPtr<short> pglibactPar, GLPtr<short> pglibset)
 {
     AssertBaseThis(0);
     AssertPo(pglibactPar, 0);
@@ -192,7 +192,7 @@ bool BODY::_FInit(PGL pglibactPar, PGL pglibset)
 /***************************************************************************
     Build the BODY
 ***************************************************************************/
-bool BODY::_FInitShape(PGL pglibactPar, PGL pglibset)
+bool BODY::_FInitShape(GLPtr<short> pglibactPar, GLPtr<short> pglibset)
 {
     AssertBaseThis(0);
     AssertPo(pglibactPar, 0);
@@ -209,15 +209,15 @@ bool BODY::_FInitShape(PGL pglibactPar, PGL pglibset)
     short ibset;
 
     // Copy pglibset into _pglibset
-    _pglibset = pglibset->PglDup();
-    if (pvNil == _pglibset)
+    _pglibset = pglibset.Dup();
+    if (!_pglibset)
         return fFalse;
 
     // _cbset is (highest entry in _pglibset) + 1.
     _cbset = -1;
     for (ibact = 0; ibact < _pglibset->IvMac(); ibact++)
     {
-        _pglibset->Get(ibact, &ibset);
+        _pglibset.Get(ibact, &ibset);
         if (ibset > _cbset)
             _cbset = ibset;
     }
@@ -262,7 +262,7 @@ bool BODY::_FInitShape(PGL pglibactPar, PGL pglibset)
         pbact->identifier = (schar *)this; // to find BODY from a BACT
 
         // Find parent of this body part
-        pglibactPar->Get(ibact, &ibactPar);
+        pglibactPar.Get(ibact, &ibactPar);
         if (ivNil == ibactPar)
         {
             pbactPar = _PbactRoot();
@@ -282,7 +282,7 @@ bool BODY::_FInitShape(PGL pglibactPar, PGL pglibset)
     Models, materials, and matrices are not changed for body parts that
     exist in both the old and reshaped BODYs.
 ***************************************************************************/
-bool BODY::FChangeShape(PGL pglibactPar, PGL pglibset)
+bool BODY::FChangeShape(GLPtr<short> pglibactPar, GLPtr<short> pglibset)
 {
     AssertThis(fobjAssertFull);
     AssertPo(pglibactPar, 0);
@@ -479,7 +479,7 @@ void BODY::_DestroyShape(void)
         FreePpv((void **)&_prgbact);
     }
     FreePpv((void **)&_prgpcmtl);
-    ReleasePpo(&_pglibset);
+    _pglibset.Release();
 }
 
 /***************************************************************************
@@ -562,8 +562,8 @@ PBODY BODY::PbodyDup(void)
             MODL::PmodlFromBmdl(pbact->model)->AddRef();
     }
 
-    pbodyDup->_pglibset = _pglibset->PglDup();
-    if (pvNil == pbodyDup->_pglibset)
+    pbodyDup->_pglibset = _pglibset.Dup();
+    if (!pbodyDup->_pglibset)
         goto LFail;
 
     if (!FAllocPv((void **)&pbodyDup->_prgpcmtl, LwMul(_cbset, size(PCMTL)), fmemClear, mprNormal))

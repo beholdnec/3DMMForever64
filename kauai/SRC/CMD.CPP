@@ -236,19 +236,19 @@ CEX::~CEX(void)
     CMD cmd;
     long icmd;
 
-    if (pvNil != _pglcmd)
+    if (_pglcmd)
     {
         for (icmd = _pglcmd->IvMac(); icmd-- != 0;)
         {
-            _pglcmd->Get(icmd, &cmd);
+            _pglcmd.Get(icmd, &cmd);
             ReleasePpo(&cmd.pgg);
         }
-        ReleasePpo(&_pglcmd);
+        _pglcmd.Release();
     }
 
-    ReleasePpo(&_pglcmhe);
+    _pglcmhe.Release();
     ReleasePpo(&_pcfl);
-    ReleasePpo(&_pglcmdf);
+    _pglcmdf.Release();
     ReleasePpo(&_cmdCur.pgg);
 }
 
@@ -280,7 +280,7 @@ bool CEX::_FInit(long ccmdInit, long ccmhInit)
     AssertIn(ccmdInit, 0, kcbMax);
     AssertIn(ccmhInit, 0, kcbMax);
 
-    if (pvNil == (_pglcmd = GL::PglNew(size(CMD), ccmdInit)) || pvNil == (_pglcmhe = GL::PglNew(size(CMHE), ccmhInit)))
+    if (!(_pglcmd = GLPtr<CMD>::New(ccmdInit)) || !(_pglcmhe = GLPtr<CMHE>::New(ccmhInit)))
     {
         return fFalse;
     }
@@ -311,9 +311,9 @@ void CEX::Record(PCFL pcfl)
     _icmdf = 0;
     _chidLast = 0;
     _cact = 0;
-    Assert(_pglcmdf == pvNil, "why isn't _pglcmdf nil?");
+    Assert(!_pglcmdf, "why isn't _pglcmdf nil?");
 
-    if ((_pglcmdf = GL::PglNew(size(CMDF), 100)) == pvNil)
+    if (!(_pglcmdf = GLPtr<CMDF>::New(100)))
         _rec = recMemError;
     else if (!_pcfl->FAdd(0, kctgMacro, &_cno))
     {
@@ -347,9 +347,9 @@ void CEX::StopRecording(void)
             // rewrite the last one's _cact
             CMDF cmdf;
 
-            _pglcmdf->Get(_icmdf, &cmdf);
+            _pglcmdf.Get(_icmdf, &cmdf);
             cmdf.cact = _cact;
-            _pglcmdf->Put(_icmdf, &cmdf);
+            _pglcmdf.Put(_icmdf, &cmdf);
         }
         cb = _pglcmdf->CbOnFile();
         if (!_pcfl->FPut(cb, kctgMacro, _cno, &blck) || !_pglcmdf->FWrite(&blck))
@@ -375,7 +375,7 @@ void CEX::StopRecording(void)
         }
     }
     _rs = rsNormal;
-    ReleasePpo(&_pglcmdf);
+    _pglcmdf.Release();
     ReleasePpo(&_pcfl);
 
     PushCid(cidCexRecordDone, pvNil, pvNil, _rec, _cno);
@@ -408,9 +408,9 @@ void CEX::RecordCmd(PCMD pcmd)
         if (_cact > 1)
         {
             // rewrite the previous one's _cact
-            _pglcmdf->Get(_icmdf, &cmdf);
+            _pglcmdf.Get(_icmdf, &cmdf);
             cmdf.cact = _cact;
-            _pglcmdf->Put(_icmdf, &cmdf);
+            _pglcmdf.Put(_icmdf, &cmdf);
         }
 
         // increment _icmdf
@@ -425,7 +425,7 @@ void CEX::RecordCmd(PCMD pcmd)
     cmdf.chidGg = pcmd->pgg != pvNil ? ++_chidLast : 0;
     CopyPb(pcmd->rglw, cmdf.rglw, kclwCmd * size(long));
 
-    if (!_pglcmdf->FInsert(_icmdf, &cmdf))
+    if (!_pglcmdf.FInsert(_icmdf, &cmdf))
     {
         // out of memory
         _rec = recMemError;
@@ -481,9 +481,9 @@ void CEX::Play(PCFL pcfl, CNO cno)
     _cno = cno;
     _icmdf = 0;
     _cact = 0;
-    Assert(_pglcmdf == pvNil, "why isn't _pglcmdf nil?");
+    Assert(!_pglcmdf, "why isn't _pglcmdf nil?");
 
-    if (!_pcfl->FFind(kctgMacro, _cno, &blck) || (_pglcmdf = GL::PglRead(&blck, &bo, &osk)) == pvNil)
+    if (!_pcfl->FFind(kctgMacro, _cno, &blck) || !(_pglcmdf = GLPtr<CMDF>::Read(&blck, &bo, &osk)))
     {
         _rec = recFileError;
         StopPlaying();
@@ -514,7 +514,7 @@ void CEX::StopPlaying(void)
 
     _rs = rsNormal;
     ReleasePpo(&_pcfl);
-    ReleasePpo(&_pglcmdf);
+    _pglcmdf.Release();
 }
 
 /***************************************************************************
@@ -538,7 +538,7 @@ bool CEX::_FReadCmd(PCMD pcmd)
     if (_icmdf >= _pglcmdf->IvMac())
         goto LStop;
 
-    _pglcmdf->Get(_icmdf, &cmdf);
+    _pglcmdf.Get(_icmdf, &cmdf);
 
     ClearPb(pcmd, size(*pcmd));
     pcmd->cid = cmdf.cid;
@@ -634,7 +634,7 @@ bool CEX::FAddCmh(PCMH pcmh, long cmhl, ulong grfcmm)
     cmhe.pcmh = pcmh;
     cmhe.cmhl = cmhl;
     cmhe.grfcmm = grfcmm;
-    if (!_pglcmhe->FInsert(icmhe, &cmhe))
+    if (!_pglcmhe.FInsert(icmhe, &cmhe))
         return fFalse;
     if (icmhe <= _icmheNext)
         _icmheNext++;
@@ -656,7 +656,7 @@ void CEX::RemoveCmh(PCMH pcmh, long cmhl)
 
     for (ccmhe = _pglcmhe->IvMac(); icmhe < ccmhe; icmhe++)
     {
-        _pglcmhe->Get(icmhe, &cmhe);
+        _pglcmhe.Get(icmhe, &cmhe);
         if (cmhe.cmhl != cmhl)
             break;
         if (cmhe.pcmh == pcmh)
@@ -703,7 +703,7 @@ void CEX::BuryCmh(PCMH pcmh)
 
     for (icmhe = _pglcmhe->IvMac(); icmhe-- != 0;)
     {
-        _pglcmhe->Get(icmhe, &cmhe);
+        _pglcmhe.Get(icmhe, &cmhe);
         if (cmhe.pcmh == pcmh)
         {
             _pglcmhe->Delete(icmhe);
@@ -714,7 +714,7 @@ void CEX::BuryCmh(PCMH pcmh)
 
     for (icmd = _pglcmd->IvMac(); icmd-- != 0;)
     {
-        _pglcmd->Get(icmd, &cmd);
+        _pglcmd.Get(icmd, &cmd);
         if (cmd.pcmh == pcmh)
         {
             _pglcmd->Delete(icmd);
@@ -800,7 +800,7 @@ void CEX::EnqueueCmd(PCMD pcmd)
     AssertPo(pcmd, 0);
     Assert(pcmd->cid != cidNil, "why enqueue a nil command?");
 
-    if (!_pglcmd->FEnqueue(pcmd))
+    if (!_pglcmd.FEnqueue(pcmd))
     {
         Bug("event queue not big enough");
         ReleasePpo(&pcmd->pgg);
@@ -822,7 +822,7 @@ void CEX::PushCmd(PCMD pcmd)
     AssertPo(pcmd, 0);
     Assert(pcmd->cid != cidNil, "why enqueue a nil command?");
 
-    if (!_pglcmd->FPush(pcmd))
+    if (!_pglcmd.FPush(pcmd))
     {
         Bug("event queue not big enough");
         ReleasePpo(&pcmd->pgg);
@@ -846,7 +846,7 @@ bool CEX::FCidIn(long cid)
 
     for (icmd = _pglcmd->IvMac(); icmd-- > 0;)
     {
-        _pglcmd->Get(icmd, &cmd);
+        _pglcmd.Get(icmd, &cmd);
         if (cmd.cid == cid)
             return fTrue;
     }
@@ -867,7 +867,7 @@ void CEX::FlushCid(long cid)
 
     for (icmd = _pglcmd->IvMac(); icmd-- > 0;)
     {
-        _pglcmd->Get(icmd, &cmd);
+        _pglcmd->Get(icmd, BlobPtr::Make(cmd));
         if (cmd.cid == cid)
         {
             _pglcmd->Delete(icmd);
@@ -888,7 +888,7 @@ tribool CEX::_TGetNextCmd(void)
     AssertThis(0);
 
     // get the next command from the command stream
-    if (!_pglcmd->FPop(&_cmdCur))
+    if (!_pglcmd.FPop(&_cmdCur))
     {
         ClearPb(&_cmdCur, size(_cmdCur));
         if (pvNil == _pgobTrack)
@@ -1026,7 +1026,7 @@ bool CEX::FDispatchNextCmd(void)
     fHandled = fFalse;
     for (_icmheNext = 0; _icmheNext < _pglcmhe->IvMac() && !fHandled;)
     {
-        _pglcmhe->Get(_icmheNext++, &cmhe);
+        _pglcmhe.Get(_icmheNext++, &cmhe);
         if (pvNil == _cmdCur.pcmh)
         {
             if (!(cmhe.grfcmm & fcmmNobody))
@@ -1085,7 +1085,7 @@ ulong CEX::GrfedsForCmd(PCMD pcmd)
     // pipe it through the command handlers, then to the target
     for (icmhe = 0, ccmhe = _pglcmhe->IvMac(); icmhe < ccmhe; icmhe++)
     {
-        _pglcmhe->Get(icmhe, &cmhe);
+        _pglcmhe->Get(icmhe, BlobPtr::Make(cmhe));
         grfeds = fedsNil;
         if (_FEnableCmd(cmhe.pcmh, pcmd, &grfeds))
             goto LDone;
@@ -1155,10 +1155,10 @@ bool CEX::FGetNextKey(PCMD pcmd)
     if ((iv = _pglcmd->IvMac()) > 0)
     {
         // get next cmd
-        _pglcmd->Get(iv - 1, pcmd);
+        _pglcmd->Get(iv - 1, BlobPtr::Make(*pcmd));
         if (pcmd->cid == cidKey)
         {
-            AssertDo(_pglcmd->FPop(pvNil), 0);
+            AssertDo(_pglcmd.FPop(pvNil), 0);
             return fTrue;
         }
     LFail:
@@ -1274,7 +1274,7 @@ void CEX::MarkMem(void)
 
     for (icmd = _pglcmd->IvMac(); icmd-- != 0;)
     {
-        _pglcmd->Get(icmd, &cmd);
+        _pglcmd->Get(icmd, BlobPtr::Make(cmd));
         if (cmd.pgg != pvNil)
             MarkMemObj(cmd.pgg);
     }

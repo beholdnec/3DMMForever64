@@ -2745,17 +2745,17 @@ bool DCD::FCmdSetColorTable(PCMD pcmd)
     AssertVarMem(pcmd);
     CKI cki;
     BLCK blck;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
 
     if (fselCki != _sel.GrfselGetCkiKid(&cki, pvNil))
         return fFalse;
     if (!_pcfl->FFind(cki.ctg, cki.cno, &blck))
         return fFalse;
 
-    if (pvNil != (pglclr = GL::PglRead(&blck)) && pglclr->CbEntry() == size(CLR))
+    if ((pglclr = GLPtr<CLR>::Read(&blck)) && pglclr->CbEntry() == size(CLR))
         GPT::SetActiveColors(pglclr, fpalIdentity);
 
-    ReleasePpo(&pglclr);
+    pglclr.Release();
     return fTrue;
 }
 
@@ -2966,7 +2966,6 @@ SEL::SEL(PCFL pcfl)
     AssertPo(pcfl, 0);
     _pcfl = pcfl;
     _lnLim = lnNil;
-    _pglctg = pvNil;
     _SetNil();
     AssertThis(0);
 }
@@ -2977,7 +2976,6 @@ SEL::SEL(PCFL pcfl)
 ***************************************************************************/
 SEL::SEL(SEL &selT)
 {
-    _pglctg = pvNil;
     *this = selT;
 }
 
@@ -2986,7 +2984,7 @@ SEL::SEL(SEL &selT)
 ***************************************************************************/
 SEL::~SEL(void)
 {
-    ReleasePpo(&_pglctg);
+    _pglctg.Release();
 }
 
 /***************************************************************************
@@ -2995,13 +2993,13 @@ SEL::~SEL(void)
 ***************************************************************************/
 SEL &SEL::operator=(SEL &selT)
 {
-    PGL pglctgOld = _pglctg;
+    GLPtr<CTG> pglctgOld = _pglctg;
 
     SEL_PAR::operator=(selT);
     CopyPb(PvAddBv(&selT, size(SEL_PAR)), PvAddBv(this, size(SEL_PAR)), size(SEL) - size(SEL_PAR));
-    if (pvNil != _pglctg)
+    if (_pglctg)
         _pglctg->AddRef();
-    ReleasePpo(&pglctgOld);
+    pglctgOld.Release();
     return *this;
 }
 
@@ -3314,9 +3312,9 @@ bool SEL::FGetCtgFilter(long ictg, CTG *pctg)
     AssertThis(0);
     AssertVarMem(pctg);
 
-    if (pvNil == _pglctg || !FIn(ictg, 0, _pglctg->IvMac()))
+    if (!_pglctg || !FIn(ictg, 0, _pglctg->IvMac()))
         return fFalse;
-    _pglctg->Get(ictg, pctg);
+    _pglctg.Get(ictg, pctg);
     return fTrue;
 }
 
@@ -3327,9 +3325,9 @@ void SEL::FreeFilterList(void)
 {
     AssertThis(0);
 
-    if (pvNil != _pglctg)
+    if (_pglctg)
     {
-        ReleasePpo(&_pglctg);
+        _pglctg.Release();
         Adjust();
     }
 }
@@ -3341,9 +3339,9 @@ bool SEL::FAddCtgFilter(CTG ctg)
 {
     AssertThis(0);
 
-    if (pvNil == _pglctg && pvNil == (_pglctg = GL::PglNew(size(CTG), 1)))
+    if (!_pglctg && !(_pglctg = GLPtr<CTG>::New(1)))
         return fFalse;
-    if (!_pglctg->FAdd(&ctg))
+    if (!_pglctg.FAdd(&ctg))
         return fFalse;
     Adjust();
     return fTrue;
@@ -3357,7 +3355,7 @@ bool SEL::_FFilter(CTG ctg, CNO cno)
     long cctg;
     CTG *qctg;
 
-    if (pvNil == _pglctg || 0 == (cctg = _pglctg->IvMac()))
+    if (!_pglctg || 0 == (cctg = _pglctg->IvMac()))
         return fTrue;
 
     for (qctg = _pglctg->QvGet(0).Cast<CTG>(cctg); cctg-- > 0; qctg++)

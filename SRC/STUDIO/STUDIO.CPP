@@ -164,8 +164,8 @@ STDIO::~STDIO(void)
     ReleasePpo(&_pgstMisc);
     ReleasePpo(&_pbrwrActr);
     ReleasePpo(&_pbrwrProp);
-    ReleasePpo(&_pglcmg);
-    ReleasePpo(&_pglclr);
+    _pglcmg.Release();
+    _pglclr.Release();
     ReleaseBrcn();
 
     PGOB pgobStudio = ((APP *)vpappb)->Pkwa()->PgobFromHid(kidBackground);
@@ -226,8 +226,8 @@ bool STDIO::_FOpenStudio(bool fPaletteFade)
         pcrf = _pcrm->PcrfGet(icrf);
         if (pcrf->Pcfl()->FFind(kctgColorTable, kidPalette, &blck))
         {
-            _pglclr = GL::PglRead(&blck);
-            if (_pglclr != pvNil)
+            _pglclr = GLPtr<CLR>::Read(&blck);
+            if (_pglclr)
             {
                 break;
             }
@@ -273,7 +273,7 @@ LFail:
     ReleasePpo(&psceg);
     ReleasePpo(&_pbrwrActr);
     ReleasePpo(&_pbrwrProp);
-    ReleasePpo(&_pglcmg);
+    _pglcmg.Release();
 
     vapp.EndLongOp();
 
@@ -1100,7 +1100,7 @@ bool STDIO::FCmdNewSpletter(PCMD pcmd)
     // as the default font for the TDT easel.
     cki.ctg = kctgTfth;
     cki.cno = cnoNil;
-    pbcl = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+    pbcl = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
     if (pvNil == pbcl)
         return fTrue;
     if (pbcl->IthdMac() == 0)
@@ -2123,7 +2123,7 @@ bool STDIO::FAddCmg(CNO cnoTmpl, CNO cnoGokd)
     long icmg;
     for (icmg = 0; icmg < _pglcmg->IvMac(); icmg++)
     {
-        _pglcmg->Get(icmg, &cmg);
+        _pglcmg.Get(icmg, &cmg);
         if (cmg.cnoTmpl == cnoTmpl)
         {
             Warn("Duplicate actor cno in content");
@@ -2134,7 +2134,7 @@ bool STDIO::FAddCmg(CNO cnoTmpl, CNO cnoGokd)
 
     cmg.cnoTmpl = cnoTmpl;
     cmg.cnoGokd = cnoGokd;
-    return _pglcmg->FAdd(&cmg);
+    return _pglcmg.FAdd(&cmg);
 }
 
 /***************************************************************************
@@ -2149,7 +2149,7 @@ CNO STDIO::CnoGokdFromCnoTmpl(CNO cnoTmpl)
 
     for (icmg = 0; icmg < _pglcmg->IvMac(); icmg++)
     {
-        _pglcmg->Get(icmg, &cmg);
+        _pglcmg.Get(icmg, &cmg);
         if (cmg.cnoTmpl == cnoTmpl)
             return cmg.cnoGokd;
     }
@@ -2707,11 +2707,11 @@ void STDIO::MarkMem(void)
     long ipbrcn;
     PBRCN pbrcn;
 
-    if (_pglpbrcn != pvNil)
+    if (_pglpbrcn)
     {
         for (ipbrcn = 0; ipbrcn < _pglpbrcn->IvMac(); ipbrcn++)
         {
-            _pglpbrcn->Get(ipbrcn, &pbrcn);
+            _pglpbrcn.Get(ipbrcn, &pbrcn);
             MarkMemObj(pbrcn);
         }
     }

@@ -189,10 +189,10 @@ class CHCM : public CHCM_PAR
         bool fPack;
     };
 
-    PGL _pglcsfc; // the stack of CSFCs for sub files
+    GLPtr<CSFC> _pglcsfc; // the stack of CSFCs for sub files
 
     PCFL _pcfl;       // current sub file
-    PGL _pglckiLoner; // the chunks that must be loners
+    GLPtr<CKI> _pglckiLoner; // the chunks that must be loners
 
     BSF _bsf;     // temporary buffer for the chunk data
     PCHLX _pchlx; // lexer for compiling

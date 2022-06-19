@@ -542,13 +542,13 @@ void AMQUE::_Queue(long isndinMin)
 
     _Enter();
 
-    if (pvNil != _pglsndin)
+    if (_pglsndin)
     {
         PCAMS pcams;
 
         for (isndin = isndinMin; isndin < _pglsndin->IvMac(); isndin++)
         {
-            _pglsndin->Get(isndin, &sndin);
+            _pglsndin.Get(isndin, &sndin);
 
             if (1 == sndin.cactPlay)
                 continue;
@@ -559,16 +559,16 @@ void AMQUE::_Queue(long isndinMin)
                 sndin.cactPlay = 1; // now it's just one sound
                 ReleasePpo(&sndin.pbaco);
                 sndin.pbaco = pcams;
-                _pglsndin->Put(isndin, &sndin);
+                _pglsndin.Put(isndin, &sndin);
             }
         }
     }
 
-    if (_isndinCur == isndinMin && pvNil != _pglsndin)
+    if (_isndinCur == isndinMin && _pglsndin)
     {
         for (; _isndinCur < _pglsndin->IvMac(); _isndinCur++)
         {
-            _pglsndin->Get(_isndinCur, &sndin);
+            _pglsndin.Get(_isndinCur, &sndin);
             if (0 <= sndin.cactPause)
                 break;
         }
@@ -634,9 +634,9 @@ void AMQUE::_PauseQueue(long isndinMin)
 
     if (_isndinCur == isndinMin && _pglsndin->IvMac() > _isndinCur)
     {
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         sndin.dtsStart = TsCurrentSystem() - _tsStart;
-        _pglsndin->Put(_isndinCur, &sndin);
+        _pglsndin.Put(_isndinCur, &sndin);
 
         _Queue(isndinMin);
     }
@@ -665,9 +665,9 @@ void AMQUE::Notify(LPSOUND psnd)
 
     _Enter();
 
-    if (pvNil != _pglsndin && _pglsndin->IvMac() > _isndinCur)
+    if (_pglsndin && _pglsndin->IvMac() > _isndinCur)
     {
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         if (psnd == ((PCAMS)sndin.pbaco)->psnd)
         {
             if (--sndin.cactPlay == 0)
@@ -678,7 +678,7 @@ void AMQUE::Notify(LPSOUND psnd)
             else
             {
                 // play the sound again
-                _pglsndin->Put(_isndinCur, &sndin);
+                _pglsndin.Put(_isndinCur, &sndin);
                 _pchan->SetSoundSrc(((PCAMS)sndin.pbaco)->psnd);
                 _tsStart = TsCurrentSystem();
             }

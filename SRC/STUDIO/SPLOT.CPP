@@ -32,7 +32,7 @@ END_CMD_MAP_NIL()
 PSPLOT SPLOT::PsplotNew(long hidPar, long hid, PRCA prca)
 {
     PSPLOT psplot = pvNil;
-    PGL pglclr = pvNil;
+    GLPtr<CLR> pglclr;
     PGOB pgobPar;
     RC rcRel;
     GCB gcb;
@@ -45,7 +45,7 @@ PSPLOT SPLOT::PsplotNew(long hidPar, long hid, PRCA prca)
     }
 
     pglclr = GPT::PglclrGetPalette();
-    if (pglclr == pvNil)
+    if (!pglclr)
         goto LFail;
 
     rcRel.Set(krelZero, krelZero, krelOne, krelOne);
@@ -70,7 +70,7 @@ PSPLOT SPLOT::PsplotNew(long hidPar, long hid, PRCA prca)
     psplot->_pglclrSav->AddRef();
 
 LFail:
-    ReleasePpo(&pglclr);
+    pglclr.Release();
     return psplot;
 }
 
@@ -161,7 +161,7 @@ bool SPLOT::FCmdSplot(PCMD pcmd)
     {
         cki.ctg = kctgBkth;
         cki.cno = cnoNil;
-        _pbclBkgd = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclBkgd = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
         if (_pbclBkgd == pvNil || _pbclBkgd->IthdMac() == 0)
         {
             ReleasePpo(&_pbclBkgd);
@@ -187,7 +187,7 @@ bool SPLOT::FCmdSplot(PCMD pcmd)
         _pbclBkgd->GetThd(_ithdBkgd, &thd);
         cki.ctg = kctgBkth;
         cki.cno = thd.tag.cno;
-        _pbclCam = BCL::PbclNew(pvNil, &cki, kctgCath, pvNil, fTrue);
+        _pbclCam = BCL::PbclNew(pvNil, &cki, kctgCath, {}, fTrue);
         if (_pbclCam == pvNil || _pbclCam->IthdMac() == 0)
         {
             ReleasePpo(&_pbclCam);
@@ -207,7 +207,7 @@ bool SPLOT::FCmdSplot(PCMD pcmd)
     {
         cki.ctg = kctgTmth;
         cki.cno = cnoNil;
-        _pbclActr = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclActr = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
         if (_pbclActr == pvNil || _pbclActr->IthdMac() == 0)
         {
             ReleasePpo(&_pbclActr);
@@ -219,7 +219,7 @@ bool SPLOT::FCmdSplot(PCMD pcmd)
     {
         cki.ctg = kctgPrth;
         cki.cno = cnoNil;
-        _pbclProp = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclProp = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
         if (_pbclProp == pvNil || _pbclProp->IthdMac() == 0)
         {
             ReleasePpo(&_pbclProp);
@@ -239,7 +239,7 @@ bool SPLOT::FCmdSplot(PCMD pcmd)
     {
         cki.ctg = kctgSmth;
         cki.cno = cnoNil;
-        _pbclSound = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclSound = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
         if (_pbclSound == pvNil || _pbclSound->IthdMac() == 0)
         {
             ReleasePpo(&_pbclSound);
@@ -408,11 +408,11 @@ SPLOT::~SPLOT(void)
         _pmvie->Pmsq()->SndOnShort();
     }
 
-    if (_pglclrSav != pvNil)
+    if (_pglclrSav)
     {
         vapp.UpdateMarked();
         GPT::SetActiveColors(_pglclrSav, fpalIdentity);
-        ReleasePpo(&_pglclrSav);
+        _pglclrSav.Release();
     }
 
     ReleasePpo(&_pmvie);

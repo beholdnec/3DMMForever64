@@ -965,7 +965,7 @@ bool BRWL::FInit(PCMD pcmd, BWS bws, long thumSelect, long sidSelect, CKI ckiRoo
             // Save new context later
 
             /* Release */
-            ReleasePpo(&pbrcnl->pglthd);
+            pbrcnl->pglthd.Release();
             ReleasePpo(&pbrcnl->pgst);
             ReleasePpo(&pbrcnl->pcrm);
         }
@@ -1055,7 +1055,7 @@ bool BRWL::_FCreateBuildThd(CKI ckiRoot, CTG ctgContent, bool fBuildGl)
         //
         // Create the gl's
         //
-        if (pvNil == (_pglthd = GL::PglNew(size(THD), kglthdGrow)))
+        if (!(_pglthd = GLPtr<THD>::New(kglthdGrow)))
             return fFalse;
         _pglthd->SetMinGrow(kglthdGrow);
     }
@@ -1132,7 +1132,7 @@ void BRWL::_GetThumFromIthum(long ithum, void *pvthumSelect, long *psid)
         return;
     }
 
-    _pglthd->Get(ithum, &thd);
+    _pglthd.Get(ithum, &thd);
     *psid = thd.tag.sid;
 
     switch (_bws)
@@ -1166,7 +1166,7 @@ void BRWL::_CacheContext(void)
 
         BRWL_PAR::_CacheContext();
 
-        if (pbrcnl->pglthd == pvNil)
+        if (!pbrcnl->pglthd)
         {
             Assert(pbrcnl->pgst == pvNil, "Inconsistent state");
             Assert(pbrcnl->pcrm == pvNil, "Inconsistent state");
@@ -1249,12 +1249,12 @@ void BRWL::_SortThd(void)
 
     if (fSortBySid && _pglthd->IvMac() > 0)
     {
-        _pglthd->Get(0, &thdi);
+        _pglthd.Get(0, &thdi);
         sid = thdi.tag.sid;
     }
     for (ithd = 1; ithd < _pglthd->IvMac(); ithd++)
     {
-        _pglthd->Get(ithd, &thdi);
+        _pglthd.Get(ithd, &thdi);
         if (fSortBySid && thdi.tag.sid != sid)
         {
             sid = thdi.tag.sid;
@@ -1263,7 +1263,7 @@ void BRWL::_SortThd(void)
 
         for (jthd = jthdMin; jthd < ithd; jthd++)
         {
-            _pglthd->Get(jthd, &thdj);
+            _pglthd.Get(jthd, &thdj);
             if (*plwJ < *plwI)
                 continue;
 
@@ -1281,9 +1281,9 @@ void BRWL::_SortThd(void)
 
                 for (ithdT = ithd + 1; ithdT < _pglthd->IvMac(); ithdT++)
                 {
-                    _pglthd->Get(ithdT, &thdT);
+                    _pglthd.Get(ithdT, &thdT);
                     thdT.ithd--;
-                    _pglthd->Put(ithdT, &thdT);
+                    _pglthd.Put(ithdT, &thdT);
                 }
 #ifdef DEBUG
                 // Note: Files for the current product was enumerated first.
@@ -1296,9 +1296,9 @@ void BRWL::_SortThd(void)
                 break;
             }
             // Switch places
-            _pglthd->Put(ithd, &thdj);
-            _pglthd->Put(jthd, &thdi);
-            _pglthd->Get(ithd, &thdi);
+            _pglthd.Put(ithd, &thdj);
+            _pglthd.Put(jthd, &thdi);
+            _pglthd.Get(ithd, &thdi);
         }
     }
 }
@@ -1341,7 +1341,7 @@ long BRWL::_IthumFromThum(long thumSelect, long sidSelect)
 
     for (long ithd = 0; ithd < _pglthd->IvMac(); ithd++)
     {
-        _pglthd->Get(ithd, &thd);
+        _pglthd.Get(ithd, &thd);
         if ((*plw == thumSelect) && (sidSelect == ksidInvalid || thd.tag.sid == sidSelect))
         {
             return ithd;
@@ -1370,7 +1370,7 @@ bool BRWL::_FSetThumFrame(long ithd, PGOB pgobPar)
     long kidThum;
 
     // Associate the gob with the current frame
-    _pglthd->Get(ithd, &thd);
+    _pglthd.Get(ithd, &thd);
 
     kidThum = _KidThumFromIfrm(_cfrmPageCur);
     pgok = vapp.Pkwa()->PgokNew(pgobPar, kidThum, thd.cno, _pcrm);
@@ -1408,7 +1408,7 @@ void BRWL::_ReleaseThumFrame(long ifrm)
  * BCL class routines
  *
  ****************************************************/
-PBCL BCL::PbclNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd, bool fOnlineOnly)
+PBCL BCL::PbclNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd, bool fOnlineOnly)
 {
     PBCL pbcl;
 
@@ -1422,7 +1422,7 @@ PBCL BCL::PbclNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd, bool fOn
     return pbcl;
 }
 
-bool BCLS::_FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGST pgst, PGL pglthd)
+bool BCLS::_FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGST pgst, GLPtr<THD> pglthd)
 {
     AssertNilOrPo(pgst, 0);
 
@@ -1443,15 +1443,15 @@ LFail:
     return fFalse;
 }
 
-bool BCL::_FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd)
+bool BCL::_FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd)
 {
     AssertNilOrPo(pcrm, 0);
     Assert(pckiRoot->ctg != ctgNil, "Bad CKI");
     AssertNilOrPo(pglthd, 0);
 
-    if (pglthd == pvNil)
+    if (!pglthd)
     {
-        if ((pglthd = GL::PglNew(size(THD))) == pvNil)
+        if (!(pglthd = GLPtr<THD>::New()))
             goto LFail;
     }
     else
@@ -1472,7 +1472,7 @@ LFail:
     return fFalse;
 }
 
-PBCLS BCLS::PbclsNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd, PGST pgst, bool fOnlineOnly)
+PBCLS BCLS::PbclsNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd, PGST pgst, bool fOnlineOnly)
 {
     PBCLS pbcls;
 
@@ -1694,7 +1694,7 @@ bool BCL::_FAddGokdToThd(PCFL pcfl, long sid, KID *pkid)
     }
 
     thd.ithd = _pglthd->IvMac();
-    if (!_pglthd->FInsert(thd.ithd, &thd))
+    if (!_pglthd.FInsert(thd.ithd, &thd))
         goto LFail;
 
     return fTrue;
@@ -1936,7 +1936,7 @@ bool BRWN::_FSetThumFrame(long ithd, PGOB pgobPar)
     STN stnLabel;
     THD thd;
 
-    _pglthd->Get(ithd, &thd);
+    _pglthd.Get(ithd, &thd);
     _pgst->GetStn(thd.ithd, &stnLabel);
     ptgob = (PTGOB)(pgobPar->PgobFirstChild());
 
@@ -2076,9 +2076,9 @@ bool BRWM::_FUpdateLists(void)
             _pgst->Delete(ithdOld);
             for (ithd = ithdOld; ithd < _pglthd->IvMac(); ithd++)
             {
-                _pglthd->Get(ithd, &thd);
+                _pglthd.Get(ithd, &thd);
                 thd.ithd--;
-                _pglthd->Put(ithd, &thd);
+                _pglthd.Put(ithd, &thd);
             }
             goto LNext;
         }
@@ -2147,7 +2147,7 @@ bool BRWM::_FAddThd(STN *pstn, CKI *pcki)
     thd.cno = cnoNil;       // unused
     thd.chidThum = chidNil; // unused
     thd.ithd = _pglthd->IvMac();
-    if (!_pglthd->FAdd(&thd))
+    if (!_pglthd.FAdd(&thd))
         goto LFail1;
 
     return fTrue;
@@ -2756,7 +2756,7 @@ bool BRWI::FInit(PCMD pcmd, CKI ckiRoot, PSTDIO pstdio)
     //
     // Create the gl's
     //
-    if (pvNil == (_pglthd = GL::PglNew(size(THD), kglthdGrow)))
+    if (!(_pglthd = GLPtr<THD>::New(kglthdGrow)))
         return fFalse;
     _pglthd->SetMinGrow(kglthdGrow);
 
@@ -3380,7 +3380,7 @@ BRWD::~BRWD(void)
 BRWL::~BRWL(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pglthd);
+    _pglthd.Release();
     ReleasePpo(&_pcrm);
     ReleasePpo(&_pgst);
 
@@ -3432,7 +3432,7 @@ BRWI::~BRWI(void)
 BRCNL::~BRCNL(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&pglthd);
+    pglthd.Release();
     ReleasePpo(&pgst);
     ReleasePpo(&pcrm);
 }

@@ -85,8 +85,8 @@ PTAGM TAGM::PtagmNew(PFNI pfniHDRoot, PFNINSCD pfninscd, long cbCache)
     ptagm->_cbCache = cbCache;
     ptagm->_pfninscd = pfninscd;
 
-    ptagm->_pglsfs = GL::PglNew(size(SFS));
-    if (pvNil == ptagm->_pglsfs)
+    ptagm->_pglsfs = GLPtr<SFS>::New();
+    if (!ptagm->_pglsfs)
         goto LFail;
 
     ptagm->_pgstSource = GST::PgstNew(size(long)); // extra data is sid
@@ -110,14 +110,14 @@ TAGM::~TAGM(void)
     long isfs;
     SFS sfs;
 
-    if (pvNil != _pglsfs)
+    if (_pglsfs)
     {
         for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
         {
-            _pglsfs->Get(isfs, &sfs);
+            _pglsfs.Get(isfs, &sfs);
             ReleasePpo(&sfs.pcrmSource);
         }
-        ReleasePpo(&_pglsfs);
+        _pglsfs.Release();
     }
     ReleasePpo(&_pgstSource);
 }
@@ -533,14 +533,14 @@ PCRM TAGM::_PcrmSourceGet(long sid, bool fDontHitCD)
 
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         if (sid == sfs.sid)
             goto LSetupSfs;
     }
     // SFS for this sid doesn't exist in _pglsfs, so make one
     sfs.Clear();
     sfs.sid = sid;
-    if (!_pglsfs->FAdd(&sfs, &isfs))
+    if (!_pglsfs.FAdd(&sfs, &isfs))
         return pvNil;
 LSetupSfs:
     if (sfs.tContentOnHD == tMaybe)
@@ -551,14 +551,14 @@ LSetupSfs:
                 return pvNil;
             if (!fExists)
                 sfs.tContentOnHD = tNo;
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
         if (sfs.tContentOnHD == tMaybe)
         {
             if (!_FDetermineIfContentOnFni(&sfs.fniHD, &fContentOnFni))
                 return pvNil;
             sfs.tContentOnHD = (fContentOnFni ? tYes : tNo);
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
     }
     if (tYes == sfs.tContentOnHD)
@@ -568,7 +568,7 @@ LSetupSfs:
             sfs.pcrmSource = _PcrmSourceNew(sid, &sfs.fniHD);
             if (pvNil == sfs.pcrmSource)
                 return pvNil;
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
         return sfs.pcrmSource;
     }
@@ -587,7 +587,7 @@ LSetupSfs:
         if (fFniChanged)
         {
             Assert(sfs.pcrmSource == pvNil, "fniCD can't change once pcrm is opened!");
-            _pglsfs->Put(isfs, &sfs); // update sfs.fniCD
+            _pglsfs.Put(isfs, &sfs); // update sfs.fniCD
         }
     }
     if (pvNil == sfs.pcrmSource)
@@ -601,7 +601,7 @@ LSetupSfs:
             sfs.pcrmSource = _PcrmSourceNew(sid, &sfs.fniCD);
             if (pvNil == sfs.pcrmSource)
                 return pvNil;
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
     }
     return sfs.pcrmSource;
@@ -625,14 +625,14 @@ bool TAGM::_FDetermineIfSourceHD(long sid, bool *pfIsOnHD)
 
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         if (sid == sfs.sid)
             goto LSetupSfs;
     }
     // SFS for this sid doesn't exist in _pglsfs, so make one
     sfs.Clear();
     sfs.sid = sid;
-    if (!_pglsfs->FAdd(&sfs, &isfs))
+    if (!_pglsfs.FAdd(&sfs, &isfs))
         return fFalse;
 LSetupSfs:
     if (sfs.tContentOnHD == tMaybe)
@@ -643,14 +643,14 @@ LSetupSfs:
                 return fFalse;
             if (!fExists)
                 sfs.tContentOnHD = tNo;
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
         if (sfs.tContentOnHD == tMaybe)
         {
             if (!_FDetermineIfContentOnFni(&sfs.fniHD, &fContentOnFni))
                 return fFalse;
             sfs.tContentOnHD = (fContentOnFni ? tYes : tNo);
-            _pglsfs->Put(isfs, &sfs);
+            _pglsfs.Put(isfs, &sfs);
         }
     }
     *pfIsOnHD = (sfs.tContentOnHD == tYes);
@@ -671,14 +671,14 @@ bool TAGM::_FGetFniHD(long sid, PFNI pfniHD)
 
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         if (sid == sfs.sid)
             goto LSetupSFS;
     }
     // SFS for this sid doesn't exist in _pglsfs, so make one
     sfs.Clear();
     sfs.sid = sid;
-    if (!_pglsfs->FAdd(&sfs, &isfs))
+    if (!_pglsfs.FAdd(&sfs, &isfs))
         return fFalse;
 LSetupSFS:
     if (sfs.fniHD.Ftg() == ftgNil)
@@ -686,7 +686,7 @@ LSetupSFS:
         if (!_FBuildFniHD(sid, &sfs.fniHD, &fExists) || !fExists)
             return fFalse;
     }
-    _pglsfs->Put(isfs, &sfs);
+    _pglsfs.Put(isfs, &sfs);
     *pfniHD = sfs.fniHD;
     return fTrue;
 }
@@ -705,14 +705,14 @@ bool TAGM::_FGetFniCD(long sid, PFNI pfniCD, bool fAskForCD)
 
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         if (sid == sfs.sid)
             goto LSetupSFS;
     }
     // SFS for this sid doesn't exist in _pglsfs, so make one
     sfs.Clear();
     sfs.sid = sid;
-    if (!_pglsfs->FAdd(&sfs, &isfs))
+    if (!_pglsfs.FAdd(&sfs, &isfs))
         return fFalse;
 LSetupSFS:
     while (!_FFindFniCD(sid, &sfs.fniCD, &fFniChanged))
@@ -723,7 +723,7 @@ LSetupSFS:
             return fFalse;
     }
     if (fFniChanged)
-        _pglsfs->Put(isfs, &sfs);
+        _pglsfs.Put(isfs, &sfs);
     *pfniCD = sfs.fniCD;
     return fTrue;
 }
@@ -923,7 +923,7 @@ void TAGM::ClearCache(long sid, ulong grftagm)
         SFS sfs;
         PCRM pcrmSource;
 
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         if ((sid != sidNil && sfs.sid != sid) || sfs.pcrmSource == pvNil)
             continue;
         if (grftagm & ftagmFile)
@@ -1115,7 +1115,7 @@ void TAGM::AssertValid(ulong grf)
 
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         AssertPo(&sfs.fniHD, ffniDir | ffniEmpty);
         AssertPo(&sfs.fniCD, ffniDir | ffniEmpty);
         AssertNilOrPo(sfs.pcrmSource, 0);
@@ -1137,7 +1137,7 @@ void TAGM::MarkMem(void)
     MarkMemObj(_pgstSource);
     for (isfs = 0; isfs < _pglsfs->IvMac(); isfs++)
     {
-        _pglsfs->Get(isfs, &sfs);
+        _pglsfs.Get(isfs, &sfs);
         MarkMemObj(sfs.pcrmSource);
     }
 }

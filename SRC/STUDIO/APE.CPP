@@ -103,14 +103,14 @@ bool APE::_FInit(PTMPL ptmpl, PCOST pcost, long anid, bool fCycleCels, PRCA prca
         }
     }
 
-    _pglgms = GL::PglNew(size(GMS), cbset);
-    if (pvNil == _pglgms)
+    _pglgms = GLPtr<GMS>::New(cbset);
+    if (!_pglgms)
         return fFalse;
     AssertDo(_pglgms->FSetIvMac(cbset), "PglNew should have ensured space");
     TrashVar(&gms);
     gms.fValid = fFalse;
     for (ibset = 0; ibset < cbset; ibset++)
-        _pglgms->Put(ibset, &gms);
+        _pglgms.Put(ibset, &gms);
 
     GetRc(&rc, cooLocal);
     _pbwld = BWLD::PbwldNew(rc.Dxp(), rc.Dyp());
@@ -163,7 +163,7 @@ APE::~APE()
     ReleasePpo(&_ptmpl);
     ReleasePpo(&_pbody);
     ReleasePpo(&_pbwld);
-    ReleasePpo(&_pglgms);
+    _pglgms.Release();
 }
 
 /***************************************************************************
@@ -528,21 +528,21 @@ bool APE::FCmdTrackMouse(PCMD_MOUSE pcmd)
         gms = _apet.gms;
         Assert(gms.fValid, 0);
         if (_FApplyGms(&gms, ibset))
-            _pglgms->Put(ibset, &gms);
+            _pglgms.Put(ibset, &gms);
         break;
 
     case aptIncCmtl:
-        _pglgms->Get(ibset, &gms);
+        _pglgms.Get(ibset, &gms);
         if (_FIncCmtl(&gms, ibset, fFalse))
-            _pglgms->Put(ibset, &gms);
+            _pglgms.Put(ibset, &gms);
         break;
 
     case aptIncAccessory:
         if ((ibsetAcc = _ibsetOnlyAcc) != ivNil || _ptmpl->FIbsetAccOfIbset(ibset, &ibsetAcc))
         {
-            _pglgms->Get(ibsetAcc, &gms);
+            _pglgms.Get(ibsetAcc, &gms);
             if (_FIncCmtl(&gms, ibsetAcc, fTrue))
-                _pglgms->Put(ibsetAcc, &gms);
+                _pglgms.Put(ibsetAcc, &gms);
             _SetScale();
         }
         break;
@@ -761,7 +761,7 @@ bool APE::FSetTdtMtrl(PTAG ptagMtrl)
     gms.fMtrl = fTrue;
     TrashVar(&gms.cmid);
     gms.tagMtrl = *ptagMtrl;
-    _pglgms->Put(0, &gms);
+    _pglgms.Put(0, &gms);
 
     _UpdateView();
     return fTrue;
@@ -819,7 +819,7 @@ bool APE::FGetMaterial(long ibset, tribool *pfMtrl, long *pcmid, TAG *ptagMtrl)
 
     GMS gms;
 
-    _pglgms->Get(ibset, &gms);
+    _pglgms.Get(ibset, &gms);
     if (!gms.fValid)
         return fFalse; // nothing new for this ibset
     *pfMtrl = (tribool)gms.fMtrl;

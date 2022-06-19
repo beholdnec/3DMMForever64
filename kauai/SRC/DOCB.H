@@ -74,9 +74,9 @@ class DOCB : public DOCB_PAR
     bool _fDirty : 1;
     bool _fFreeing : 1;
     bool _fInternal : 1;
-    PGL _pglpddg; // keep track of the DDGs based on this doc
+    GLPtr<PDDG> _pglpddg; // keep track of the DDGs based on this doc
 
-    PGL _pglpundb; // keep track of undo items
+    GLPtr<PUNDB> _pglpundb; // keep track of undo items
     long _ipundbLimDone;
     long _cundbMax;
 
@@ -127,7 +127,7 @@ class DOCB : public DOCB_PAR
     // General DDG management
     long Cddg(void)
     {
-        return pvNil == _pglpddg ? 0 : _pglpddg->IvMac();
+        return !_pglpddg ? 0 : _pglpddg->IvMac();
     }
     PDDG PddgGet(long ipddg);
     PDDG PddgActive(void);

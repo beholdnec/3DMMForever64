@@ -442,8 +442,8 @@ class GNV : public GNV_PAR
     HQ _HqolyFrame(POGN pogn, ulong grfogn);
 
     // transition related methods
-    bool _FInitPaletteTrans(PGL pglclr, PGL *ppglclrOld, PGL *ppglclrTrans, long cbitPixel = 0);
-    void _PaletteTrans(PGL pglclrOld, PGL pglclrNew, long lwNum, long lwDen, PGL pglclrTrans, CLR *pclrSub = pvNil);
+    bool _FInitPaletteTrans(GLPtr<CLR> pglclr, GLPtr<CLR> *ppglclrOld, GLPtr<CLR> *ppglclrTrans, long cbitPixel = 0);
+    void _PaletteTrans(GLPtr<CLR> pglclrOld, GLPtr<CLR> pglclrNew, long lwNum, long lwDen, GLPtr<CLR> pglclrTrans, CLR *pclrSub = pvNil);
     bool _FEnsureTempGnv(PGNV *ppgnv, RC *prc);
 
   public:
@@ -550,13 +550,13 @@ class GNV : public GNV_PAR
     void DrawMbmp(PMBMP pmbmp, RC *prc);
 
     // transitions
-    void Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr = pvNil);
-    void Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr = pvNil);
+    void Wipe(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr = {});
+    void Slide(long gfd, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr = {});
     void Dissolve(long crcWidth, long crcHeight, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts,
-                  PGL pglclr = pvNil);
-    void Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, PGL pglclr = pvNil);
+                  GLPtr<CLR> pglclr = {});
+    void Fade(long cactMax, ACR acrFade, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts, GLPtr<CLR> pglclr = {});
     void Iris(long gfd, long xp, long yp, ACR acrFill, PGNV pgnvSrc, RC *prcSrc, RC *prcDst, ulong dts,
-              PGL pglclr = pvNil);
+              GLPtr<CLR> pglclr = {});
 };
 
 // palette setting options
@@ -713,14 +713,14 @@ class GPT : public GPT_PAR
     static void MarkStaticMem(void);
 #endif // DEBUG
 
-    static void SetActiveColors(PGL pglclr, ulong grfpal);
-    static PGL PglclrGetPalette(void);
+    static void SetActiveColors(GLPtr<CLR> pglclr, ulong grfpal);
+    static GLPtr<CLR> PglclrGetPalette(void);
     static void Flush(void);
 
     static PGPT PgptNewOffscreen(RC *prc, long cbitPixel);
     static PGPT PgptNewPic(RC *prc);
     PPIC PpicRelease(void);
-    void SetOffscreenColors(PGL pglclr = pvNil);
+    void SetOffscreenColors(GLPtr<CLR> pglclr = {});
 
     void ClipToRegn(PREGN *ppregn);
     void SetPtBase(PT *ppt);

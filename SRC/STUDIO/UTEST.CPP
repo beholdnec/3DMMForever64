@@ -1465,18 +1465,18 @@ bool APP::_FDisplayHomeLogo(void)
     AssertPo(_pcfl, 0);
 
     BLCK blck;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
     PMBMP pmbmp;
     short bo;
     short osk;
 
     if (!_pcfl->FFind(kctgColorTable, kcnoGlcrInit, &blck))
         return fFalse;
-    pglclr = GL::PglRead(&blck, &bo, &osk);
-    if (pvNil == pglclr)
+    pglclr = GLPtr<CLR>::Read(&blck, &bo, &osk);
+    if (!pglclr)
         return fFalse;
     GPT::SetActiveColors(pglclr, fpalIdentity);
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 
     if (!_pcfl->FFind(kctgMbmp, kcnoMbmpHomeLogo, &blck))
         return fFalse;
@@ -1775,15 +1775,15 @@ bool APP::_FInitCrm(void)
     if (pvNil == _pcrmAll)
         goto LFail;
 
-    _pglicrfBuilding = GL::PglNew(size(long), _pgstBuildingFiles->IvMac());
-    if (pvNil == _pglicrfBuilding)
+    _pglicrfBuilding = GLPtr<long>::New(_pgstBuildingFiles->IvMac());
+    if (!_pglicrfBuilding)
         goto LFail;
 
-    _pglicrfStudio = GL::PglNew(size(long), _pgstStudioFiles->IvMac());
-    if (pvNil == _pglicrfStudio)
+    _pglicrfStudio = GLPtr<long>::New(_pgstStudioFiles->IvMac());
+    if (!_pglicrfStudio)
         goto LFail;
 
-    if (!_FAddToCrm(_pgstSharedFiles, _pcrmAll, pvNil))
+    if (!_FAddToCrm(_pgstSharedFiles, _pcrmAll, {}))
         goto LFail;
 
     if (!_FAddToCrm(_pgstBuildingFiles, _pcrmAll, _pglicrfBuilding))
@@ -1819,7 +1819,7 @@ LFail:
     it is filled in with the positions in the CRM of each of the loaded
     crfs.
 ***************************************************************************/
-bool APP::_FAddToCrm(PGST pgstFiles, PCRM pcrm, PGL pglFiles)
+bool APP::_FAddToCrm(PGST pgstFiles, PCRM pcrm, GLPtr<long> pglFiles)
 {
     AssertBaseThis(0);
     AssertPo(&_fniProductDir, ffniDir);
@@ -1878,7 +1878,7 @@ bool APP::_FAddToCrm(PGST pgstFiles, PCRM pcrm, PGL pglFiles)
         if (!pcrm->FAddCfl(pcfl, cbCache, &icfl))
             goto LFail;
         ReleasePpo(&pcfl);
-        if (pglFiles != pvNil && !pglFiles->FAdd(&icfl))
+        if (pglFiles && !pglFiles.FAdd(&icfl))
             goto LFail;
     }
 
@@ -1923,7 +1923,7 @@ bool APP::_FInitBuilding(void)
     for (i = 0; i < _pglicrfBuilding->IvMac(); i++)
     {
         _pgstBuildingFiles->GetExtra(i, &cbCache);
-        _pglicrfBuilding->Get(i, &iv);
+        _pglicrfBuilding.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
         pcrfT->SetCbMax(cbCache);
@@ -1932,7 +1932,7 @@ bool APP::_FInitBuilding(void)
     // Zero the cache for the studio crfs in the global crm.
     for (i = 0; i < _pglicrfStudio->IvMac(); i++)
     {
-        _pglicrfStudio->Get(i, &iv);
+        _pglicrfStudio.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
         pcrfT->SetCbMax(0);
@@ -1971,7 +1971,7 @@ bool APP::_FInitStudio(PFNI pfniUserDoc, bool fFailIfDocOpenFailed)
     for (i = 0; i < _pglicrfStudio->IvMac(); i++)
     {
         _pgstStudioFiles->GetExtra(i, &cbCache);
-        _pglicrfStudio->Get(i, &iv);
+        _pglicrfStudio.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
         pcrfT->SetCbMax(cbCache);
@@ -1980,7 +1980,7 @@ bool APP::_FInitStudio(PFNI pfniUserDoc, bool fFailIfDocOpenFailed)
     // Zero the cache for the building crfs in the global crm.
     for (i = 0; i < _pglicrfBuilding->IvMac(); i++)
     {
-        _pglicrfBuilding->Get(i, &iv);
+        _pglicrfBuilding.Get(i, &iv);
         pcrfT = _pcrmAll->PcrfGet(iv);
         Assert(pcrfT != pvNil, "Main CRM is corrupt.");
         pcrfT->SetCbMax(0);
@@ -3578,8 +3578,8 @@ void APP::_CleanUp(void)
     ReleasePpo(&_pcfl);
     ReleasePpo(&_pmvieHandoff);
     ReleasePpo(&_pcrmAll);
-    ReleasePpo(&_pglicrfBuilding);
-    ReleasePpo(&_pglicrfStudio);
+    _pglicrfBuilding.Release();
+    _pglicrfStudio.Release();
     ReleasePpo(&_pgstBuildingFiles);
     ReleasePpo(&_pgstStudioFiles);
     ReleasePpo(&_pgstSharedFiles);

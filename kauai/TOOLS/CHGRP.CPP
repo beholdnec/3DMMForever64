@@ -895,13 +895,13 @@ bool DCGL::FCmdAddItem(PCMD pcmd)
     switch (pcmd->cid)
     {
     case cidAddItem:
-        fT = pglb->FAdd(pv, &ivNew);
+        fT = pglb->FAdd(BlobPtr(pv, cb), &ivNew);
         break;
     case cidInsertItem:
         if (_fAllocated)
             break;
         Assert(pglb->FIs(kclsGL), "bad grpb");
-        fT = ((PGL)pglb)->FInsert(ivNew = _ivCur, pv);
+        fT = ((PGL)pglb)->FInsert(ivNew = _ivCur, BlobPtr(pv, cb));
     }
     UnlockHq(hq);
     FreePhq(&hq);
@@ -1437,7 +1437,7 @@ bool DOCI::_FWrite(long iv)
     case kclsGL:
     case kclsAL:
         Assert(cb == ((PGLB)_pgrpb)->CbEntry(), "bad cb in GL/AL");
-        ((PGLB)_pgrpb)->Put(iv, pv);
+        ((PGLB)_pgrpb)->Put(iv, BlobPtr(pv, cb));
         break;
     case kclsGG:
     case kclsAG:
@@ -1525,7 +1525,7 @@ HQ DOCI::_HqRead(void)
     {
     case kclsGL:
     case kclsAL:
-        ((PGLB)_pgrpb)->Get(_iv, pv);
+        ((PGLB)_pgrpb)->Get(_iv, BlobPtr(pv, cb));
         break;
     case kclsGG:
     case kclsAG:

@@ -312,7 +312,7 @@ BKGD::~BKGD(void)
     FreePpv((void **)&_prgbactLight);
     FreePpv((void **)&_prgblitLight);
     ReleasePpo(&_pglclr);
-    ReleasePpo(&_pglapos);
+    _pglapos.Release();
 }
 
 /***************************************************************************
@@ -486,15 +486,15 @@ bool BKGD::FSetCamera(PBWLD pbwld, long icam)
     }
 
     // Get actor placements
-    ReleasePpo(&_pglapos);
+    _pglapos.Release();
     _iaposNext = _iaposLast = 0;
-    if (capos > 0 && (_pglapos = GL::PglNew(size(APOS), capos)) != pvNil)
+    if (capos > 0 && (_pglapos = GLPtr<APOS>::New(capos)))
     {
         AssertDo(_pglapos->FSetIvMac(capos), "Should never fail");
         _pglapos->Lock();
         if (!blck.FReadRgb(_pglapos->QvGet(0).Ptr(), size(APOS) * capos, size(CAM)))
         {
-            ReleasePpo(&_pglapos);
+            _pglapos.Release();
             return fFalse;
         }
         _pglapos->Unlock();
@@ -552,14 +552,14 @@ void BKGD::GetActorPlacePoint(BRS *pxr, BRS *pyr, BRS *pzr)
     }
     else
     {
-        _pglapos->Get(_iaposNext - 1, &apos);
+        _pglapos.Get(_iaposNext - 1, &apos);
         *pxr = apos.xrPlace;
         *pyr = apos.yrPlace;
         *pzr = apos.zrPlace;
     }
 
     _iaposLast = _iaposNext;
-    if (_pglapos != pvNil)
+    if (_pglapos)
     {
         _iaposNext++;
         if (_iaposNext > _pglapos->IvMac())

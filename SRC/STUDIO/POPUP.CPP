@@ -115,7 +115,7 @@ void MP::_ApplySelection(long ithumSelect, long sid)
     {
         THD thd;
 
-        _pglthd->Get(ithumSelect, &thd);
+        _pglthd.Get(ithumSelect, &thd);
         vpcex->EnqueueCid(_cid, _pcmh, pvNil, thd.grfontMask, thd.grfont);
         return;
     }
@@ -150,7 +150,7 @@ long MP::_IthumFromThum(long thumSelect, long sidSelect)
         ithum = _pglthd->IvMac();
         while (ithum-- > 0)
         {
-            _pglthd->Get(ithum, &thd);
+            _pglthd.Get(ithum, &thd);
             if (thd.grfont == (thumSelect & thd.grfontMask))
                 break;
         }

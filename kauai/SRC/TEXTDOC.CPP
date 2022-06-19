@@ -225,7 +225,7 @@ TXDD::TXDD(PDOCB pdocb, PGCB pgcb, PBSF pbsf, long onn, ulong grfont, long dypFo
 ***************************************************************************/
 TXDD::~TXDD(void)
 {
-    ReleasePpo(&_pglichStarts);
+    _pglichStarts.Release();
 }
 
 /***************************************************************************
@@ -258,12 +258,12 @@ bool TXDD::_FInit(void)
 
     if (!TXDD_PAR::_FInit())
         return fFalse;
-    if (pvNil == (_pglichStarts = GL::PglNew(size(long))))
+    if (!(_pglichStarts = GLPtr<long>::New()))
         return fFalse;
 
     _pglichStarts->SetMinGrow(20);
     ib = 0;
-    if (!_pglichStarts->FPush(&ib))
+    if (!_pglichStarts.FPush(&ib))
         return fFalse;
     _Reformat(0);
     AssertThis(0);
@@ -332,7 +332,7 @@ void TXDD::_Reformat(long lnMin, long *pclnIns, long *pclnDel)
         }
 
         // add the new line start
-        if (!_pglichStarts->FInsert(ln, &ich))
+        if (!_pglichStarts.FInsert(ln, &ich))
         {
             if (ln >= _pglichStarts->IvMac())
             {

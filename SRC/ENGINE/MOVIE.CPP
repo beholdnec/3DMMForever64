@@ -280,8 +280,8 @@ PMVIE MVIE::PmvieNew(bool fHalfMode, PMCC pmcc, FNI *pfni, CNO cno)
     //
     // Create the GL for holding undo events
     //
-    pmvie->_pglpundb = GL::PglNew(size(PUNDB), 1);
-    if (pmvie->_pglpundb == pvNil)
+    pmvie->_pglpundb = GLPtr<PUNDB>::New(1);
+    if (!pmvie->_pglpundb)
     {
         goto LFail;
     }
@@ -643,7 +643,7 @@ MVIE::~MVIE(void)
     //
     ReleasePpo(&_pmsq);
 
-    ReleasePpo(&_pglclrThumbPalette);
+    _pglclrThumbPalette.Release();
 
     return;
 }
@@ -2782,14 +2782,14 @@ bool MVIE::_FDoMtrlTmplGC(PCFL pcfl)
     long icki1 = 0;
     long icki2 = 0;
     CKI cki;
-    PGL pglckiDoomed = pvNil;
+    GLPtr<CKI> pglckiDoomed;
 
     ptagl = _PtaglFetch(); // get all tags in user's document
     if (ptagl == pvNil)
         goto LEnd; // no work to do
 
-    pglckiDoomed = GL::PglNew(size(CKI), 0);
-    if (pvNil == pglckiDoomed)
+    pglckiDoomed = GLPtr<CKI>::New(0);
+    if (!pglckiDoomed)
         goto LFail;
 
     while (pcfl->FGetCkiCtg(kctgMtrl, icki1++, &cki) || pcfl->FGetCkiCtg(kctgTmpl, icki2++, &cki))
@@ -2813,14 +2813,14 @@ bool MVIE::_FDoMtrlTmplGC(PCFL pcfl)
         if (tag.sid != ksidUseCrf || itag == ptagl->Ctag())
         {
             // this chunk is not referenced by a ksidUseCrf tag, so kill it
-            if (!pglckiDoomed->FAdd(&cki))
+            if (!pglckiDoomed.FAdd(&cki))
                 goto LFail;
         }
     }
     // Get rid of the blacklisted chunks
     for (icki1 = 0; icki1 < pglckiDoomed->IvMac(); icki1++)
     {
-        pglckiDoomed->Get(icki1, &cki);
+        pglckiDoomed.Get(icki1, &cki);
         pcfl->Delete(cki.ctg, cki.cno);
         if (pcfl == _pcrfAutoSave->Pcfl()) // remove chunk from CRF cache
         {
@@ -2845,11 +2845,11 @@ bool MVIE::_FDoMtrlTmplGC(PCFL pcfl)
     }
 LEnd:
     ReleasePpo(&ptagl);
-    ReleasePpo(&pglckiDoomed);
+    pglckiDoomed.Release();
     return fTrue;
 LFail:
     ReleasePpo(&ptagl);
-    ReleasePpo(&pglckiDoomed);
+    pglckiDoomed.Release();
     return fFalse;
 }
 
@@ -3589,8 +3589,7 @@ bool MVIE::FSoonerLaterActr(long nfrm)
 
     if (CundbUndo() > 0)
     {
-
-        _pglpundb->Get(_ipundbLimDone - 1, &paund);
+        _pglpundb->Get(_ipundbLimDone - 1, BlobPtr::Make(paund));
 
         if (paund->FIs(kclsAUND) && paund->FSoonerLater())
         {
@@ -4595,7 +4594,7 @@ void CMVI::MarkMem(void)
     ivMac = pglmvied->IvMac();
     for (iv = 0; iv < ivMac; iv++)
     {
-        pglmvied->Get(iv, &mvied);
+        pglmvied.Get(iv, &mvied);
         MarkMemObj(mvied.pcrf);
     }
     MarkMemObj(pglmvied);
@@ -4603,7 +4602,7 @@ void CMVI::MarkMem(void)
     ivMac = pglscend->IvMac();
     for (iv = 0; iv < ivMac; iv++)
     {
-        pglscend->Get(iv, &scend);
+        pglscend.Get(iv, &scend);
         MarkMemObj(scend.pmbmp);
     }
     MarkMemObj(pglscend);
@@ -4647,12 +4646,12 @@ bool MVIE::FAddToCmvi(PCMVI pcmvi, long *piscendIns)
     if (!FAutoSave(pvNil, fFalse))
         goto LFail;
 
-    if ((pcmvi->pglscend == pvNil) && (pcmvi->pglscend = GL::PglNew(size(SCEND))) == pvNil)
+    if ((!pcmvi->pglscend) && !(pcmvi->pglscend = GLPtr<SCEND>::New()))
     {
         goto LFail;
     }
 
-    if ((pcmvi->pglmvied == pvNil) && (pcmvi->pglmvied = GL::PglNew(size(MVIED))) == pvNil)
+    if ((!pcmvi->pglmvied) && !(pcmvi->pglmvied = GLPtr<MVIED>::New()))
     {
         goto LFail;
     }
@@ -4660,7 +4659,7 @@ bool MVIE::FAddToCmvi(PCMVI pcmvi, long *piscendIns)
     mvied.pcrf = _pcrfAutoSave;
     mvied.cno = _cno;
     mvied.aridLim = _aridLim;
-    if (!pcmvi->pglmvied->FAdd(&mvied, &imvied))
+    if (!pcmvi->pglmvied.FAdd(&mvied, &imvied))
         goto LFail;
     scend.imvied = imvied;
     mvied.pcrf->AddRef();
@@ -4713,15 +4712,15 @@ bool MVIE::FAddToCmvi(PCMVI pcmvi, long *piscendIns)
 LFail:
     while (iscen--)
         _DeleteScend(pcmvi->pglscend, --(*piscendIns));
-    if (pcmvi->pglscend != pvNil && pcmvi->pglscend->IvMac() == 0)
-        ReleasePpo(&pcmvi->pglscend);
+    if (pcmvi->pglscend && pcmvi->pglscend->IvMac() == 0)
+        pcmvi->pglscend.Release();
     if (scend.imvied != ivNil)
     {
         ReleasePpo(&mvied.pcrf);
         pcmvi->pglmvied->Delete(scend.imvied);
     }
-    if (pcmvi->pglmvied != pvNil && pcmvi->pglmvied->IvMac() == 0)
-        ReleasePpo(&pcmvi->pglmvied);
+    if (pcmvi->pglmvied && pcmvi->pglmvied->IvMac() == 0)
+        pcmvi->pglmvied.Release();
     return fFalse;
 }
 
@@ -4759,10 +4758,10 @@ bool MVIE::FSetCmvi(PCMVI pcmvi)
     CHID chidScen = 0;
     PCFL pcfl = _pcrfAutoSave->Pcfl();
     PCRF pcrf = _pcrfAutoSave;
-    PGL pglmviedNew;
+    GLPtr<MVIED> pglmviedNew;
 
-    pglmviedNew = pcmvi->pglmvied->PglDup();
-    if (pglmviedNew == pvNil)
+    pglmviedNew = pcmvi->pglmvied.Dup();
+    if (!pglmviedNew)
         goto LFail;
 
     /* Copy all the external movie chunks into this movie */
@@ -4770,7 +4769,7 @@ bool MVIE::FSetCmvi(PCMVI pcmvi)
     {
         MVIED mvied;
 
-        pglmviedNew->Get(imvied, &mvied);
+        pglmviedNew.Get(imvied, &mvied);
 
         if (imvied > 0)
         {
@@ -4780,7 +4779,7 @@ bool MVIE::FSetCmvi(PCMVI pcmvi)
                 goto LFail;
             mvied.pcrf = pcrf;
             mvied.pcrf->AddRef();
-            pglmviedNew->Put(imvied, &mvied);
+            pglmviedNew.Put(imvied, &mvied);
         }
         else
         {
@@ -4796,8 +4795,8 @@ bool MVIE::FSetCmvi(PCMVI pcmvi)
         SCEND scend;
         MVIED mvied;
 
-        pcmvi->pglscend->Get(iscend, &scend);
-        pglmviedNew->Get(scend.imvied, &mvied);
+        pcmvi->pglscend.Get(iscend, &scend);
+        pglmviedNew.Get(scend.imvied, &mvied);
 
         /* Was this scene imported? */
         if (scend.imvied > 0)
@@ -4930,19 +4929,19 @@ bool MVIE::FSetCmvi(PCMVI pcmvi)
 
     fRet = fTrue;
 LFail:
-    if (pglmviedNew != pvNil)
+    if (pglmviedNew)
     {
         /* Remove any copied movies; leave the first MVIED alone */
         while (imvied-- > 1)
         {
             MVIED mvied;
 
-            pglmviedNew->Get(imvied, &mvied);
+            pglmviedNew.Get(imvied, &mvied);
             Assert(mvied.pcrf == pcrf, "Invalid MVIED during cleanup");
             pcfl->Delete(kctgMvie, mvied.cno);
             ReleasePpo(&mvied.pcrf);
         }
-        ReleasePpo(&pglmviedNew);
+        pglmviedNew.Release();
     }
     return fRet;
 }
@@ -4993,12 +4992,12 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
     if (aridMin > 0)
     {
         ulong grfcge, grfcgeIn = fcgeNil;
-        PGL pglcno;
+        GLPtr<CNO> pglcno;
         CKI ckiParLast = {ctgNil, cnoNil}, ckiPar;
         KID kid;
         CGE cge;
 
-        if ((pglcno = GL::PglNew(size(CNO))) == pvNil)
+        if (!(pglcno = GLPtr<CNO>::New()))
             goto LFail;
         cge.Init(pcfl, kctgMvie, cno);
         while (cge.FNextKid(&kid, &ckiPar, &grfcge, fcgeNil))
@@ -5016,13 +5015,13 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
                     Assert(icnoMac == pglcno->IvMac(), "icnoMac isn't up-to-date");
                     for (icno = 0; icno < icnoMac; icno++)
                     {
-                        pglcno->Get(icno, &cnoActr);
+                        pglcno.Get(icno, &cnoActr);
                         if (kid.cki.cno == cnoActr)
                             break;
                     }
                     if (icno < icnoMac)
                         continue;
-                    if (!pglcno->FAdd(&kid.cki.cno))
+                    if (!pglcno.FAdd(&kid.cki.cno))
                         goto LFail1;
 
                     /* Change the arid */
@@ -5031,7 +5030,7 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
                         /* Don't bother trying to fix the arids on file; the caller
                             should be deleting the copied MVIE chunk anyway */
                     LFail1:
-                        ReleasePpo(&pglcno);
+                        pglcno.Release();
                         goto LFail;
                     }
                     icnoMac++;
@@ -5049,7 +5048,7 @@ bool MVIE::_FAddMvieToRollCall(CNO cno, long aridMin)
                     grfcgeIn = fcgeNil;
             }
         }
-        ReleasePpo(&pglcno);
+        pglcno.Release();
     }
 
     ReleasePpo(&pgstmactr);
@@ -5102,36 +5101,38 @@ void CMVI::Empty(void)
     AssertPo(pglscend, 0);
     AssertPo(pglmvied, 0);
 
-    PGL pgl;
+    GLPtr<SCEND> pgl1;
 
-    if ((pgl = pglscend) != pvNil)
+    if ((pgl1 = pglscend))
     {
-        long iscend = pgl->IvMac();
+        long iscend = pgl1->IvMac();
 
         while (iscend-- > 0)
         {
             SCEND scend;
 
-            pgl->Get(iscend, &scend);
+            pgl1.Get(iscend, &scend);
             ReleasePpo(&scend.pmbmp);
         }
-        ReleasePpo(&pgl);
-        pglscend = pvNil;
+        pgl1.Release();
+        pglscend = GLPtr<SCEND>();
     }
 
-    if ((pgl = pglmvied) != pvNil)
+    GLPtr<MVIED> pgl2;
+
+    if ((pgl2 = pglmvied))
     {
-        long imvied = pgl->IvMac();
+        long imvied = pgl2->IvMac();
 
         while (imvied-- > 0)
         {
             MVIED mvied;
 
-            pgl->Get(imvied, &mvied);
+            pgl2.Get(imvied, &mvied);
             ReleasePpo(&mvied.pcrf);
         }
-        ReleasePpo(&pgl);
-        pglmvied = pvNil;
+        pgl2.Release();
+        pglmvied = GLPtr<MVIED>();
     }
 }
 
@@ -5148,12 +5149,12 @@ void CMVI::Empty(void)
     Returns: fTrue if successful, fFalse otherwise
 
 ************************************************************ PETED ***********/
-bool MVIE::_FInsertScend(PGL pglscend, long iscend, PSCEND pscend)
+bool MVIE::_FInsertScend(GLPtr<SCEND> pglscend, long iscend, PSCEND pscend)
 {
     AssertPo(pglscend, 0);
     AssertPo(pscend->pmbmp, 0);
 
-    if (!pglscend->FInsert(iscend, pscend))
+    if (!pglscend.FInsert(iscend, pscend))
         return fFalse;
     pscend->pmbmp->AddRef();
     return fTrue;
@@ -5169,14 +5170,14 @@ bool MVIE::_FInsertScend(PGL pglscend, long iscend, PSCEND pscend)
         long iscend  -- which SCEND to delete
 
 ************************************************************ PETED ***********/
-void MVIE::_DeleteScend(PGL pglscend, long iscend)
+void MVIE::_DeleteScend(GLPtr<SCEND> pglscend, long iscend)
 {
     AssertPo(pglscend, 0);
     AssertIn(iscend, 0, pglscend->IvMac());
 
     SCEND scend;
 
-    pglscend->Get(iscend, &scend);
+    pglscend.Get(iscend, &scend);
     AssertPo(scend.pmbmp, 0);
     pglscend->Delete(iscend);
     ReleasePpo(&scend.pmbmp);
@@ -5489,7 +5490,7 @@ void MVIE::DoTrans(PGNV pgnvDst, PGNV pgnvSrc, RC *prcDst, RC *prcSrc)
     AssertVarMem(prcDst);
     AssertVarMem(prcSrc);
 
-    PGL pglclrSystem = pvNil;
+    GLPtr<CLR> pglclrSystem;
     PGL pglclrBkgd = pvNil;
     long iclrMin;
 
@@ -5498,7 +5499,7 @@ void MVIE::DoTrans(PGNV pgnvDst, PGNV pgnvSrc, RC *prcDst, RC *prcSrc)
     {
         pglclrBkgd = pvNil;
     }
-    if (pvNil != pglclrSystem && pvNil != pglclrBkgd)
+    if (pglclrSystem && pvNil != pglclrBkgd)
     {
         Assert(pglclrBkgd->IvMac() + iclrMin <= pglclrSystem->IvMac(), "Background palette too large");
         CopyPb(pglclrBkgd->QvGet(0).Ptr(), pglclrSystem->QvGet(iclrMin).Ptr(), LwMul(size(CLR), pglclrBkgd->IvMac()));
@@ -5533,7 +5534,7 @@ void MVIE::DoTrans(PGNV pgnvDst, PGNV pgnvSrc, RC *prcDst, RC *prcSrc)
         break;
     }
 
-    ReleasePpo(&pglclrSystem);
+    pglclrSystem.Release();
     ReleasePpo(&pglclrBkgd);
 
     _trans = transNil;

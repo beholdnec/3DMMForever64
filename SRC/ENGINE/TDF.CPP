@@ -155,7 +155,7 @@ TDF::~TDF(void)
     TDF instance in memory...to do that, call FReadTdf with the values
     returned in pckiTdf.
 ***************************************************************************/
-bool TDF::FCreate(PCRF pcrf, PGL pglkid, STN *pstn, CKI *pckiTdf)
+bool TDF::FCreate(PCRF pcrf, GLPtr<KID> pglkid, STN *pstn, CKI *pckiTdf)
 {
     AssertPo(pcrf, 0);
     AssertPo(pglkid, 0);
@@ -180,7 +180,7 @@ bool TDF::FCreate(PCRF pcrf, PGL pglkid, STN *pstn, CKI *pckiTdf)
     ckid = pglkid->IvMac();
     for (ikid = 0; ikid < ckid; ikid++)
     {
-        pglkid->Get(ikid, &kid);
+        pglkid.Get(ikid, &kid);
         if (kid.chid > chidMax)
             chidMax = kid.chid;
         if (kid.chid == (CHID)ChLit('i'))
@@ -207,7 +207,7 @@ bool TDF::FCreate(PCRF pcrf, PGL pglkid, STN *pstn, CKI *pckiTdf)
     // Add the BMDL kids and remember widths, heights, and maximum height
     for (ikid = 0; ikid < ckid; ikid++)
     {
-        pglkid->Get(ikid, &kid);
+        pglkid.Get(ikid, &kid);
         pmodl = (PMODL)pcrf->PbacoFetch(kid.cki.ctg, kid.cki.cno, MODL::FReadModl);
         if (pmodl == pvNil)
             goto LFail;
@@ -220,7 +220,7 @@ bool TDF::FCreate(PCRF pcrf, PGL pglkid, STN *pstn, CKI *pckiTdf)
             // Hack to turn null models into space characters:
             // space is the width and height of an "i"
             ReleasePpo(&pmodl);
-            pglkid->Get(ikidLetteri, &kid2);
+            pglkid.Get(ikidLetteri, &kid2);
             pmodl = (PMODL)pcrf->PbacoFetch(kid2.cki.ctg, kid2.cki.cno, MODL::FReadModl);
             if (pvNil == pmodl)
                 goto LFail;

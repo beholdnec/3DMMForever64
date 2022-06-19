@@ -31,8 +31,6 @@ SCEB::SCEB(PRCA prca, PSTRG pstrg)
     AssertNilOrPo(prca, 0);
     AssertNilOrPo(pstrg, 0);
 
-    _pgllwStack = pvNil;
-    _pglrtvm = pvNil;
     _pscpt = pvNil;
     _fPaused = fFalse;
 
@@ -64,7 +62,7 @@ void SCEB::Free(void)
     AssertThis(0);
 
     // nuke literal strings left in the global string table
-    if (pvNil != _pscpt && pvNil != _pstrg && pvNil != _pscpt->_pgstLiterals && pvNil != _pglrtvm)
+    if (pvNil != _pscpt && pvNil != _pstrg && pvNil != _pscpt->_pgstLiterals && _pglrtvm)
     {
         RTVN rtvn;
         long stid;
@@ -77,8 +75,8 @@ void SCEB::Free(void)
         }
     }
 
-    ReleasePpo(&_pgllwStack);
-    ReleasePpo(&_pglrtvm);
+    _pgllwStack.Release();
+    _pglrtvm.Release();
     ReleasePpo(&_pscpt);
     _fPaused = fFalse;
 }
@@ -92,7 +90,7 @@ void SCEB::AssertValid(ulong grfsceb)
     SCEB_PAR::AssertValid(0);
     if (grfsceb & fscebRunnable)
     {
-        Assert(pvNil != _pgllwStack, "nil stack");
+        Assert(_pgllwStack, "nil stack");
         Assert(pvNil != _pscpt, "nil script");
         Assert(_ilwMac == _pscpt->_pgllw->IvMac(), 0);
         AssertIn(_ilwCur, 1, _ilwMac + 1);
@@ -146,7 +144,7 @@ bool SCEB::FAttachScript(PSCPT pscpt, long *prglw, long clw)
     _fError = fFalse;
 
     // create the stack GL
-    if (pvNil == (_pgllwStack = GL::PglNew(size(long), 10)))
+    if (!(_pgllwStack = GLPtr<long>::New(10)))
         goto LFail;
     _pgllwStack->SetMinGrow(10);
 
@@ -161,7 +159,7 @@ bool SCEB::FAttachScript(PSCPT pscpt, long *prglw, long clw)
         Bug("No version info on script");
         goto LFail;
     }
-    _pscpt->_pgllw->Get(0, &lw);
+    _pscpt->_pgllw.Get(0, &lw);
     dver.Set(SwHigh(lw), SwLow(lw));
     if (!dver.FReadable(_SwCur(), _SwMin()))
     {
@@ -1153,7 +1151,7 @@ void SCEB::_StrToNum(long stid, long lwEmpty, long lwError)
 /***************************************************************************
     Push the value of a variable onto the runtime stack.
 ***************************************************************************/
-void SCEB::_PushVar(PGL pglrtvm, RTVN *prtvn)
+void SCEB::_PushVar(GLPtr<RTVM> pglrtvm, RTVN *prtvn)
 {
     AssertThis(0);
     AssertVarMem(prtvn);
@@ -1163,7 +1161,7 @@ void SCEB::_PushVar(PGL pglrtvm, RTVN *prtvn)
     if (_fError)
         return;
 
-    if (pvNil == pglrtvm || !FFindRtvm(pglrtvm, prtvn, &lw, pvNil))
+    if (!pglrtvm || !FFindRtvm(pglrtvm, prtvn, &lw, pvNil))
     {
 #ifdef DEBUG
         prtvn->GetStn(&_stn);
@@ -1178,7 +1176,7 @@ void SCEB::_PushVar(PGL pglrtvm, RTVN *prtvn)
 /***************************************************************************
     Pop the top value off the runtime stack into a variable.
 ***************************************************************************/
-void SCEB::_AssignVar(PGL *ppglrtvm, RTVN *prtvn, long lw)
+void SCEB::_AssignVar(GLPtr<RTVM> *ppglrtvm, RTVN *prtvn, long lw)
 {
     AssertThis(0);
     AssertVarMem(prtvn);
@@ -1200,11 +1198,11 @@ void SCEB::_AssignVar(PGL *ppglrtvm, RTVN *prtvn, long lw)
 /***************************************************************************
     Get the variable map for "this" object.
 ***************************************************************************/
-PGL SCEB::_PglrtvmThis(void)
+GLPtr<RTVM> SCEB::_PglrtvmThis(void)
 {
-    PGL *ppgl = _PpglrtvmThis();
+    GLPtr<RTVM> *ppgl = _PpglrtvmThis();
     if (pvNil == ppgl)
-        return pvNil;
+        return GLPtr<RTVM>();
     return *ppgl;
 }
 
@@ -1212,7 +1210,7 @@ PGL SCEB::_PglrtvmThis(void)
     Get the adress of the variable map master pointer for "this" object
     (so we can create the variable map if need be).
 ***************************************************************************/
-PGL *SCEB::_PpglrtvmThis(void)
+GLPtr<RTVM> *SCEB::_PpglrtvmThis(void)
 {
     return pvNil;
 }
@@ -1220,11 +1218,11 @@ PGL *SCEB::_PpglrtvmThis(void)
 /***************************************************************************
     Get the variable map for "global" variables.
 ***************************************************************************/
-PGL SCEB::_PglrtvmGlobal(void)
+GLPtr<RTVM> SCEB::_PglrtvmGlobal(void)
 {
-    PGL *ppgl = _PpglrtvmGlobal();
+    GLPtr<RTVM> *ppgl = _PpglrtvmGlobal();
     if (pvNil == ppgl)
-        return pvNil;
+        return GLPtr<RTVM>();
     return *ppgl;
 }
 
@@ -1232,7 +1230,7 @@ PGL SCEB::_PglrtvmGlobal(void)
     Get the adress of the variable map master pointer for "global" variables
     (so we can create the variable map if need be).
 ***************************************************************************/
-PGL *SCEB::_PpglrtvmGlobal(void)
+GLPtr<RTVM> *SCEB::_PpglrtvmGlobal(void)
 {
     return pvNil;
 }
@@ -1240,11 +1238,11 @@ PGL *SCEB::_PpglrtvmGlobal(void)
 /***************************************************************************
     Get the variable map for a remote object.
 ***************************************************************************/
-PGL SCEB::_PglrtvmRemote(long lw)
+GLPtr<RTVM> SCEB::_PglrtvmRemote(long lw)
 {
-    PGL *ppgl = _PpglrtvmRemote(lw);
+    GLPtr<RTVM> *ppgl = _PpglrtvmRemote(lw);
     if (pvNil == ppgl)
-        return pvNil;
+        return GLPtr<RTVM>();
     return *ppgl;
 }
 
@@ -1252,7 +1250,7 @@ PGL SCEB::_PglrtvmRemote(long lw)
     Get the adress of the variable map master pointer for a remote object
     (so we can create the variable map if need be).
 ***************************************************************************/
-PGL *SCEB::_PpglrtvmRemote(long lw)
+GLPtr<RTVM> *SCEB::_PpglrtvmRemote(long lw)
 {
     return pvNil;
 }
@@ -1262,7 +1260,7 @@ PGL *SCEB::_PpglrtvmRemote(long lw)
     If the RTVN is not in the GL, sets *pirtvm to where it would be if
     it were.
 ***************************************************************************/
-bool FFindRtvm(PGL pglrtvm, RTVN *prtvn, long *plw, long *pirtvm)
+bool FFindRtvm(GLPtr<RTVM> pglrtvm, RTVN *prtvn, long *plw, long *pirtvm)
 {
     AssertPo(pglrtvm, 0);
     AssertVarMem(prtvn);
@@ -1303,7 +1301,7 @@ bool FFindRtvm(PGL pglrtvm, RTVN *prtvn, long *plw, long *pirtvm)
 /***************************************************************************
     Put the given value into a runtime variable.
 ***************************************************************************/
-bool FAssignRtvm(PGL *ppglrtvm, RTVN *prtvn, long lw)
+bool FAssignRtvm(GLPtr<RTVM> *ppglrtvm, RTVN *prtvn, long lw)
 {
     AssertVarMem(ppglrtvm);
     AssertNilOrPo(*ppglrtvm, 0);
@@ -1313,20 +1311,20 @@ bool FAssignRtvm(PGL *ppglrtvm, RTVN *prtvn, long lw)
 
     rtvm.lwValue = lw;
     rtvm.rtvn = *prtvn;
-    if (pvNil == *ppglrtvm)
+    if (!*ppglrtvm)
     {
-        if (pvNil == (*ppglrtvm = GL::PglNew(size(RTVM))))
+        if (!(*ppglrtvm = GLPtr<RTVM>::New()))
             return fFalse;
         (*ppglrtvm)->SetMinGrow(10);
         irtvm = 0;
     }
     else if (FFindRtvm(*ppglrtvm, prtvn, pvNil, &irtvm))
     {
-        (*ppglrtvm)->Put(irtvm, &rtvm);
+        (*ppglrtvm).Put(irtvm, &rtvm);
         return fTrue;
     }
 
-    return (*ppglrtvm)->FInsert(irtvm, &rtvm);
+    return (*ppglrtvm).FInsert(irtvm, &rtvm);
 }
 
 /***************************************************************************
@@ -1356,13 +1354,13 @@ PSCPT SCPT::PscptRead(PCFL pcfl, CTG ctg, CNO cno)
     KID kid;
     BLCK blck;
     PSCPT pscpt = pvNil;
-    PGL pgllw = pvNil;
+    GLPtr<long> pgllw;
     PGST pgst = pvNil;
 
     if (!pcfl->FFind(ctg, cno, &blck))
         goto LFail;
 
-    if (pvNil == (pgllw = GL::PglRead(&blck, &bo)) || pgllw->CbEntry() != size(long))
+    if (!(pgllw = GLPtr<long>::Read(&blck, &bo)) || pgllw->CbEntry() != size(long))
     {
         goto LFail;
     }
@@ -1376,7 +1374,7 @@ PSCPT SCPT::PscptRead(PCFL pcfl, CTG ctg, CNO cno)
     if (pvNil == (pscpt = NewObj SCPT))
     {
     LFail:
-        ReleasePpo(&pgllw);
+        pgllw.Release();
         ReleasePpo(&pgst);
         return pvNil;
     }
@@ -1394,7 +1392,7 @@ PSCPT SCPT::PscptRead(PCFL pcfl, CTG ctg, CNO cno)
 SCPT::~SCPT(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pgllw);
+    _pgllw.Release();
     ReleasePpo(&_pgstLiterals);
 }
 

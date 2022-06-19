@@ -376,7 +376,7 @@ bool ESLT::FCmdTransmogrify(PCMD pcmd)
     {
         cki.ctg = kctgTfth;
         cki.cno = cnoNil;
-        _pbclTdf = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclTdf = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
     }
     if (_pbclTdf != pvNil && _pbclTdf->IthdMac() != 0)
     {
@@ -395,7 +395,7 @@ bool ESLT::FCmdTransmogrify(PCMD pcmd)
     {
         cki.ctg = kctgMtth;
         cki.cno = cnoNil;
-        _pbclMtrl = BCL::PbclNew(pvNil, &cki, ctgNil, pvNil, fTrue);
+        _pbclMtrl = BCL::PbclNew(pvNil, &cki, ctgNil, {}, fTrue);
     }
     if (_pbclMtrl != pvNil && _pbclMtrl->IthdMac() != 0)
     {
@@ -1106,7 +1106,7 @@ bool ESLL::_FInit(PRCA prca, long kidEasel, PMVIE pmvie, PACTR pactr)
     AssertPo(pmvie, 0);
     AssertNilOrPo(pactr, 0);
 
-    PGL pgltag;
+    GLPtr<TAG> pgltag;
     long vlm;
     bool fLoop;
 
@@ -1210,12 +1210,12 @@ bool LSND::FValidSnd(void)
     long itag;
     TAG tag;
 
-    if (pvNil == _pgltag)
+    if (!_pgltag)
         return fFalse;
 
     for (itag = 0; itag < _pgltag->IvMac(); itag++)
     {
-        _pgltag->Get(itag, &tag);
+        _pgltag.Get(itag, &tag);
         pmsnd = (PMSND)vptagm->PbacoFetch(&tag, MSND::FReadMsnd);
         if (pvNil == pmsnd)
             continue;
@@ -1454,7 +1454,7 @@ void ESLL::MarkMem(void)
     Initialize a LSND.  Note that the LSND takes over the reference to
     *ppgltag.
 ***************************************************************************/
-bool LSND::FInit(long sty, long kidVol, long kidIcon, long kidEditBox, PGL *ppgltag, long vlm, bool fLoop, long objID,
+bool LSND::FInit(long sty, long kidVol, long kidIcon, long kidEditBox, GLPtr<TAG> *ppgltag, long vlm, bool fLoop, long objID,
                  bool fMatcher)
 {
     AssertBaseThis(0);
@@ -1473,18 +1473,18 @@ bool LSND::FInit(long sty, long kidVol, long kidIcon, long kidEditBox, PGL *ppgl
     _kidIcon = kidIcon;
     _kidEditBox = kidEditBox;
     _pgltag = *ppgltag;
-    *ppgltag = pvNil;
+    *ppgltag = {};
     _vlm = vlm;
     _vlmNew = vlm;
     _fLoop = fLoop;
     _objID = objID;
     _fMatcher = fMatcher;
 
-    if (pvNil == _pgltag || 0 == _pgltag->IvMac())
+    if (!_pgltag || 0 == _pgltag->IvMac())
         return fTrue;
 
     // Set button state based on the tool
-    if (_pgltag == pvNil || _pgltag->IvMac() == 0)
+    if (!_pgltag || _pgltag->IvMac() == 0)
         st = kstListenDisabled;
     else if (_fMatcher)
         st = kstListenMatcher;
@@ -1499,7 +1499,7 @@ bool LSND::FInit(long sty, long kidVol, long kidIcon, long kidEditBox, PGL *ppgl
     // Search until a valid (not deleted) msnd is found
     for (itag = 0; itag < _pgltag->IvMac(); itag++)
     {
-        _pgltag->Get(itag, &tag);
+        _pgltag.Get(itag, &tag);
         pmsnd = (PMSND)vptagm->PbacoFetch(&tag, MSND::FReadMsnd);
         if (pvNil == pmsnd)
             return fFalse;
@@ -1544,7 +1544,7 @@ void LSND::Play(void)
     TAG tag;
     PMSND pmsnd;
 
-    if (pvNil == _pgltag || _pgltag->IvMac() == 0)
+    if (!_pgltag || _pgltag->IvMac() == 0)
         return; // nothing to play
     if (_vlmNew < 0)
         return; // don't play nuked sounds
@@ -1558,7 +1558,7 @@ void LSND::Play(void)
 
     for (itag = 0; itag < _pgltag->IvMac(); itag++)
     {
-        _pgltag->Get(itag, &tag);
+        _pgltag.Get(itag, &tag);
         // Verify sound before including in the event list
         pmsnd = (PMSND)vptagm->PbacoFetch(&tag, MSND::FReadMsnd);
         if (pvNil == pmsnd)
@@ -1581,7 +1581,7 @@ bool LSND::FChanged(long *pvlmNew, bool *pfNuked)
 
     *pfNuked = (_vlmNew < 0);
     *pvlmNew = _vlmNew;
-    return (_pgltag != pvNil && _pgltag->IvMac() > 0 && _vlm != _vlmNew);
+    return (_pgltag && _pgltag->IvMac() > 0 && _vlm != _vlmNew);
 }
 
 /***************************************************************************
@@ -1590,7 +1590,7 @@ bool LSND::FChanged(long *pvlmNew, bool *pfNuked)
 LSND::~LSND(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pgltag);
+    _pgltag.Release();
 }
 
 #ifdef DEBUG

@@ -35,7 +35,6 @@ CODM::CODM(PCODC pcodc, long cfmt)
     _pcodcDef = pcodc;
     if (pvNil != _pcodcDef)
         _pcodcDef->AddRef();
-    _pglpcodc = pvNil;
 
     AssertThis(0);
 }
@@ -48,17 +47,17 @@ CODM::~CODM(void)
     AssertThis(0);
 
     ReleasePpo(&_pcodcDef);
-    if (pvNil != _pglpcodc)
+    if (_pglpcodc)
     {
         long ipcodc;
         PCODC pcodc;
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, &pcodc);
+            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
             ReleasePpo(&pcodc);
         }
-        ReleasePpo(&_pglpcodc);
+        _pglpcodc.Release();
     }
 }
 
@@ -83,14 +82,14 @@ void CODM::MarkMem(void)
     CODM_PAR::MarkMem();
 
     MarkMemObj(_pcodcDef);
-    if (pvNil != _pglpcodc)
+    if (_pglpcodc)
     {
         long ipcodc;
         PCODC pcodc;
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, &pcodc);
+            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
             MarkMemObj(pcodc);
         }
         MarkMemObj(_pglpcodc);
@@ -122,10 +121,10 @@ bool CODM::FRegisterCodec(PCODC pcodc)
     AssertThis(0);
     AssertPo(pcodc, 0);
 
-    if (pvNil == _pglpcodc && pvNil == (_pglpcodc = GL::PglNew(size(PCODC))))
+    if (!_pglpcodc && !(_pglpcodc = GLPtr<PCODC>::New()))
         return fFalse;
 
-    if (!_pglpcodc->FAdd(&pcodc))
+    if (!_pglpcodc.FAdd(&pcodc))
         return fFalse;
 
     pcodc->AddRef();
@@ -184,14 +183,14 @@ bool CODM::_FFindCodec(bool fEncode, long cfmt, PCODC *ppcodc)
         return fTrue;
     }
 
-    if (pvNil != _pglpcodc)
+    if (_pglpcodc)
     {
         long ipcodc;
         PCODC pcodc;
 
         for (ipcodc = _pglpcodc->IvMac(); ipcodc-- > 0;)
         {
-            _pglpcodc->Get(ipcodc, &pcodc);
+            _pglpcodc->Get(ipcodc, BlobPtr::Make(pcodc));
             if (pcodc->FCanDo(fEncode, cfmt))
             {
                 *ppcodc = pcodc;

@@ -85,19 +85,19 @@ const BOM kbomTdtf = (0x5C000000 | kbomTag >> 6);
     if an error occurs.  The point is, look at *pfError, not the return
     value.
 ***************************************************************************/
-PGL TDT::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
+GLPtr<TAG> TDT::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
 {
     AssertPo(pcfl, 0);
     AssertVarMem(pfError);
 
-    PGL pgltag;
+    GLPtr<TAG> pgltag;
     KID kid;
     BLCK blck;
     TDTF tdtf;
 
     *pfError = fFalse;
-    pgltag = GL::PglNew(size(TAG));
-    if (pvNil == pgltag)
+    pgltag = GLPtr<TAG>::New();
+    if (!pgltag)
         goto LFail;
     if (!pcfl->FGetKidChidCtg(ctg, cno, kchidTdt, kctgTdt, &kid))
         goto LFail;
@@ -112,13 +112,13 @@ PGL TDT::PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError)
     if (kboCur != tdtf.bo)
         SwapBytesBom(&tdtf, kbomTdtf);
     Assert(kboCur == tdtf.bo, "bad TDTF");
-    if (!pgltag->FAdd(&tdtf.tagTdf))
+    if (!pgltag.FAdd(&tdtf.tagTdf))
         goto LFail;
     return pgltag;
 LFail:
     *pfError = fTrue;
-    ReleasePpo(&pgltag);
-    return pvNil;
+    pgltag.Release();
+    return {};
 }
 
 /***************************************************************************
@@ -208,16 +208,16 @@ bool TDT::_FInitLists(void)
     AssertIn(_tdts, 0, tdtsLim);
 
     long cch;
-    PGL pglibactParNew = pvNil;
-    PGL pglibsetNew = pvNil;
+    GLPtr<short> pglibactParNew;
+    GLPtr<short> pglibsetNew;
     PGG pggcmidNew = pvNil;
     PMTRL pmtrlDefaultNew = pvNil;
 
     pglibactParNew = _PglibactParBuild();
-    if (pvNil == pglibactParNew)
+    if (!pglibactParNew)
         goto LFail;
     pglibsetNew = _PglibsetBuild();
-    if (pvNil == pglibsetNew)
+    if (!pglibsetNew)
         goto LFail;
     pggcmidNew = _PggcmidBuild();
     if (pvNil == pggcmidNew)
@@ -236,9 +236,9 @@ bool TDT::_FInitLists(void)
         goto LFail;
 
     // We're home free: the function will succeed. Update member variables.
-    ReleasePpo(&_pglibactPar);
+    _pglibactPar.Release();
     _pglibactPar = pglibactParNew;
-    ReleasePpo(&_pglibset);
+    _pglibset.Release();
     _pglibset = pglibsetNew;
     ReleasePpo(&_pggcmid);
     _pggcmid = pggcmidNew;
@@ -253,8 +253,8 @@ bool TDT::_FInitLists(void)
 
     return fTrue;
 LFail:
-    ReleasePpo(&pglibactParNew);
-    ReleasePpo(&pglibsetNew);
+    pglibactParNew.Release();
+    pglibsetNew.Release();
     ReleasePpo(&pggcmidNew);
     ReleasePpo(&pmtrlDefaultNew);
     return fFalse;
@@ -293,25 +293,25 @@ PACTN TDT::_PactnBuild(long tda)
 
     PACTN pactn;
     PGG pggcel;
-    PGL pglbmat34 = pvNil;
+    GLPtr<BMAT34> pglbmat34;
     ulong grfactn;
 
     pggcel = _PggcelBuild(tda);
     if (pvNil == pggcel)
         goto LFail;
     pglbmat34 = _Pglbmat34Build(tda);
-    if (pvNil == pglbmat34)
+    if (!pglbmat34)
         goto LFail;
     grfactn = factnStatic | factnRotateY;
     pactn = ACTN::PactnNew(pggcel, pglbmat34, grfactn);
     if (pvNil == pactn)
         goto LFail;
     ReleasePpo(&pggcel);
-    ReleasePpo(&pglbmat34);
+    pglbmat34.Release();
     return pactn;
 LFail:
     ReleasePpo(&pggcel);
-    ReleasePpo(&pglbmat34);
+    pglbmat34.Release();
     return pvNil;
 }
 
@@ -364,21 +364,21 @@ PMODL TDT::_PmodlFetch(CHID chidModl)
     Build the BACT tree GL for BODY creation.  TDTs all have the same
     body part tree: every part is a child of the root.
 ***************************************************************************/
-PGL TDT::_PglibactParBuild(void)
+GLPtr<short> TDT::_PglibactParBuild(void)
 {
     AssertBaseThis(0);
 
     long cch = _stn.Cch();
     long ich;
     short ibactPar = ivNil;
-    PGL pglibactPar;
+    GLPtr<short> pglibactPar;
 
-    pglibactPar = GL::PglNew(size(short), cch); // ibacts are shorts
-    if (pvNil == pglibactPar)
-        return pvNil;
+    pglibactPar = GLPtr<short>::New(cch); // ibacts are shorts
+    if (!pglibactPar)
+        return GLPtr<short>();
     AssertDo(pglibactPar->FSetIvMac(cch), "PglNew should have ensured space!");
     for (ich = 0; ich < cch; ich++)
-        pglibactPar->Put(ich, &ibactPar);
+        pglibactPar.Put(ich, &ibactPar);
     return pglibactPar;
 }
 
@@ -386,21 +386,21 @@ PGL TDT::_PglibactParBuild(void)
     Build the body part set GL for BODY creation.  For TDTs, all body parts
     belong to a single body part set
 ***************************************************************************/
-PGL TDT::_PglibsetBuild(void)
+GLPtr<short> TDT::_PglibsetBuild(void)
 {
     AssertBaseThis(0);
 
     long cch = _stn.Cch();
     long ich;
     short ibset = 0;
-    PGL pglibset;
+    GLPtr<short> pglibset;
 
-    pglibset = GL::PglNew(size(short), cch);
-    if (pvNil == pglibset)
-        return pvNil;
+    pglibset = GLPtr<short>::New(cch);
+    if (!pglibset)
+        return {};
     AssertDo(pglibset->FSetIvMac(cch), "PglNew should have ensured space!");
     for (ich = 0; ich < cch; ich++)
-        pglibset->Put(ich, &ibset);
+        pglibset.Put(ich, &ibset);
     return pglibset;
 }
 
@@ -431,7 +431,7 @@ PGG TDT::_PggcmidBuild(void)
 /***************************************************************************
     Build a GL of matrices for the action
 ***************************************************************************/
-PGL TDT::_Pglbmat34Build(long tda)
+GLPtr<BMAT34> TDT::_Pglbmat34Build(long tda)
 {
     AssertBaseThis(0);
     AssertIn(tda, 0, tdaLim);
@@ -440,7 +440,7 @@ PGL TDT::_Pglbmat34Build(long tda)
     long cch = _stn.Cch();
     long ich;
     BMAT34 bmat34;
-    PGL pglbmat34 = pvNil;
+    GLPtr<BMAT34> pglbmat34;
     BRS dxrTotal;     // width of string (before scaling)
     BRS dxrTotal2;    // width of string (after scaling)
     BRS dxrHalf;      // half width of string (before scaling)
@@ -460,8 +460,8 @@ PGL TDT::_Pglbmat34Build(long tda)
 
     ccel = _CcelOfTda(tda);
 
-    pglbmat34 = GL::PglNew(size(BMAT34), LwMul(ccel, cch));
-    if (pvNil == pglbmat34)
+    pglbmat34 = GLPtr<BMAT34>::New(LwMul(ccel, cch));
+    if (!pglbmat34)
         goto LFail;
     AssertDo(pglbmat34->FSetIvMac(LwMul(ccel, cch)), "PglNew should have ensured space!");
 
@@ -523,15 +523,15 @@ PGL TDT::_Pglbmat34Build(long tda)
             }
             xrChar += dxrChar;
             yrChar += dyrChar;
-            pglbmat34->Put(LwMul(icel, cch) + ich, &bmat34);
+            pglbmat34.Put(LwMul(icel, cch) + ich, &bmat34);
         }
     }
     ReleasePpo(&ptdf);
     return pglbmat34;
 LFail:
     ReleasePpo(&ptdf);
-    ReleasePpo(&pglbmat34);
-    return pvNil;
+    pglbmat34.Release();
+    return {};
 }
 
 /***************************************************************************

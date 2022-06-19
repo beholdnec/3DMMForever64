@@ -104,7 +104,7 @@ class APPB : public APPB_PAR
     bool _fForeground : 1;      // whether we're the foreground app
     bool _fEndModal : 1;        // set to end the topmost modal loop
 
-    PGL _pglmkrgn;        // list of marked regions for fast updating
+    GLPtr<MKRGN> _pglmkrgn;        // list of marked regions for fast updating
     long _onnDefFixed;    // default fixed pitch font
     long _onnDefVariable; // default variable pitched font
     PGPT _pgptOff;        // cached offscreen GPT for offscreen updates
@@ -133,12 +133,12 @@ class APPB : public APPB_PAR
     long _gft;     // transition to apply during next fast update
     long _lwGft;   // parameter for transition
     ulong _dtsGft; // how much time to give the transition
-    PGL _pglclr;   // palette to transition to
+    GLPtr<CLR> _pglclr;   // palette to transition to
     ACR _acr;      // intermediate color to transition to
 
-    PGL _pglprop; // the properties
+    GLPtr<PROP> _pglprop; // the properties
 
-    PGL _pglmodcx;   // The modal context stack
+    GLPtr<MODCX> _pglmodcx;   // The modal context stack
     long _lwModal;   // Return value from modal loop
     long _cactModal; // how deep we are in application loops
 
@@ -253,7 +253,7 @@ class APPB : public APPB_PAR
     virtual bool FGetMarkedRc(HWND hwnd, RC *prc);
     virtual void UpdateMarked(void);
     virtual void InvalMarked(HWND hwnd);
-    virtual void SetGft(long gft, long lwGft, ulong dts = kdtsSecond, PGL pglclr = pvNil, ACR acr = kacrClear);
+    virtual void SetGft(long gft, long lwGft, ulong dts = kdtsSecond, GLPtr<CLR> pglclr = {}, ACR acr = kacrClear);
 
     // default fonts
     virtual long OnnDefVariable(void);

@@ -50,7 +50,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
 
     // If the current point is between nodes, a node will
     // be inserted.  Compute its dwr.
-    _pglrpt->Get(_rtelCur.irpt, &rpt);
+    _pglrpt.Get(_rtelCur.irpt, &rpt);
     rptOld.dwr = rpt.dwr;
     rpt.dwr = BrsSub(rptOld.dwr, _rtelCur.dwrOffset);
 
@@ -193,7 +193,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     //
     // Add the point we are at.
     //
-    if (!(*ppactr)->_pglrpt->FInsert(0, &rpt))
+    if (!(*ppactr)->_pglrpt.FInsert(0, &rpt))
     {
         goto LFail;
     }
@@ -212,7 +212,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
         {
             for (irpt = _rtelCur.irpt; irpt < irptLim; irpt++)
             {
-                _pglrpt->Get(irpt, &rpt);
+                _pglrpt.Get(irpt, &rpt);
                 if (rZero == rpt.dwr)
                 {
                     irptLim = irpt + 1;
@@ -234,7 +234,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
     {
         // Mark the end of the path
         rpt.dwr = rZero;
-        (*ppactr)->_pglrpt->Put(0, &rpt);
+        (*ppactr)->_pglrpt.Put(0, &rpt);
     }
 
     (*ppactr)->_SetStateRewound();
@@ -330,8 +330,8 @@ void ACTR::Restore(PACTR pactr)
     // Note that both copies will point to the same *_pbody & *_ptmpl
     cactRef = pactrDest->_cactRef;
     PGG pggaev = pactrDest->_pggaev;
-    PGL pglrpt = pactrDest->_pglrpt;
-    PGL pglsmm = pactrDest->_pglsmm;
+    GLPtr<RPT> pglrpt = pactrDest->_pglrpt;
+    GLPtr<SMM> pglsmm = pactrDest->_pglsmm;
     *(pactrDest) = *pactrSrc;
     pactrDest->_cactRef = cactRef;
     pactrDest->_pggaev = pggaev;
@@ -483,7 +483,7 @@ bool ACTR::FCopyRte(PACTR *ppactr, bool fEntireScene)
     // Insert the current point
     //
     _GetXyzFromRtel(&_rtelCur, &rpt.xyz);
-    _pglrpt->Get(_rtelCur.irpt, &rptNode);
+    _pglrpt.Get(_rtelCur.irpt, &rptNode);
     rpt.dwr = rZero;
 
     if (_rtelCur.dwrOffset == rZero)
@@ -492,7 +492,7 @@ bool ACTR::FCopyRte(PACTR *ppactr, bool fEntireScene)
     }
     else if (rptNode.dwr > rZero && _rtelCur.irpt < _pglrpt->IvMac() - 1)
     {
-        _pglrpt->Get(_rtelCur.irpt + 1, &rpt1);
+        _pglrpt.Get(_rtelCur.irpt + 1, &rpt1);
         rpt.dwr = BR_LENGTH3(BrsSub(rpt1.xyz.dxr, rpt.xyz.dxr), BrsSub(rpt1.xyz.dyr, rpt.xyz.dyr),
                              BrsSub(rpt1.xyz.dzr, rpt.xyz.dzr));
         if (rZero == rpt.dwr)
@@ -501,7 +501,7 @@ bool ACTR::FCopyRte(PACTR *ppactr, bool fEntireScene)
         }
     }
 
-    if (!(*ppactr)->_pglrpt->FInsert(0, &rpt))
+    if (!(*ppactr)->_pglrpt.FInsert(0, &rpt))
     {
         goto LFail;
     }
@@ -519,7 +519,7 @@ bool ACTR::FCopyRte(PACTR *ppactr, bool fEntireScene)
     {
         for (irpt = _rtelCur.irpt + 1; irpt < irptLim; irpt++)
         {
-            _pglrpt->Get(irpt, &rpt);
+            _pglrpt.Get(irpt, &rpt);
             if (rZero == rpt.dwr)
             {
                 irptLim = irpt + 1;
@@ -537,9 +537,9 @@ bool ACTR::FCopyRte(PACTR *ppactr, bool fEntireScene)
 
     for (irpt = _rtelCur.irpt + 1; irpt < irptLim; irpt++)
     {
-        _pglrpt->Get(irpt, &rpt);
+        _pglrpt.Get(irpt, &rpt);
 
-        if (!(*ppactr)->_pglrpt->FInsert(irpt - _rtelCur.irpt, &rpt))
+        if (!(*ppactr)->_pglrpt.FInsert(irpt - _rtelCur.irpt, &rpt))
         {
             goto LFail;
         }
@@ -619,7 +619,7 @@ bool ACTR::FPasteRte(PACTR pactr)
     //
     for (irpt = _rtelCur.irpt + 1; irpt < _pglrpt->IvMac(); irpt++)
     {
-        _pglrpt->Get(irpt, &rpt);
+        _pglrpt.Get(irpt, &rpt);
         crptDel++;
         if (rpt.dwr == rZero)
         {
@@ -657,29 +657,29 @@ bool ACTR::FPasteRte(PACTR pactr)
     // Translate the points of this section of route
     // Adjust the aev presently
     //
-    pactr->_pglrpt->Get(0, &rpt);
+    pactr->_pglrpt.Get(0, &rpt);
     dxyz.dxr = BrsSub(rptCur.xyz.dxr, rpt.xyz.dxr);
     dxyz.dyr = BrsSub(rptCur.xyz.dyr, rpt.xyz.dyr);
     dxyz.dzr = BrsSub(rptCur.xyz.dzr, rpt.xyz.dzr);
     for (irpt = 1; irpt <= crptNew; irpt++)
     {
-        pactr->_pglrpt->Get(irpt, &rpt);
+        pactr->_pglrpt.Get(irpt, &rpt);
         rpt.xyz.dxr = BrsAdd(rpt.xyz.dxr, dxyz.dxr);
         rpt.xyz.dyr = BrsAdd(rpt.xyz.dyr, dxyz.dyr);
         rpt.xyz.dzr = BrsAdd(rpt.xyz.dzr, dxyz.dzr);
-        AssertDo(_pglrpt->FInsert(_rtelCur.irpt + irpt, &rpt), "Logic error");
+        AssertDo(_pglrpt.FInsert(_rtelCur.irpt + irpt, &rpt), "Logic error");
     }
 
     //
     // Set the right dwr distance from the current point to
     // the first point on the new section of route
     //
-    _pglrpt->Get(_rtelCur.irpt + 1, &rpt);
+    _pglrpt.Get(_rtelCur.irpt + 1, &rpt);
     rptCur.dwr = BR_LENGTH3(BrsSub(rpt.xyz.dxr, rptCur.xyz.dxr), BrsSub(rpt.xyz.dyr, rptCur.xyz.dyr),
                             BrsSub(rpt.xyz.dzr, rptCur.xyz.dzr));
     if (rZero == rptCur.dwr)
         rptCur.dwr = rEps; // Epsilon.  Prevent pathological incorrect end-of-path
-    _pglrpt->Put(_rtelCur.irpt, &rptCur);
+    _pglrpt.Put(_rtelCur.irpt, &rptCur);
 
 #ifdef STATIC
     //
@@ -810,7 +810,7 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     // Note: In order to place a pasted actor at the insertion point,
     // the translation needs to compensate for the distance
     // recorded in each path point -> subtract the first path point.
-    _pglrpt->Get(0, &rpt);
+    _pglrpt.Get(0, &rpt);
     _dxyzSubRte.dxr = rZero;
     _dxyzSubRte.dyr = rZero;
     _dxyzSubRte.dzr = rZero;

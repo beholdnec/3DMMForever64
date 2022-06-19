@@ -26,8 +26,8 @@ struct RTVM
     long lwValue;
 };
 
-bool FFindRtvm(PGL pglrtvm, RTVN *prtvn, long *plwValue, long *pirtvm);
-bool FAssignRtvm(PGL *ppglrtvm, RTVN *prtvn, long lw);
+bool FFindRtvm(GLPtr<RTVM> pglrtvm, RTVN *prtvn, long *plwValue, long *pirtvm);
+bool FAssignRtvm(GLPtr<RTVM> *ppglrtvm, RTVN *prtvn, long lw);
 
 /***************************************************************************
     A script.  This is here rather than in scrcom.* because scrcom is
@@ -43,7 +43,7 @@ class SCPT : public SCPT_PAR
     ASSERT
 
   protected:
-    PGL _pgllw;
+    GLPtr<long> _pgllw;
     PGST _pgstLiterals;
 
     SCPT(void)
@@ -113,8 +113,8 @@ class SCEB : public SCEB_PAR
   protected:
     PRCA _prca; // the chunky resource file list (may be nil)
     PSTRG _pstrg;
-    PGL _pgllwStack;   // the execution stack
-    PGL _pglrtvm;      // the local variables
+    GLPtr<long> _pgllwStack;   // the execution stack
+    GLPtr<RTVM> _pglrtvm;      // the local variables
     PSCPT _pscpt;      // the script
     long _ilwMac;      // the length of the script
     long _ilwCur;      // the current location in the script
@@ -124,7 +124,7 @@ class SCEB : public SCEB_PAR
 
     void _Push(long lw)
     {
-        if (!_fError && !_pgllwStack->FPush(&lw))
+        if (!_fError && !_pgllwStack.FPush(&lw))
             _Error(fFalse);
     }
     long _LwPop(void);
@@ -149,14 +149,14 @@ class SCEB : public SCEB_PAR
     virtual void _AddStrings(PGST pgst);
     virtual bool _FExecVarOp(long op, RTVN *prtvn);
     virtual bool _FExecOp(long op);
-    virtual void _PushVar(PGL pglrtvm, RTVN *prtvn);
-    virtual void _AssignVar(PGL *ppglrtvm, RTVN *prtvn, long lw);
-    virtual PGL _PglrtvmThis(void);
-    virtual PGL *_PpglrtvmThis(void);
-    virtual PGL _PglrtvmGlobal(void);
-    virtual PGL *_PpglrtvmGlobal(void);
-    virtual PGL _PglrtvmRemote(long lw);
-    virtual PGL *_PpglrtvmRemote(long lw);
+    virtual void _PushVar(GLPtr<RTVM> pglrtvm, RTVN *prtvn);
+    virtual void _AssignVar(GLPtr<RTVM> *ppglrtvm, RTVN *prtvn, long lw);
+    virtual GLPtr<RTVM> _PglrtvmThis(void);
+    virtual GLPtr<RTVM> *_PpglrtvmThis(void);
+    virtual GLPtr<RTVM> _PglrtvmGlobal(void);
+    virtual GLPtr<RTVM> *_PpglrtvmGlobal(void);
+    virtual GLPtr<RTVM> _PglrtvmRemote(long lw);
+    virtual GLPtr<RTVM> *_PpglrtvmRemote(long lw);
 
     virtual short _SwCur(void);
     virtual short _SwMin(void);

@@ -277,7 +277,7 @@ class TXRD : public TXRD_PAR
 #define kbomRdop 0x5FC00000
 
     PCFL _pcfl;
-    PGL _pglmpe;
+    GLPtr<MPE> _pglmpe;
     PAG _pagcact; // for sprm's that have more than a long's worth of data
 
     long _onnDef; // default font and font size
@@ -446,7 +446,7 @@ class TXTG : public TXTG_PAR
     };
 
     PTXTB _ptxtb;
-    PGL _pgllin;
+    GLPtr<LIN> _pgllin;
     long _ilinDisp;
     long _cpDisp;
     long _dypDisp;

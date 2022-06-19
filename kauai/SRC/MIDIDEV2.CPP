@@ -150,7 +150,7 @@ MDWS::MDWS(void)
 ***************************************************************************/
 MDWS::~MDWS(void)
 {
-    ReleasePpo(&_pglmev);
+    _pglmev.Release();
 }
 
 #ifdef DEBUG
@@ -241,7 +241,7 @@ bool MDWS::_FInit(PMIDS pmids)
     MIDEV midev;
     bool fEvt;
 
-    if (pvNil == (_pglmev = GL::PglNew(size(MEV))))
+    if (!(_pglmev = GLPtr<MEV>::New()))
         return fFalse;
 
     Assert(MEVT_SHORTMSG == 0, "this code assumes MEVT_SHORTMSG is 0 and it's not");
@@ -278,7 +278,7 @@ bool MDWS::_FInit(PMIDS pmids)
                 rgmev[0].dwDeltaTime = 0;
                 rgmev[0].dwStreamID = 0;
                 rgmev[0].dwEvent = (ulong)MEVT_NOP << 24;
-                if (!_pglmev->FAdd(&rgmev[0]))
+                if (!_pglmev.FAdd(&rgmev[0]))
                     return fFalse;
 
                 _pglmev->FEnsureSpace(0, fgrpShrink);
@@ -435,11 +435,11 @@ void MSQUE::_Queue(long isndinMin)
 
     _mutx.Enter();
 
-    if (_isndinCur == isndinMin && pvNil != _pglsndin)
+    if (_isndinCur == isndinMin && _pglsndin)
     {
         for (; _isndinCur < _pglsndin->IvMac(); _isndinCur++)
         {
-            _pglsndin->Get(_isndinCur, &sndin);
+            _pglsndin.Get(_isndinCur, &sndin);
             if (0 < sndin.cactPause)
                 break;
 
@@ -470,9 +470,9 @@ void MSQUE::_PauseQueue(long isndinMin)
 
     if (_isndinCur == isndinMin && _pglsndin->IvMac() > _isndinCur)
     {
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         sndin.dtsStart = TsCurrentSystem() - _tsStart;
-        _pglsndin->Put(_isndinCur, &sndin);
+        _pglsndin.Put(_isndinCur, &sndin);
 
         _Queue(isndinMin);
     }
@@ -501,9 +501,9 @@ void MSQUE::Notify(PMDWS pmdws)
 
     _mutx.Enter();
 
-    if (pvNil != _pglsndin && _pglsndin->IvMac() > _isndinCur)
+    if (_pglsndin && _pglsndin->IvMac() > _isndinCur)
     {
-        _pglsndin->Get(_isndinCur, &sndin);
+        _pglsndin.Get(_isndinCur, &sndin);
         if (pmdws == sndin.pbaco)
         {
             _isndinCur++;
@@ -541,10 +541,10 @@ MSMIX::~MSMIX(void)
     if (hNil != _hevt)
         CloseHandle(_hevt);
 
-    if (pvNil != _pglmsos)
+    if (_pglmsos)
     {
         Assert(_pglmsos->IvMac() == 0, "MSMIX still has active sounds");
-        ReleasePpo(&_pglmsos);
+        _pglmsos.Release();
     }
     ReleasePpo(&_pmisi);
     ReleasePpo(&_pglmevKey);
@@ -576,7 +576,7 @@ bool MSMIX::_FInit(void)
     AssertBaseThis(0);
     ulong luThread;
 
-    if (pvNil == (_pglmsos = GL::PglNew(size(MSOS))))
+    if (!(_pglmsos = GLPtr<MSOS>::New()))
         return fFalse;
     _pglmsos->SetMinGrow(1);
 
@@ -725,12 +725,12 @@ bool MSMIX::FPlay(PMSQUE pmsque, PMDWS pmdws, long sii, long spr, long cactPlay,
     // stop any current midi stream on this msque
     for (imsos = _pglmsos->IvMac(); imsos-- > 0;)
     {
-        _pglmsos->Get(imsos, &msos);
+        _pglmsos.Get(imsos, &msos);
         if (msos.pmsque == pmsque)
         {
             if (0 == imsos)
                 _StopStream();
-            _pglmsos->Get(imsos, &msos);
+            _pglmsos.Get(imsos, &msos);
             _pglmsos->Delete(imsos);
             break;
         }
@@ -742,7 +742,7 @@ bool MSMIX::FPlay(PMSQUE pmsque, PMDWS pmdws, long sii, long spr, long cactPlay,
         // find the position to insert the new one
         for (imsos = 0; imsos < _pglmsos->IvMac(); imsos++)
         {
-            _pglmsos->Get(imsos, &msos);
+            _pglmsos.Get(imsos, &msos);
             if (msos.spr < spr || msos.spr == spr && msos.sii < sii)
             {
                 // insert before the current one
@@ -767,7 +767,7 @@ bool MSMIX::FPlay(PMSQUE pmsque, PMDWS pmdws, long sii, long spr, long cactPlay,
         msos.vlm = vlm;
         msos.tsStart = TsCurrentSystem() - msos.dtsStart;
 
-        if (!_pglmsos->FInsert(imsos, &msos))
+        if (!_pglmsos.FInsert(imsos, &msos))
         {
             fRet = fFalse;
             fNew = fFalse;
@@ -796,9 +796,9 @@ void MSMIX::_Restart(bool fNew)
 
         if (fNew)
         {
-            _pglmsos->Get(0, &msos);
+            _pglmsos->Get(0, BlobPtr::Make(msos));
             msos.tsStart = tsCur - msos.dtsStart;
-            _pglmsos->Put(0, &msos);
+            _pglmsos->Put(0, BlobPtr::Make(msos));
         }
         _SubmitBuffers(tsCur);
     }
@@ -822,7 +822,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
 
     for (imsos = 0; imsos < _pglmsos->IvMac(); imsos++)
     {
-        _pglmsos->Get(imsos, &msos);
+        _pglmsos.Get(imsos, &msos);
 
         cactSkip = (tsCur - msos.tsStart) / msos.dts;
         if (cactSkip > 0)
@@ -835,7 +835,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
 
             dtsSeek = (tsCur - msos.tsStart) % msos.dts;
             msos.tsStart = tsCur - dtsSeek;
-            _pglmsos->Put(imsos, &msos);
+            _pglmsos.Put(imsos, &msos);
         }
 
         // Calling SetVlm causes us to tell the MISI about the new volume
@@ -890,7 +890,7 @@ void MSMIX::_SubmitBuffers(ulong tsCur)
         msos.cactPlay = 1;
         msos.sii = klwMin;
         msos.spr = klwMin;
-        _pglmsos->Put(imsos, &msos);
+        _pglmsos.Put(imsos, &msos);
     }
 
     if (_fPlaying && imsos > 0)
@@ -1117,7 +1117,7 @@ void MSMIX::_Notify(void *pvData, PMDWS pmdws)
         _fPlaying = fFalse;
         if (0 < _pglmsos->IvMac())
         {
-            _pglmsos->Get(0, &msos);
+            _pglmsos->Get(0, BlobPtr::Make(msos));
             _pglmsos->Delete(0);
 
             _mutx.Leave();
@@ -1184,7 +1184,7 @@ ulong MSMIX::_LuThread(void)
             {
                 if (imsos == 0 && _fPlaying)
                     break;
-                _pglmsos->Get(imsos, &msos);
+                _pglmsos->Get(imsos, BlobPtr::Make(msos));
 
                 cactSkip = (tsCur - msos.tsStart) / msos.dts;
                 if (cactSkip > 0)
@@ -1208,7 +1208,7 @@ ulong MSMIX::_LuThread(void)
                     // adjust the values in the MSOS
                     dtsSeek = (tsCur - msos.tsStart) % msos.dts;
                     msos.tsStart = tsCur - dtsSeek;
-                    _pglmsos->Put(imsos, &msos);
+                    _pglmsos->Put(imsos, BlobPtr::Make(msos));
                 }
 
                 dtsNextStop = LuMin(dtsNextStop, msos.dts - (tsCur - msos.tsStart));
@@ -1395,10 +1395,10 @@ WMS::~WMS(void)
     if (hNil != _hevt)
         CloseHandle(_hevt);
 
-    if (pvNil != _pglpmsir)
+    if (_pglpmsir)
     {
         Assert(0 == _pglpmsir->IvMac(), "WMS still has some active buffers");
-        ReleasePpo(&_pglpmsir);
+        _pglpmsir.Release();
     }
     if (hNil != _hlib)
     {
@@ -1468,7 +1468,7 @@ bool WMS::_FInit(void)
 
 #undef _Get
 
-    if (pvNil == (_pglpmsir = GL::PglNew(size(PMSIR))))
+    if (!(_pglpmsir = GLPtr<PMSIR>::New()))
         return fFalse;
     _pglpmsir->SetMinGrow(1);
 
@@ -1519,7 +1519,7 @@ void WMS::MarkMem(void)
     _mutx.Enter();
     for (ipmsir = _pglpmsir->IvMac(); ipmsir-- > 0;)
     {
-        _pglpmsir->Get(ipmsir, &pmsir);
+        _pglpmsir->Get(ipmsir, BlobPtr::Make(pmsir));
         AssertVarMem(pmsir);
         MarkPv(pmsir);
     }
@@ -1703,7 +1703,7 @@ bool WMS::FQueueBuffer(void *pvData, long cb, long ibStart, long cactPlay, ulong
     pmsir->luData = luData;
     pmsir->ibNext = ibStart;
 
-    if (_hms == hNil || !_pglpmsir->FAdd(&pmsir, &ipmsir))
+    if (_hms == hNil || !_pglpmsir.FAdd(&pmsir, &ipmsir))
         goto LFail;
 
     if (0 == _CmhSubmitBuffers() && ipmsir == 0)
@@ -1734,7 +1734,7 @@ long WMS::_CmhSubmitBuffers(void)
 
     while (_ipmsirCur < _pglpmsir->IvMac())
     {
-        _pglpmsir->Get(_ipmsirCur, &pmsir);
+        _pglpmsir->Get(_ipmsirCur, BlobPtr::Make(pmsir));
         if (pmsir->ibNext >= pmsir->cb)
         {
             // see if the sound should be repeated
@@ -1957,7 +1957,7 @@ void WMS::_DoCallBacks()
     AssertIn(_ipmsirCur, 0, _pglpmsir->IvMac() + 1);
     while (0 < _ipmsirCur)
     {
-        _pglpmsir->Get(0, &pmsir);
+        _pglpmsir->Get(0, BlobPtr::Make(pmsir));
 
         if (_cmhOut > 0)
         {
@@ -2015,7 +2015,7 @@ OMS::~OMS(void)
 
     Assert(_hms == hNil, "Still have an HMS");
     Assert(_pglmsb->IvMac() == 0, "Still have some buffers");
-    ReleasePpo(&_pglmsb);
+    _pglmsb.Release();
 
     _mutx.Leave();
 }
@@ -2044,7 +2044,7 @@ bool OMS::_FInit(void)
     AssertBaseThis(0);
     ulong luThread;
 
-    if (pvNil == (_pglmsb = GL::PglNew(size(MSB))))
+    if (!(_pglmsb = GLPtr<MSB>::New()))
         return fFalse;
     _pglmsb->SetMinGrow(1);
 
@@ -2186,7 +2186,7 @@ bool OMS::FQueueBuffer(void *pvData, long cb, long ibStart, long cactPlay, ulong
     msb.cactPlay = cactPlay;
     msb.luData = luData;
 
-    if (!_pglmsb->FAdd(&msb))
+    if (!_pglmsb.FAdd(&msb))
     {
     LFail:
         _mutx.Leave();
@@ -2294,7 +2294,7 @@ ulong OMS::_LuThread(void)
 
             // ran out of events in the current buffer - see if we should
             // repeat it
-            _pglmsb->Get(0, &msb);
+            _pglmsb->Get(0, BlobPtr::Make(msb));
             if (msb.cactPlay == 1)
             {
                 _imsbCur = 1;
@@ -2306,7 +2306,7 @@ ulong OMS::_LuThread(void)
                 if (msb.cactPlay > 0)
                     msb.cactPlay--;
                 msb.ibStart = 0;
-                _pglmsb->Put(0, &msb);
+                _pglmsb->Put(0, BlobPtr::Make(msb));
             }
         }
         else if (_fStop)
@@ -2325,7 +2325,7 @@ ulong OMS::_LuThread(void)
         else
         {
             // start playing the new buffers
-            _pglmsb->Get(0, &msb);
+            _pglmsb->Get(0, BlobPtr::Make(msb));
             _pmev = (PMEV)PvAddBv(msb.pvData, msb.ibStart);
             _pmevLim = (PMEV)PvAddBv(msb.pvData, msb.cb);
             if (_pmev >= _pmevLim)
@@ -2354,7 +2354,7 @@ void OMS::_ReleaseBuffers(void)
 
     while (_imsbCur > 0)
     {
-        _pglmsb->Get(0, &msb);
+        _pglmsb->Get(0, BlobPtr::Make(msb));
         _pglmsb->Delete(0);
         _imsbCur--;
 

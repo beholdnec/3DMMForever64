@@ -254,7 +254,7 @@ class BRCNL : public BRCNL_PAR
   public:
     long cthumCD;
     CKI ckiRoot;
-    PGL pglthd;
+    GLPtr<struct THD> pglthd;
     PGST pgst;
     PCRM pcrm;
 };
@@ -306,19 +306,18 @@ class BCL : public BCL_PAR
     CNO _cnoRoot;
     CTG _ctgContent;
     bool _fDescend;
-    PGL _pglthd;
+    GLPtr<THD> _pglthd;
 
   protected:
     BCL(void)
     {
-        _pglthd = pvNil;
     }
     ~BCL(void)
     {
-        ReleasePpo(&_pglthd);
+        _pglthd.Release();
     }
 
-    bool _FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd);
+    bool _FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd);
     bool _FAddGokdToThd(PCFL pcfl, long sid, CKI *pcki);
     bool _FAddFileToThd(PCFL pcfl, long sid);
     bool _FBuildThd(PCRM pcrm);
@@ -326,15 +325,15 @@ class BCL : public BCL_PAR
     virtual bool _FAddGokdToThd(PCFL pcfl, long sid, KID *pkid);
 
   public:
-    static PBCL PbclNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd = pvNil, bool fOnlineOnly = fFalse);
+    static PBCL PbclNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd = {}, bool fOnlineOnly = fFalse);
 
-    PGL Pglthd(void)
+    GLPtr<THD> Pglthd(void)
     {
         return _pglthd;
     }
     void GetThd(long ithd, THD *pthd)
     {
-        _pglthd->Get(ithd, pthd);
+        _pglthd.Get(ithd, pthd);
     }
     long IthdMac(void)
     {
@@ -366,13 +365,13 @@ class BCLS : public BCLS_PAR
         ReleasePpo(&_pgst);
     }
 
-    bool _FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGST pgst, PGL pglthd);
+    bool _FInit(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGST pgst, GLPtr<THD> pglthd);
     bool _FSetNameGst(PCFL pcfl, CTG ctg, CNO cno);
 
     virtual bool _FAddGokdToThd(PCFL pcfl, long sid, KID *pkid);
 
   public:
-    static PBCLS PbclsNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, PGL pglthd = pvNil, PGST pgst = pvNil,
+    static PBCLS PbclsNew(PCRM pcrm, CKI *pckiRoot, CTG ctgContent, GLPtr<THD> pglthd = {}, PGST pgst = pvNil,
                           bool fOnlineOnly = fFalse);
 
     PGST Pgst(void)
@@ -412,7 +411,7 @@ class BRWL : public BRWL_PAR
 
     // Thumnail descriptor lists
     PCRM _pcrm;  // Chunky resource manager
-    PGL _pglthd; // Thumbnail descriptor	gl
+    GLPtr<THD> _pglthd; // Thumbnail descriptor	gl
     PGST _pgst;  // Chunk name
 
     // Browser Search (List) parameters

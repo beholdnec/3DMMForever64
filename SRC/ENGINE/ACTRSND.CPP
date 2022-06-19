@@ -255,7 +255,7 @@ bool ACTR::_FEnqueueSmmInMsq(void)
                 Bug("Actrsnd: Expected to resolve snd tag");
                 goto LFail;
             }
-            _pglsmm->Put(ismm, psmm); // Update event
+            _pglsmm.Put(ismm, psmm); // Update event
         }
 
         pmsnd = (PMSND)vptagm->PbacoFetch(&psmm->aevsnd.tag, MSND::FReadMsnd);
@@ -314,13 +314,13 @@ bool ACTR::_FInsertSmm(long iaev)
             continue;
 
         // Replace the current smm with the new
-        _pglsmm->Put(ismm, &smm);
+        _pglsmm.Put(ismm, &smm);
         return fTrue;
     }
 
     // No sound for this cel was found
     // Add a new mm sound
-    return _pglsmm->FAdd(&smm);
+    return _pglsmm.FAdd(&smm);
 }
 
 /***************************************************************************
@@ -494,7 +494,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
         // Adjust the volume in the smm also
         for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
         {
-            _pglsmm->Get(ismm, &smm);
+            _pglsmm.Get(ismm, &smm);
             Assert(smm.aevsnd.celn != smmNil, "Logic error in smm");
 
             if (smm.aevsnd.celn != celn)
@@ -505,7 +505,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
 
             // Set the volume in the smm
             smm.aevsnd.vlm = vlm;
-            _pglsmm->Put(ismm, &smm);
+            _pglsmm.Put(ismm, &smm);
         }
     }
 
@@ -518,14 +518,14 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
     Query actor for current frame sounds
 
 ***************************************************************************/
-bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bool *pfLoop)
+bool ACTR::FQuerySnd(long sty, bool fMotionMatch, GLPtr<TAG> *pglTagSnd, long *pvlm, bool *pfLoop)
 {
     AssertThis(0);
     AssertIn(sty, 0, styLim);
     AssertVarMem(pvlm);
     AssertVarMem(pfLoop);
 
-    PGL pgltag = pvNil;
+    GLPtr<TAG> pgltag;
     AEVSND aevsnd;
     long ccel;
     long celn;
@@ -534,7 +534,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
     long ismm;
     SMM smm;
 
-    if (pvNil == (pgltag = GL::PglNew(size(TAG), kctagSndGrow)))
+    if (!(pgltag = GLPtr<TAG>::New(kctagSndGrow)))
         return fFalse;
     pgltag->SetMinGrow(kctagSndGrow);
 
@@ -559,7 +559,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
                 if (!_pscen->Pmvie()->FResolveSndTag(&aevsnd.tag, aevsnd.chid))
                     goto LFail;
             }
-            if (!pgltag->FAdd(&aevsnd.tag))
+            if (!pgltag.FAdd(&aevsnd.tag))
                 goto LFail;
             *pvlm = aevsnd.vlm;
             *pfLoop = aevsnd.fLoop;
@@ -576,7 +576,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
         // Motion match sounds
         for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
         {
-            _pglsmm->Get(ismm, &smm);
+            _pglsmm.Get(ismm, &smm);
             if (smm.aevsnd.sty != sty)
                 continue;
             if (smm.aevsnd.celn != celn)
@@ -586,7 +586,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
                 if (!_pscen->Pmvie()->FResolveSndTag(&smm.aevsnd.tag, smm.aevsnd.chid))
                     goto LFail;
             }
-            if (!pgltag->FAdd(&smm.aevsnd.tag))
+            if (!pgltag.FAdd(&smm.aevsnd.tag))
                 goto LFail;
             *pvlm = smm.aevsnd.vlm;
             *pfLoop = smm.aevsnd.fLoop;
@@ -596,8 +596,8 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
 
     if (pgltag->IvMac() == 0)
     {
-        ReleasePpo(&pgltag);
-        *pglTagSnd = pvNil;
+        pgltag.Release();
+        *pglTagSnd = {};
         return fTrue;
     }
 
@@ -605,7 +605,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bo
     return fTrue;
 
 LFail:
-    ReleasePpo(&pgltag);
+    pgltag.Release();
     return fFalse;
 }
 
@@ -670,7 +670,7 @@ bool ACTR::FDeleteSndCore(long sty, bool fMotionMatch)
         // Motion match sounds
         for (ismm = 0; ismm < _pglsmm->IvMac(); ismm++)
         {
-            _pglsmm->Get(ismm, &smm);
+            _pglsmm.Get(ismm, &smm);
             if (smm.aevsnd.sty != sty)
                 continue;
             if (smm.aevsnd.celn != celn)

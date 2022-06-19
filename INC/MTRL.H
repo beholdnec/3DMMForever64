@@ -71,7 +71,7 @@ class MTRL : public MTRL_PAR
     static PMTRL PmtrlNew(long iclrBase = ivNil, long cclr = ivNil);
     static bool FReadMtrl(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, long *pcb);
     static PMTRL PmtrlNewFromPix(PFNI pfni);
-    static PMTRL PmtrlNewFromBmp(PFNI pfni, PGL pglclr = pvNil);
+    static PMTRL PmtrlNewFromBmp(PFNI pfni, GLPtr<CLR> pglclr = {});
     static PMTRL PmtrlFromBmtl(PBMTL pbmtl);
     ~MTRL(void);
     PTMAP Ptmap(void);

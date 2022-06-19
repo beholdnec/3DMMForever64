@@ -94,8 +94,8 @@ class ACTN : public ACTN_PAR
 
   protected:
     PGG _pggcel;    // GG of CELs; variable part is a rgcps[]
-    PGL _pglbmat34; // GL of transformation matrices used in this action
-    PGL _pgltagSnd; // GL of motion-match sounds for this action
+    GLPtr<BMAT34> _pglbmat34; // GL of transformation matrices used in this action
+    GLPtr<TAG> _pgltagSnd; // GL of motion-match sounds for this action
     ulong _grfactn; // various flags for this action
 
   protected:
@@ -105,7 +105,7 @@ class ACTN : public ACTN_PAR
     bool _FInit(PCFL pcfl, CTG ctg, CNO cno);
 
   public:
-    static PACTN PactnNew(PGG pggcel, PGL pglbmat34, ulong grfactn);
+    static PACTN PactnNew(PGG pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn);
     static bool FReadActn(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, long *pcb);
     ~ACTN(void);
 
@@ -152,8 +152,8 @@ class TMPL : public TMPL_PAR
     BRA _yaRest;
     BRA _zaRest;
     ulong _grftmpl;
-    PGL _pglibactPar; // GL of parent IDs (shorts) to build BODY
-    PGL _pglibset;    // GL of body-part-set IDs to build BODY
+    GLPtr<short> _pglibactPar; // GL of parent IDs (shorts) to build BODY
+    GLPtr<short> _pglibset;    // GL of body-part-set IDs to build BODY
     PGG _pggcmid;     // List of costumes for each body part set
     long _ccmid;      // Count of custom costumes
     long _cbset;      // Count of body part sets
@@ -173,7 +173,7 @@ class TMPL : public TMPL_PAR
   public:
     static bool FReadTmpl(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, long *pcb);
     ~TMPL(void);
-    static PGL PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError);
+    static GLPtr<TAG> PgltagFetch(PCFL pcfl, CTG ctg, CNO cno, bool *pfError);
 
     // TMPL / BODY stuff
     void GetName(PSTN pstn); // default name of actor or text of the TDT

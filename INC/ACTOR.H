@@ -334,7 +334,7 @@ class ACTR : public ACTR_PAR
     // have either fLifeDirty set or _nfrmLast current.
     // Note: _tagTmpl cannot be derived from _ptmpl
     PGG _pggaev;      // GG pointer to Actor EVent list
-    PGL _pglrpt;      // GL pointer to actor's route
+    GLPtr<RPT> _pglrpt;      // GL pointer to actor's route
     TMPL *_ptmpl;     // Actor body & action list template
     BODY *_pbody;     // Actor's body
     TAG _tagTmpl;     // Note: The sid cannot be queried at save time
@@ -366,7 +366,7 @@ class ACTR : public ACTR_PAR
     RTEL _rtelCur;           // Current location on route	(excludes tweak info)
     XYZ _xyzCur;             // Last point displayed (may be tweak modified)
     XFRM _xfrm;              // Current transformation
-    PGL _pglsmm;             // Current action motion match sounds
+    GLPtr<SMM> _pglsmm;             // Current action motion match sounds
 
     // Path Recording State Information
     RTEL _rtelInsert;        // Joining information
@@ -484,7 +484,7 @@ class ACTR : public ACTR_PAR
     // ActrSave Routines
     static PACTR PactrRead(PCRF pcrf, CNO cno);    // Construct from a document
     bool FWrite(PCFL pcfl, CNO cno, CNO cnoScene); // Write to a document
-    static PGL PgltagFetch(PCFL pcfl, CNO cno, bool *pfError);
+    static GLPtr<TAG> PgltagFetch(PCFL pcfl, CNO cno, bool *pfError);
     static bool FAdjustAridOnFile(PCFL pcfl, CNO cno, long darid);
 
     // Visibility
@@ -654,7 +654,7 @@ class ACTR : public ACTR_PAR
     bool FSetSnd(PTAG ptag, tribool fLoop, tribool fQueue, tribool fActnCel, long vlm, long sty);
     bool FSetSndCore(PTAG ptag, tribool fLoop, tribool fQueue, tribool fActnCel, long vlm, long sty);
     bool FSetVlmSnd(long sty, bool fMotionMatch, long vlm); // Set the volume of a sound
-    bool FQuerySnd(long sty, bool fMotionMatch, PGL *pglTagSnd, long *pvlm, bool *pfLoop);
+    bool FQuerySnd(long sty, bool fMotionMatch, GLPtr<TAG> *pglTagSnd, long *pvlm, bool *pfLoop);
     bool FDeleteSndCore(long sty, bool fMotionMatch);
     bool FSoundInFrm(void);
     bool FResolveAllSndTags(CNO cnoScen);

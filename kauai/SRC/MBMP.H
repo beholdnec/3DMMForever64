@@ -109,10 +109,10 @@ class MBMP : public MBMP_PAR
 const BOM kbomMbmph = 0xAFFC0000;
 
 // reads a bitmap from the given file
-bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, bool *pfUpsideDown,
+bool FReadBitmap(FNI *pfni, byte **pprgb, GLPtr<struct CLR> *ppglclr, long *pdxp, long *pdyp, bool *pfUpsideDown,
                  byte bTransparent = 0);
 
 // writes a bitmap file
-bool FWriteBitmap(FNI *pfni, byte *prgb, PGL pglclr, long dxp, long dyp, bool fUpsideDown = fTrue);
+bool FWriteBitmap(FNI *pfni, byte *prgb, GLPtr<struct CLR> pglclr, long dxp, long dyp, bool fUpsideDown = fTrue);
 
 #endif //! MBMP_H

@@ -119,7 +119,7 @@ class BKGD : public BKGD_PAR
     byte _bIndexBase;    // first index for palette
     long _iaposLast;     // Last placement point we used
     long _iaposNext;     // Next placement point to use
-    PGL _pglapos;        // actor placement point(s) for current view
+    GLPtr<APOS> _pglapos;        // actor placement point(s) for current view
     BRS _xrPlace;
     BRS _yrPlace;
     BRS _zrPlace;

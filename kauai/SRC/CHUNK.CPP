@@ -339,12 +339,12 @@ CFL::~CFL(void)
 {
     AssertBaseThis(0);
     ReleasePpo(&_csto.pfil);
-    ReleasePpo(&_csto.pglfsm);
+    _csto.pglfsm.Release();
     ReleasePpo(&_cstoExtra.pfil);
-    ReleasePpo(&_cstoExtra.pglfsm);
+    _cstoExtra.pglfsm.Release();
     ReleasePpo(&_pggcrp);
 #ifndef CHUNK_BIG_INDEX
-    ReleasePpo(&_pglrtie);
+    _pglrtie.Release();
 #endif //! CHUNK_BIG_INDEX
 }
 
@@ -400,7 +400,7 @@ bool CFL::FReopen(void)
     CSTO csto, cstoExtra;
     PGG pggcrp;
 #ifndef CHUNK_BIG_INDEX
-    PGL pglrtie;
+    GLPtr<RTIE> pglrtie;
 #endif // CHUNK_BIG_INDEX
     bool fFreeMapNotRead;
     bool fRet;
@@ -413,7 +413,7 @@ bool CFL::FReopen(void)
 
 #ifndef CHUNK_BIG_INDEX
     pglrtie = _pglrtie;
-    _pglrtie = pvNil;
+    _pglrtie = {};
 #endif // CHUNK_BIG_INDEX
 
     fFreeMapNotRead = _fFreeMapNotRead;
@@ -440,12 +440,12 @@ bool CFL::FReopen(void)
     }
     ReleasePpo(&pggcrp);
 #ifndef CHUNK_BIG_INDEX
-    ReleasePpo(&pglrtie);
+    pglrtie.Release();
 #endif // CHUNK_BIG_INDEX
     ReleasePpo(&csto.pfil);
-    ReleasePpo(&csto.pglfsm);
+    csto.pglfsm.Release();
     ReleasePpo(&cstoExtra.pfil);
-    ReleasePpo(&cstoExtra.pglfsm);
+    cstoExtra.pglfsm.Release();
 
     AssertThis(0);
     return fRet;
@@ -670,9 +670,9 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
     ECDF ecdf;
     ECSD ecsdT, ecsdCur;
     FP fpSrc, fpLimSrc;
-    PGL pglecsd = pvNil;
+    GLPtr<ECSD> pglecsd;
 
-    if (pvNil == (pglecsd = GL::PglNew(size(ECSD))))
+    if (!(pglecsd = GLPtr<ECSD>::New()))
         goto LFail;
 
     if ((pcfl = NewObj CFL()) == pvNil)
@@ -764,7 +764,7 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
             ecsdT.ctg = ecdf.ctg;
             ecsdT.ckid = ecdf.ckid;
 
-            if (!pglecsd->FPush(&ecsdCur))
+            if (!pglecsd.FPush(&ecsdCur))
                 goto LFail;
 
             ecsdCur = ecsdT;
@@ -774,7 +774,7 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
             // pop up while there are no more children and there's something
             // to pop.
             while (ecsdCur.ckid <= 0 && pglecsd->IvMac() > 0)
-                pglecsd->FPop(&ecsdCur);
+                pglecsd.FPop(&ecsdCur);
         }
     }
 
@@ -785,7 +785,7 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
         ReleasePpo(&pcfl);
     }
 
-    ReleasePpo(&pglecsd);
+    pglecsd.Release();
     AssertNilOrPo(pcfl, fcflFull | fcflGraph);
 
     return pcfl;
@@ -1005,7 +1005,7 @@ void CFL::AssertValid(ulong grfcfl)
 
     AssertPo(_pggcrp, 0);
     AssertPo(_csto.pfil, 0);
-    if (_csto.pglfsm != pvNil)
+    if (_csto.pglfsm)
     {
         AssertPo(_csto.pglfsm, 0);
         Assert(!_fFreeMapNotRead, "free map never read, but exists!");
@@ -1015,11 +1015,11 @@ void CFL::AssertValid(ulong grfcfl)
     if (_cstoExtra.pfil != pvNil)
     {
         AssertPo(_cstoExtra.pfil, 0);
-        if (_cstoExtra.pglfsm != pvNil)
+        if (_cstoExtra.pglfsm)
             AssertPo(_cstoExtra.pglfsm, 0);
     }
     else
-        Assert(_cstoExtra.pglfsm == pvNil, 0);
+        Assert(!_cstoExtra.pglfsm, 0);
 
 #ifndef CHUNK_BIG_INDEX
     AssertNilOrPo(_pglrtie, 0);
@@ -1096,7 +1096,7 @@ void CFL::AssertValid(ulong grfcfl)
     Assert(cbTotExtra <= _cstoExtra.fpMac, "overlapping chunks on extra");
     Assert(cbTot <= _csto.fpMac - fpBase, "overlapping chunks on file");
 
-    if (_csto.pglfsm != pvNil)
+    if (_csto.pglfsm)
     {
         long ifsm;
         FSM fsm;
@@ -1105,7 +1105,7 @@ void CFL::AssertValid(ulong grfcfl)
         fpOld = _csto.fpMac;
         for (ifsm = _csto.pglfsm->IvMac(); ifsm-- != 0;)
         {
-            _csto.pglfsm->Get(ifsm, &fsm);
+            _csto.pglfsm->Get(ifsm, BlobPtr::Make(fsm));
             Assert(fsm.fp >= fpBase && fsm.fp < fpOld, "bad fp in fsm");
             Assert(fsm.cb + fsm.fp > fsm.fp && fsm.cb + fsm.fp < fpOld, "bad cb in fsm");
             fpOld = fsm.fp;
@@ -1113,7 +1113,7 @@ void CFL::AssertValid(ulong grfcfl)
         }
         Assert(cbTot <= _csto.fpMac - fpBase, "too much free space");
     }
-    if (_cstoExtra.pglfsm != pvNil)
+    if (_cstoExtra.pglfsm)
     {
         long ifsm;
         FSM fsm;
@@ -1122,7 +1122,7 @@ void CFL::AssertValid(ulong grfcfl)
         fpOld = _cstoExtra.fpMac;
         for (ifsm = _cstoExtra.pglfsm->IvMac(); ifsm-- != 0;)
         {
-            _cstoExtra.pglfsm->Get(ifsm, &fsm);
+            _cstoExtra.pglfsm->Get(ifsm, BlobPtr::Make(fsm));
             Assert(fsm.fp >= 0 && fsm.fp < fpOld, "bad fp in fsm");
             Assert(fsm.cb + fsm.fp > fsm.fp && fsm.cb + fsm.fp < fpOld, "bad cb in fsm");
             fpOld = fsm.fp;
@@ -1136,20 +1136,20 @@ void CFL::AssertValid(ulong grfcfl)
 
 #ifndef CHUNK_BIG_INDEX
     // verify that the _pglrtie is in sorted order and all the chunks exist
-    if (pvNil != _pglrtie && _pglrtie->IvMac() > 0)
+    if (_pglrtie && _pglrtie->IvMac() > 0)
     {
         long irtie;
         RTIE rtie, rtiePrev;
         long icrp;
 
         irtie = _pglrtie->IvMac() - 1;
-        _pglrtie->Get(irtie, &rtie);
+        _pglrtie.Get(irtie, &rtie);
         Assert(rtiNil != rtie.rti && _FFindCtgCno(rtie.ctg, rtie.cno, &icrp), "Bad RTIE");
 
         while (irtie-- > 0)
         {
             rtiePrev = rtie;
-            _pglrtie->Get(irtie, &rtie);
+            _pglrtie.Get(irtie, &rtie);
             Assert(rtiNil != rtie.rti && _FFindCtgCno(rtie.ctg, rtie.cno, &icrp), "Bad RTIE");
             Assert(rtie.ctg < rtiePrev.ctg || rtie.ctg == rtiePrev.ctg && rtie.cno < rtiePrev.cno, "RTIE out of order");
         }
@@ -1342,7 +1342,7 @@ bool CFL::_FReadIndex(void)
     // used for old index stuff
     bool fOldIndex;
 
-    Assert(_pggcrp == pvNil && _csto.pglfsm == pvNil && _cstoExtra.pfil == pvNil && _cstoExtra.pglfsm == pvNil,
+    Assert(_pggcrp == pvNil && !_csto.pglfsm && _cstoExtra.pfil == pvNil && !_cstoExtra.pglfsm,
            "cfl has wrong non-nil entries");
 
     // verify that this is a chunky file
@@ -1585,7 +1585,7 @@ void CFL::_ReadFreeMap(void)
     // read again
     _fFreeMapNotRead = fFalse;
 
-    if (_csto.pglfsm != pvNil)
+    if (_csto.pglfsm)
     {
         Bug("free map already exists");
         return;
@@ -1593,11 +1593,11 @@ void CFL::_ReadFreeMap(void)
 
     if (_cbFreeMap > 0)
     {
-        if ((_csto.pglfsm = GL::PglRead(_csto.pfil, _fpFreeMap, _cbFreeMap, &bo, &osk)) == pvNil ||
+        if (!(_csto.pglfsm = GLPtr<FSM>::Read(_csto.pfil, _fpFreeMap, _cbFreeMap, &bo, &osk)) ||
             _csto.pglfsm->CbEntry() != size(FSM))
         {
             // it failed, but so what
-            ReleasePpo(&_csto.pglfsm);
+            _csto.pglfsm.Release();
             return;
         }
         // swap bytes
@@ -1693,7 +1693,7 @@ bool CFL::FSave(CTG ctgCreator, FNI *pfni)
 
     // update the csto's and write the index
     pfilOld = _csto.pfil;
-    ReleasePpo(&_csto.pglfsm);
+    _csto.pglfsm.Release();
     _fFreeMapNotRead = fFalse;
     _csto.pfil = floDst.pfil;
     _csto.fpMac = floDst.fp;
@@ -1703,7 +1703,7 @@ bool CFL::FSave(CTG ctgCreator, FNI *pfni)
     {
         _cstoExtra.fpMac = 0;
         ReleasePpo(&_cstoExtra.pfil);
-        ReleasePpo(&_cstoExtra.pglfsm);
+        _cstoExtra.pglfsm.Release();
     }
 
     // write the index
@@ -1781,7 +1781,7 @@ bool CFL::_FWriteIndex(CTG ctgCreator)
     if (!_pggcrp->FWrite(&blck))
         return fFalse;
     cfp.fpMap = cfp.fpIndex + cfp.cbIndex;
-    if (_csto.pglfsm != pvNil)
+    if (_csto.pglfsm)
     {
         AssertDo(blck.FMoveMin(cfp.cbIndex), 0);
         AssertDo(blck.FMoveLim(cfp.cbMap = _csto.pglfsm->CbOnFile()), 0);
@@ -2164,7 +2164,7 @@ bool CFL::_FCreateExtra(void)
 {
     AssertBaseThis(0);
     Assert(_cstoExtra.pfil == pvNil, 0);
-    Assert(_cstoExtra.pglfsm == pvNil, 0);
+    Assert(!_cstoExtra.pglfsm, 0);
 
     if (pvNil == (_cstoExtra.pfil = FIL::PfilCreateTemp()))
         return fFalse;
@@ -2220,7 +2220,7 @@ bool CFL::_FAllocFlo(long cb, PFLO pflo, bool fForceOnExtra)
     }
 
     // look for a free spot in the free space map
-    if (pcsto->pglfsm != pvNil && (cfsm = pcsto->pglfsm->IvMac()) > 0)
+    if (pcsto->pglfsm && (cfsm = pcsto->pglfsm->IvMac()) > 0)
     {
         // TODO: Implement SpanPtr for arrays
         qfsm = pcsto->pglfsm->QvGet(0).Cast<FSM>();
@@ -3061,7 +3061,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     Assert(cb > 0 || cb == 0 && fp == 0, "bad cb");
     Assert(fp >= 0 && (fOnExtra || fp >= size(CFP) || cb == 0 || _fInvalidMainFile), "bad fp");
 
-    PGL pglfsm;
+    GLPtr<FSM> pglfsm;
     long ifsm, ifsmMin, ifsmLim;
     FSM fsm, fsmT;
     CSTO *pcsto;
@@ -3084,10 +3084,10 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
         // it's at the end of the file, just change fpMac and
         // compact the free map if possible
         pcsto->fpMac = fp;
-        if (pglfsm == pvNil || (ifsm = pglfsm->IvMac()) == 0)
+        if (!pglfsm || (ifsm = pglfsm->IvMac()) == 0)
             return;
         ifsm--;
-        pglfsm->Get(ifsm, &fsm);
+        pglfsm->Get(ifsm, BlobPtr::Make(fsm));
         if (fsm.fp + fsm.cb >= pcsto->fpMac)
         {
             // fsm extends to the new end of the file, so delete the fsm
@@ -3101,7 +3101,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
 
     // Chunk is not at the end of the file.  We need to add it
     // to the free map.
-    if (pglfsm == pvNil && (pglfsm = pcsto->pglfsm = GL::PglNew(size(FSM), 1)) == pvNil)
+    if (!pglfsm && !(pglfsm = pcsto->pglfsm = GLPtr<FSM>::New(1)))
     {
         // can't create the free map, just drop the space
         return;
@@ -3110,7 +3110,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     for (ifsmMin = 0, ifsmLim = pglfsm->IvMac(); ifsmMin < ifsmLim;)
     {
         ifsm = (ifsmMin + ifsmLim) / 2;
-        pglfsm->Get(ifsm, &fsm);
+        pglfsm->Get(ifsm, BlobPtr::Make(fsm));
         Assert(fp + cb <= fsm.fp || fp >= fsm.fp + fsm.cb, "freeing space that overlaps free space");
         if (fsm.fp < fp)
             ifsmMin = ifsm + 1;
@@ -3122,7 +3122,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     if (ifsmMin > 0)
     {
         // check for adjacency to previous free block
-        pglfsm->Get(ifsmMin - 1, &fsm);
+        pglfsm->Get(ifsmMin - 1, BlobPtr::Make(fsm));
         Assert(fsm.fp < fp, "bad ifsmMin");
         if (fsm.fp + fsm.cb >= fp)
         {
@@ -3132,7 +3132,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
             if (ifsmMin < ifsmLim)
             {
                 // check for adjacency to next free block
-                pglfsm->Get(ifsmMin, &fsmT);
+                pglfsm->Get(ifsmMin, BlobPtr::Make(fsmT));
                 if (fsmT.fp <= fsm.fp + fsm.cb)
                 {
                     // merge the two
@@ -3141,21 +3141,21 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
                     pglfsm->Delete(ifsmMin);
                 }
             }
-            pglfsm->Put(ifsmMin - 1, &fsm);
+            pglfsm->Put(ifsmMin - 1, BlobPtr::Make(fsm));
             return;
         }
     }
 
     if (ifsmMin < ifsmLim)
     {
-        pglfsm->Get(ifsmMin, &fsm);
+        pglfsm->Get(ifsmMin, BlobPtr::Make(fsm));
         Assert(fsm.fp > fp, "bad ifsmMin");
         if (fsm.fp <= fp + cb)
         {
             Assert(fsm.fp == fp + cb, "overlap");
             fsm.cb = fsm.fp + fsm.cb - fp;
             fsm.fp = fp;
-            pglfsm->Put(ifsmMin, &fsm);
+            pglfsm->Put(ifsmMin, BlobPtr::Make(fsm));
             return;
         }
     }
@@ -3164,7 +3164,7 @@ void CFL::_FreeFpCb(bool fOnExtra, FP fp, long cb)
     fsm.cb = cb;
 
     // if it fails, we lose some space - so what
-    pglfsm->FInsert(ifsmMin, &fsm);
+    pglfsm.FInsert(ifsmMin, &fsm);
 }
 
 /***************************************************************************
@@ -3736,14 +3736,14 @@ struct CNOM
     CNO cnoDst;
 };
 
-bool _FFindCnom(PGL pglcnom, CTG ctg, CNO cno, CNOM *pcnom = pvNil, long *picnom = pvNil);
-bool _FAddCnom(PGL *ppglcnom, CNOM *pcnom);
+bool _FFindCnom(GLPtr<CNOM> pglcnom, CTG ctg, CNO cno, CNOM *pcnom = pvNil, long *picnom = pvNil);
+bool _FAddCnom(GLPtr<CNOM> *ppglcnom, CNOM *pcnom);
 
 /***************************************************************************
     Look for a cnom for the given (ctg, cno). Whether or not it exists,
     fill *picnom with where it would go in the pglcnom.
 ***************************************************************************/
-bool _FFindCnom(PGL pglcnom, CTG ctg, CNO cno, CNOM *pcnom, long *picnom)
+bool _FFindCnom(GLPtr<CNOM> pglcnom, CTG ctg, CNO cno, CNOM *pcnom, long *picnom)
 {
     AssertNilOrPo(pglcnom, 0);
     AssertNilOrVarMem(pcnom);
@@ -3751,7 +3751,7 @@ bool _FFindCnom(PGL pglcnom, CTG ctg, CNO cno, CNOM *pcnom, long *picnom)
     long ivMin, ivLim, iv;
     CNOM cnom;
 
-    if (pvNil == pglcnom)
+    if (!pglcnom)
     {
         TrashVar(pcnom);
         if (pvNil != picnom)
@@ -3762,7 +3762,7 @@ bool _FFindCnom(PGL pglcnom, CTG ctg, CNO cno, CNOM *pcnom, long *picnom)
     for (ivMin = 0, ivLim = pglcnom->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        pglcnom->Get(iv, &cnom);
+        pglcnom.Get(iv, &cnom);
         if (cnom.ctg < ctg)
             ivMin = iv + 1;
         else if (cnom.ctg > ctg)
@@ -3790,18 +3790,18 @@ bool _FFindCnom(PGL pglcnom, CTG ctg, CNO cno, CNOM *pcnom, long *picnom)
 /***************************************************************************
     Add a cnom to the *ppglcnom. Allocated *ppglcnom if it is nil.
 ***************************************************************************/
-bool _FAddCnom(PGL *ppglcnom, CNOM *pcnom)
+bool _FAddCnom(GLPtr<CNOM> *ppglcnom, CNOM *pcnom)
 {
     AssertVarMem(ppglcnom);
     AssertNilOrPo(*ppglcnom, 0);
     AssertVarMem(pcnom);
     long icnom;
 
-    if (pvNil == *ppglcnom && pvNil == (*ppglcnom = GL::PglNew(size(CNOM))))
+    if (!*ppglcnom && !(*ppglcnom = GLPtr<CNOM>::New()))
         return fFalse;
 
     AssertDo(!_FFindCnom(*ppglcnom, pcnom->ctg, pcnom->cnoSrc, pvNil, &icnom), "why is this cnom already in the gl?");
-    return (*ppglcnom)->FInsert(icnom, pcnom);
+    return (*ppglcnom).FInsert(icnom, pcnom);
 }
 
 /***************************************************************************
@@ -3829,7 +3829,7 @@ bool CFL::_FCopy(CTG ctgSrc, CNO cnoSrc, PCFL pcflDst, CNO *pcnoDst, bool fClone
     CRP *qcrp;
 
     bool fFreeDstOnFailure = fFalse;
-    PGL pglcnom = pvNil;
+    GLPtr<CNOM> pglcnom;
     bool fRet = fFalse;
 
     if (!_FFindCtgCno(ctgSrc, cnoSrc, &icrpSrc))
@@ -3960,7 +3960,7 @@ bool CFL::_FCopy(CTG ctgSrc, CNO cnoSrc, PCFL pcflDst, CNO *pcnoDst, bool fClone
 LFail:
     AssertThis(fcflFull);
     AssertPo(pcflDst, fcflFull);
-    ReleasePpo(&pglcnom);
+    pglcnom.Release();
     if (!fRet && fFreeDstOnFailure)
         pcflDst->Delete(ctgSrc, *pcnoDst);
     TrashVarIf(!fRet, pcnoDst);
@@ -4083,12 +4083,12 @@ bool CFL::_FFindCtgRti(CTG ctg, long rti, CNO cnoMin, CNO *pcno)
     long irtie, crtie;
     RTIE rtie;
 
-    if (pvNil != _pglrtie && 0 < (crtie = _pglrtie->IvMac()))
+    if (_pglrtie && 0 < (crtie = _pglrtie->IvMac()))
     {
         _FFindRtie(ctg, cnoMin, pvNil, &irtie);
         for (; irtie < crtie; irtie++)
         {
-            _pglrtie->Get(irtie, &rtie);
+            _pglrtie->Get(irtie, BlobPtr::Make(rtie));
             if (rtie.ctg != ctg)
                 break; // done
             if (rtie.rti == rti)
@@ -4192,7 +4192,7 @@ bool CFL::_FSetRti(CTG ctg, CNO cno, long rti)
         else
         {
             rtie.rti = rti;
-            _pglrtie->Put(irtie, &rtie);
+            _pglrtie.Put(irtie, &rtie);
         }
         return fTrue;
     }
@@ -4203,10 +4203,10 @@ bool CFL::_FSetRti(CTG ctg, CNO cno, long rti)
     rtie.ctg = ctg;
     rtie.cno = cno;
     rtie.rti = rti;
-    if (pvNil == _pglrtie && pvNil == (_pglrtie = GL::PglNew(size(RTIE), 1)))
+    if (!_pglrtie && !(_pglrtie = GLPtr<RTIE>::New(1)))
         return fFalse;
 
-    return _pglrtie->FInsert(irtie, &rtie);
+    return _pglrtie.FInsert(irtie, &rtie);
 
 #endif //! CHUNK_BIG_INDEX
 }
@@ -4224,7 +4224,7 @@ bool CFL::_FFindRtie(CTG ctg, CNO cno, RTIE *prtie, long *pirtie)
     long ivMin, ivLim, iv;
     RTIE rtie;
 
-    if (pvNil == _pglrtie)
+    if (!_pglrtie)
     {
         if (pvNil != pirtie)
             *pirtie = 0;
@@ -4235,7 +4235,7 @@ bool CFL::_FFindRtie(CTG ctg, CNO cno, RTIE *prtie, long *pirtie)
     for (ivMin = 0, ivLim = _pglrtie->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        _pglrtie->Get(iv, &rtie);
+        _pglrtie->Get(iv, BlobPtr::Make(rtie));
         if (rtie.ctg < ctg)
             ivMin = iv + 1;
         else if (rtie.ctg > ctg)
@@ -4270,7 +4270,6 @@ CGE::CGE(void)
     AssertThisMem();
 
     _es = esDone;
-    _pgldps = pvNil;
     AssertThis(0);
 }
 
@@ -4280,7 +4279,7 @@ CGE::CGE(void)
 CGE::~CGE(void)
 {
     AssertThis(0);
-    ReleasePpo(&_pgldps);
+    _pgldps.Release();
 }
 
 #ifdef DEBUG
@@ -4297,7 +4296,7 @@ void CGE::AssertValid(ulong grf)
         AssertNilOrPo(_pgldps, 0);
     }
     else
-        Assert(_pgldps == pvNil, "_pgldps not nil");
+        Assert(!_pgldps, "_pgldps not nil");
 }
 
 /***************************************************************************
@@ -4319,7 +4318,7 @@ void CGE::Init(PCFL pcfl, CTG ctg, CNO cno)
     AssertThis(0);
     AssertPo(pcfl, 0);
 
-    ReleasePpo(&_pgldps);
+    _pgldps.Release();
     _es = esStart;
     _pcfl = pcfl;
     _dps.kid.cki.ctg = ctg;
@@ -4372,7 +4371,7 @@ bool CGE::FNextKid(KID *pkid, CKI *pckiPar, ulong *pgrfcgeOut, ulong grfcgeIn)
         break;
 
     case esGo:
-        if ((grfcgeIn & fcgeSkipToSib) && (_pgldps == pvNil || !_pgldps->FPop(&_dps)))
+        if ((grfcgeIn & fcgeSkipToSib) && (!_pgldps || !_pgldps.FPop(&_dps)))
         {
             goto LDone;
         }
@@ -4384,12 +4383,12 @@ bool CGE::FNextKid(KID *pkid, CKI *pckiPar, ulong *pgrfcgeOut, ulong grfcgeIn)
             // no more children, hit the node on the way up
             *pgrfcgeOut |= fcgePost;
             *pkid = _dps.kid;
-            if (_pgldps == pvNil || !_pgldps->FPop(&_dps))
+            if (!_pgldps || !_pgldps.FPop(&_dps))
             {
                 // this is the root
                 *pgrfcgeOut |= fcgeRoot;
                 _es = esDone;
-                ReleasePpo(&_pgldps);
+                _pgldps.Release();
             }
             else
             {
@@ -4406,7 +4405,7 @@ bool CGE::FNextKid(KID *pkid, CKI *pckiPar, ulong *pgrfcgeOut, ulong grfcgeIn)
         if (_pcfl->Ckid(pkid->cki.ctg, pkid->cki.cno) > 0)
         {
             // child has children, need to push the dps
-            if (_pgldps == pvNil && (_pgldps = GL::PglNew(size(DPS), 10)) == pvNil || !_pgldps->FPush(&_dps))
+            if (!_pgldps && !(_pgldps = GLPtr<DPS>::New(10)) || !_pgldps.FPush(&_dps))
             {
                 // mem failure, pretend it has no children
                 *pgrfcgeOut |= fcgeError;
@@ -4429,7 +4428,7 @@ bool CGE::FNextKid(KID *pkid, CKI *pckiPar, ulong *pgrfcgeOut, ulong grfcgeIn)
     default:
     LDone:
         _es = esDone;
-        ReleasePpo(&_pgldps);
+        _pgldps.Release();
         TrashVar(pkid);
         TrashVar(pckiPar);
         TrashVar(pgrfcgeOut);

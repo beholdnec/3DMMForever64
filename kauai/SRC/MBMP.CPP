@@ -528,7 +528,7 @@ bool MBMP::FReadMbmp(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
             pfUpsideDown	--	fTrue if the bitmap is upside down
         returns fTrue if it succeeds
 ***************************************************************************/
-bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, bool *pfUpsideDown, byte bTransparent)
+bool FReadBitmap(FNI *pfni, byte **pprgb, GLPtr<CLR> *ppglclr, long *pdxp, long *pdyp, bool *pfUpsideDown, byte bTransparent)
 {
     AssertPo(pfni, ffniFile);
     AssertNilOrVarMem(pprgb);
@@ -556,7 +556,7 @@ bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, 
     if (pvNil != pprgb)
         *pprgb = pvNil;
     if (pvNil != ppglclr)
-        *ppglclr = pvNil;
+        *ppglclr = GLPtr<CLR>();
 
     if (pvNil == (pfil = FIL::PfilOpen(pfni)))
         return fFalse;
@@ -611,7 +611,7 @@ bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, 
             goto LFail;
         }
 
-        if (pvNil == (*ppglclr = GL::PglNew(size(CLR), 256)))
+        if (!(*ppglclr = GLPtr<CLR>::New(256)))
             goto LFail;
 
         AssertDo((*ppglclr)->FSetIvMac(256), 0);
@@ -730,7 +730,7 @@ bool FReadBitmap(FNI *pfni, byte **pprgb, PGL *ppglclr, long *pdxp, long *pdyp, 
             if (pvNil != pprgb)
                 *pprgb = pvNil;
             if (pvNil != ppglclr)
-                ReleasePpo(ppglclr);
+                ppglclr->Release();
             TrashVar(pdxp);
             TrashVar(pdyp);
             TrashVar(pfUpsideDown);
@@ -776,7 +776,7 @@ LDone:
 
     Returns: fTrue if it could write the file
 ***************************************************************************/
-bool FWriteBitmap(FNI *pfni, byte *prgb, PGL pglclr, long dxp, long dyp, bool fUpsideDown)
+bool FWriteBitmap(FNI *pfni, byte *prgb, GLPtr<CLR> pglclr, long dxp, long dyp, bool fUpsideDown)
 {
     AssertPo(pfni, ffniFile);
     AssertVarMem(prgb);

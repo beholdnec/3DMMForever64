@@ -58,12 +58,12 @@ class STDIO : public STDIO_PAR
     PGST _pgstMisc;
     PMVIE _pmvie;
     PSMCC _psmcc;
-    PGL _pglpbrcn;
+    GLPtr<PBRCN> _pglpbrcn;
     long _aridSelected;
     PBRWR _pbrwrActr;
     PBRWR _pbrwrProp;
-    PGL _pglcmg;        // Cno map tmpl->gokd for rollcall
-    PGL _pglclr;        // Color table for common palette
+    GLPtr<CMG> _pglcmg;        // Cno map tmpl->gokd for rollcall
+    GLPtr<CLR> _pglclr;        // Color table for common palette
     bool _fDisplayCast; // Display movie's cast
 
     CMD _cmd;

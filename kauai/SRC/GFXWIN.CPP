@@ -114,10 +114,10 @@ static PALETTEENTRY _rgpe[20] = {
     fpalAnimate means animate the palette with the new colors, don't do
         a normal palette set.
 ***************************************************************************/
-void GPT::SetActiveColors(PGL pglclr, ulong grfpal)
+void GPT::SetActiveColors(GLPtr<CLR> pglclr, ulong grfpal)
 {
     AssertNilOrPo(pglclr, 0);
-    Assert(pvNil == pglclr || pglclr->CbEntry() == size(CLR), "wrong CbEntry");
+    Assert(!pglclr || pglclr->CbEntry() == size(CLR), "wrong CbEntry");
     byte rgb[size(LOGPALETTE) + 256 * size(PALETTEENTRY)];
     LOGPALETTE *ppal = (LOGPALETTE *)rgb;
     PALETTEENTRY pe;
@@ -167,7 +167,7 @@ void GPT::SetActiveColors(PGL pglclr, ulong grfpal)
     }
 
     // need to resize the palette and fill in the entries
-    if (pglclr == pvNil || 0 == (cclr = LwMin(pglclr->IvMac(), 256)))
+    if (!pglclr || 0 == (cclr = LwMin(pglclr->IvMac(), 256)))
     {
         if (grfpal & fpalAnimate)
             return;
@@ -235,7 +235,7 @@ void GPT::SetActiveColors(PGL pglclr, ulong grfpal)
     ipeLim = LwMin(cclr, 246);
     for (ipe = 10; ipe < ipeLim; ipe++)
     {
-        pglclr->Get(ipe, &clr);
+        pglclr.Get(ipe, &clr);
         clr.bZero = 0;
         if (rgbT[IbFromIbit(clr.bRed)] & Fbit(clr.bRed))
         {
@@ -281,12 +281,12 @@ LDone:
 /***************************************************************************
     Static method to create a new pglclr containing the current palette.
 ***************************************************************************/
-PGL GPT::PglclrGetPalette(void)
+GLPtr<CLR> GPT::PglclrGetPalette(void)
 {
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
 
-    if (pvNil == (pglclr = GL::PglNew(size(CLR), _cclrPal)))
-        return pvNil;
+    if (!(pglclr = GLPtr<CLR>::New(_cclrPal)))
+        return {};
 
     AssertDo(pglclr->FSetIvMac(_cclrPal), 0);
     CopyPb(_prgclr, pglclr->QvGet(0).Ptr(), LwMul(size(CLR), _cclrPal));
@@ -632,7 +632,7 @@ PGPT GPT::PgptNewOffscreen(RC *prc, long cbitPixel)
 /***************************************************************************
     Set the color table of an offscreen GPT.
 ***************************************************************************/
-void GPT::SetOffscreenColors(PGL pglclr)
+void GPT::SetOffscreenColors(GLPtr<CLR> pglclr)
 {
     AssertThis(0);
     AssertNilOrPo(pglclr, 0);
@@ -643,7 +643,7 @@ void GPT::SetOffscreenColors(PGL pglclr)
         return;
     }
 
-    if (pvNil == pglclr)
+    if (!pglclr)
     {
         if (!_fOwnPalette)
             return;
@@ -1461,7 +1461,7 @@ void GPT::_SetTextProps(DSF *pdsf)
         TA_CENTER, // tahCenter
         TA_RIGHT   // tahRight
     };
-    static _mptavw[] = {
+    static int _mptavw[] = {
         TA_TOP,      // tavTop
         TA_TOP,      // tavCenter + code
         TA_BASELINE, // tavBaseline

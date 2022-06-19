@@ -142,8 +142,8 @@ ACTR::~ACTR(void)
     _CloseTags();
     ReleasePpo(&_pbody);
     ReleasePpo(&_pggaev);
-    ReleasePpo(&_pglrpt);
-    ReleasePpo(&_pglsmm);
+    _pglrpt.Release();
+    _pglsmm.Release();
     ReleasePpo(&_ptmpl);
 }
 
@@ -250,11 +250,11 @@ bool ACTR::_FCreateGroups(void)
     if (pvNil == (_pggaev = GG::PggNew(size(AEV), kcaevInit, kcbVarAdd)))
         return fFalse;
 
-    if (pvNil == (_pglrpt = GL::PglNew(size(RPT), kcrptGrow)))
+    if (!(_pglrpt = GLPtr<RPT>::New(kcrptGrow)))
         return fFalse;
     _pglrpt->SetMinGrow(kcrptGrow);
 
-    if (pvNil == (_pglsmm = GL::PglNew(size(SMM), kcsmmGrow)))
+    if (!(_pglsmm = GLPtr<SMM>::New(kcsmmGrow)))
         return fFalse;
     _pglsmm->SetMinGrow(kcsmmGrow);
 
@@ -323,7 +323,7 @@ void ACTR::_SetStateRewound(void)
     if (_pglrpt->IvMac() > 0)
     {
         RPT rpt;
-        _pglrpt->Get(0, &rpt);
+        _pglrpt.Get(0, &rpt);
         _xyzCur = rpt.xyz;
     }
 
@@ -599,7 +599,7 @@ bool ACTR::_FGetRtelBack(RTEL *prtel, bool fUpdateStateVar)
                 break;
             }
             _rtelCur.irpt--;
-            _pglrpt->Get(_rtelCur.irpt, &rpt);
+            _pglrpt.Get(_rtelCur.irpt, &rpt);
             dwrT = BrsAdd(rpt.dwr, dwrT);
         }
         _rtelCur.dwrOffset = dwrT;
@@ -1067,7 +1067,7 @@ bool ACTR::_FDoAevCore(long iaev)
         _iaevFrmMin = _iaevAddCur = iaev;
         _rtelCur = aev.rtel;
         _GetXyzFromRtel(&_rtelCur, &_xyzCur);
-        _pglrpt->Get(aev.rtel.irpt, &rpt);
+        _pglrpt.Get(aev.rtel.irpt, &rpt);
 
         // Show the actor
         if (!_fOnStage)
@@ -1556,12 +1556,12 @@ bool ACTR::_FInsertGgRpt(long irpt, RPT *prpt, BRS dwrPrior)
     RPT rpt;
     BRS dwrTotal = rZero; // Dist from prev node to node after the inserted node
 
-    if (!_pglrpt->FInsert(irpt, prpt))
+    if (!_pglrpt.FInsert(irpt, prpt))
         return fFalse;
 
     if (0 < irpt)
     {
-        _pglrpt->Get(irpt - 1, &rpt);
+        _pglrpt.Get(irpt - 1, &rpt);
         dwrTotal = rpt.dwr;
 
         // Do not alter end of route dwr's
@@ -1571,7 +1571,7 @@ bool ACTR::_FInsertGgRpt(long irpt, RPT *prpt, BRS dwrPrior)
             rpt.dwr = dwrPrior;
             if (rZero == rpt.dwr)
                 rpt.dwr = rEps; // Epsilon.  Prevent pathological incorrect end-of-path
-            _pglrpt->Put(irpt - 1, &rpt);
+            _pglrpt.Put(irpt - 1, &rpt);
         }
         else
             Assert(dwrPrior == rZero, "Illegal distance");
@@ -1579,7 +1579,7 @@ bool ACTR::_FInsertGgRpt(long irpt, RPT *prpt, BRS dwrPrior)
 
     if (irpt < _pglrpt->IvMac() - 1)
     {
-        _pglrpt->Get(irpt + 1, &rpt);
+        _pglrpt.Get(irpt + 1, &rpt);
         if (rZero != prpt->dwr) // If not at end of subroute
         {
             // Set the distance to the next point in this subroute
@@ -1587,7 +1587,7 @@ bool ACTR::_FInsertGgRpt(long irpt, RPT *prpt, BRS dwrPrior)
             prpt->dwr = BrsSub(dwrTotal, dwrPrior);
             if (rZero >= prpt->dwr)
                 prpt->dwr = rEps; // Epsilon.  Prevent pathological incorrect end-of-path
-            _pglrpt->Put(irpt, prpt);
+            _pglrpt.Put(irpt, prpt);
         }
     }
     else
@@ -3371,13 +3371,13 @@ void ACTR::_AdjustAevForRteIns(long irptAdjust, long iaevMin)
 
     if (irptAdjust > 0)
     {
-        _pglrpt->Get(irptAdjust - 1, &rptBack);
+        _pglrpt.Get(irptAdjust - 1, &rptBack);
         dwrBack = rptBack.dwr;
     }
     else
         dwrBack = rZero;
 
-    _pglrpt->Get(irptAdjust, &rptAdjust);
+    _pglrpt.Get(irptAdjust, &rptAdjust);
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
     {
@@ -3426,11 +3426,11 @@ void ACTR::_AdjustAevForRteDel(long irptAdjust, long iaevMin)
         dwrBack = rZero;
     else
     {
-        _pglrpt->Get(irptAdjust - 1, &rptBack);
+        _pglrpt.Get(irptAdjust - 1, &rptBack);
         dwrBack = rptBack.dwr;
     }
 
-    _pglrpt->Get(irptAdjust, &rptAdjust);
+    _pglrpt.Get(irptAdjust, &rptAdjust);
     dwrFwd = rptAdjust.dwr;
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
@@ -3573,13 +3573,13 @@ void ACTR::_GetXyzFromRtel(RTEL *prtel, PXYZ pxyz)
 
     if (rZero == prtel->dwrOffset || (prtel->irpt) + 1 == _pglrpt->IvMac())
     {
-        _pglrpt->Get(prtel->irpt, &rpt);
+        _pglrpt.Get(prtel->irpt, &rpt);
         *pxyz = rpt.xyz;
         return;
     }
 
-    _pglrpt->Get(prtel->irpt, &rptFirst);
-    _pglrpt->Get(1 + prtel->irpt, &rptSecond);
+    _pglrpt.Get(prtel->irpt, &rptFirst);
+    _pglrpt.Get(1 + prtel->irpt, &rptSecond);
     Assert(rptFirst.dwr >= prtel->dwrOffset, "Possible offset bug in _GetXyzFromRtel");
 
     rFract = BrsDiv(prtel->dwrOffset, rptFirst.dwr);
@@ -3694,7 +3694,7 @@ void ACTR::_MatrixRotUpdate(XYZ *pxyz, BMAT34 *pbmat34)
         // Post apply the path orientation
         AssertIn(_iaevAddCur, 0, _pggaev->IvMac());
         paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
-        _pglrpt->Get(paev->rtel.irpt, &rpt);
+        _pglrpt.Get(paev->rtel.irpt, &rpt);
 #ifdef BUG1899
         if (_ptmpl->FIsTdt() || (_rtelCur.irpt == paev->rtel.irpt && _rtelCur.dwrOffset == rZero))
 #else  //! BUG1899
@@ -3766,7 +3766,7 @@ void ACTR::_CalcRteOrient(BMAT34 *pbmat34, BRA *pxa, BRA *pya, BRA *pza, ulong *
 
     // If at end of subpath, or if on a static segment,
     // retain the orientation the actor last had
-    _pglrpt->Get(irptPrev, &rpt);
+    _pglrpt.Get(irptPrev, &rpt);
     if (rZero == rpt.dwr)
         irptPrev--;
 
@@ -3817,8 +3817,8 @@ void ACTR::_UpdateXyzTan(XYZ *pxyz, long irpt, long rw)
 
     Assert(irpt + 1 < _pglrpt->IvMac(), "irpt out of range");
 
-    _pglrpt->Get(irpt, &rpt1);
-    _pglrpt->Get(irpt + 1, &rpt2);
+    _pglrpt.Get(irpt, &rpt1);
+    _pglrpt.Get(irpt + 1, &rpt2);
 
     dxr = BrsSub(rpt2.xyz.dxr, rpt1.xyz.dxr);
     dyr = BrsSub(rpt2.xyz.dyr, rpt1.xyz.dyr);
@@ -4317,7 +4317,7 @@ bool ACTR::FBeginRecord(ulong tsCurrent, bool fReplace, PACTR pactrRestore)
     long nfrmPrev;
     bool fClosestSubrte = fTrue;
 
-    _pglrpt->Get(_rtelCur.irpt, &rpt);
+    _pglrpt.Get(_rtelCur.irpt, &rpt);
     _fPathInserted = fFalse;
 
     // Do not rejoin to a one point offstage stub.
@@ -4464,7 +4464,7 @@ bool ACTR::FRecordMove(BRS dxr, BRS dyr, BRS dzr, ulong grfmaf, ulong tsCurrent,
 
     // In record mode, know prev point on a route Node
     // Determine if threshhold distance has been advanced
-    _pglrpt->Get(_rtelCur.irpt, &rptCur);
+    _pglrpt.Get(_rtelCur.irpt, &rptCur);
     xyzMouse.dxr = BrsAdd(dxr, rptCur.xyz.dxr);
     xyzMouse.dyr = BrsAdd(dyr, rptCur.xyz.dyr);
     xyzMouse.dzr = BrsAdd(dzr, rptCur.xyz.dzr);
@@ -4518,7 +4518,7 @@ bool ACTR::FRecordMove(BRS dxr, BRS dyr, BRS dzr, ulong grfmaf, ulong tsCurrent,
         rptNew.xyz.dyr = -_dxyzRte.dyr;
     }
 
-    if (!_pglrpt->FInsert(1 + _rtelCur.irpt, &rptNew))
+    if (!_pglrpt.FInsert(1 + _rtelCur.irpt, &rptNew))
         goto LFail;
 
     if (kdwrNil != _dwrStep)
@@ -4529,7 +4529,7 @@ bool ACTR::FRecordMove(BRS dxr, BRS dyr, BRS dzr, ulong grfmaf, ulong tsCurrent,
     // Reset distance in previous xyz entry
     rptCur.dwr = dwrCur;
     Assert(dwrCur != rZero, "Bug in InsertRoute");
-    _pglrpt->Put(_rtelCur.irpt, &rptCur);
+    _pglrpt.Put(_rtelCur.irpt, &rptCur);
 
     _AdjustAevForRteIns(1 + _rtelCur.irpt, _iaevCur);
     _fPathInserted = fTrue;
@@ -4654,7 +4654,7 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
         rtelJoin.dnfrm = 0;
         for (irpt = 1 + _rtelCur.irpt; irpt < irptLim; irpt++)
         {
-            _pglrpt->Get(irpt, &rpt);
+            _pglrpt.Get(irpt, &rpt);
             dwr = BR_LENGTH3(BrsSub(_xyzCur.dxr, rpt.xyz.dxr), BrsSub(_xyzCur.dyr, rpt.xyz.dyr),
                              BrsSub(_xyzCur.dzr, rpt.xyz.dzr));
             if (dwr < dwrMin)
@@ -4674,8 +4674,8 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
         // Update the dwr of the most recently recorded point to be
         // the length to the join point on the path
         // NOTE: This cannot be zero (it would signal end of path)
-        _pglrpt->Get(_rtelCur.irpt, &rptCur);
-        _pglrpt->Get(rtelJoin.irpt, &rptJoin);
+        _pglrpt.Get(_rtelCur.irpt, &rptCur);
+        _pglrpt.Get(rtelJoin.irpt, &rptJoin);
         rptCur.dwr = BR_LENGTH3(BrsSub(_xyzCur.dxr, rptJoin.xyz.dxr), BrsSub(_xyzCur.dyr, rptJoin.xyz.dyr),
                                 BrsSub(_xyzCur.dzr, rptJoin.xyz.dzr));
 
@@ -4684,7 +4684,7 @@ bool ACTR::FEndRecord(bool fReplace, PACTR pactrRestore)
             // Prevent pathological end-of-route case
             rptCur.dwr = rEps;
         }
-        _pglrpt->Put(_rtelCur.irpt, &rptCur);
+        _pglrpt.Put(_rtelCur.irpt, &rptCur);
     }
 
     //
@@ -4949,9 +4949,9 @@ void ACTR::_DeleteFwdCore(bool fDeleteAll, bool *pfAlive, long iaevCur)
         if (_rtelCur.irpt >= 0)
         {
             Assert(_pglrpt->IvMac() > 0, "Logic Error");
-            _pglrpt->Get(_rtelCur.irpt, &rpt);
+            _pglrpt.Get(_rtelCur.irpt, &rpt);
             rpt.dwr = rZero;
-            _pglrpt->Put(_rtelCur.irpt, &rpt);
+            _pglrpt.Put(_rtelCur.irpt, &rpt);
         }
     }
 
@@ -4996,7 +4996,7 @@ void ACTR::_SaveCurPathOrien(void)
     if (_iaevAddCur >= 0 && !_ptmpl->FIsTdt())
     {
         _pggaev->GetFixed(_iaevAddCur, BlobPtr::Make(aev));
-        _pglrpt->Get(aev.rtel.irpt, &rpt);
+        _pglrpt.Get(aev.rtel.irpt, &rpt);
         if (rZero != rpt.dwr) // ie, non-static path segment
         {
             // _xfrm.waPath is current and CalcRteOrient() cannot be called
@@ -5046,7 +5046,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
     // If the current point is between nodes, a node will
     // be inserted as the new first node of the subroute.
     // Compute the dwr of the new node.
-    _pglrpt->Get(_rtelCur.irpt, &rptOld);
+    _pglrpt.Get(_rtelCur.irpt, &rptOld);
     dwrOld = rptOld.dwr;
     dwrNew = BrsSub(dwrOld, _rtelCur.dwrOffset);
 
@@ -5093,7 +5093,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
     //
     _GetXyzFromRtel(&_rtelCur, &rptOld.xyz);
     rptOld.dwr = dwrNew;
-    _pglrpt->Put(_rtelCur.irpt, &rptOld);
+    _pglrpt.Put(_rtelCur.irpt, &rptOld);
     dnrpt = _rtelCur.irpt;
     _rtelCur.dnfrm = 0;
     _rtelCur.dwrOffset = rZero;
@@ -5246,15 +5246,15 @@ void ACTR::_TruncateSubRte(long irptDelLim)
         return;
 
     // Store the new length between nodes
-    _pglrpt->Get(irpt, &rptNode1);
+    _pglrpt.Get(irpt, &rptNode1);
     rptNode1.dwr = _rtelCur.dwrOffset;
-    _pglrpt->Put(irpt, &rptNode1);
+    _pglrpt.Put(irpt, &rptNode1);
 
     // Move node 2 rather than inserting a node
     _GetXyzFromRtel(&_rtelCur, &rptNode2.xyz);
     rptNode2.dwr = rZero;
     Assert(irpt + 1 < _pglrpt->IvMac(), "Error in truncation");
-    _pglrpt->Put(irpt + 1, &rptNode2);
+    _pglrpt.Put(irpt + 1, &rptNode2);
 
     // Update _rtelCur
     _rtelCur.dnfrm = 0;
@@ -5523,7 +5523,7 @@ void ACTR::AssertValid(ulong grfobj)
         // Supply a debug readable view of br_scalar path
         for (irpt = 0; irpt < irptMac; irpt++)
         {
-            _pglrpt->Get(irpt, &rpt);
+            _pglrpt.Get(irpt, &rpt);
         }
 
         AssertIn(_rtelCur.irpt, 0, irptMac + 1); // Supply a debug readable view of the event stream
@@ -5560,7 +5560,7 @@ void ACTR::AssertValid(ulong grfobj)
 
             mpaetfSeen[aev.aet] = fTrue;
             rtel = aev.rtel;
-            _pglrpt->Get(aev.rtel.irpt, &rpt);
+            _pglrpt.Get(aev.rtel.irpt, &rpt);
             Assert(aev.rtel.dwrOffset < rpt.dwr || rpt.dwr == rZero, "Invalid rtel.dwrOffset");
 
             // Variable portion of aev retrieved for debug viewing

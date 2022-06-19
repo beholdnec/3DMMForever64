@@ -69,10 +69,8 @@ PSZ _mpertpsz[] = {
 ***************************************************************************/
 CHCM::CHCM(void)
 {
-    _pglcsfc = pvNil;
     _pcfl = pvNil;
     _pchlx = pvNil;
-    _pglckiLoner = pvNil;
     _pmsnkError = pvNil;
     _cactError = 0;
     AssertThis(0);
@@ -83,20 +81,20 @@ CHCM::CHCM(void)
 ***************************************************************************/
 CHCM::~CHCM(void)
 {
-    if (pvNil != _pglcsfc)
+    if (_pglcsfc)
     {
         CSFC csfc;
 
-        while (_pglcsfc->FPop(&csfc))
+        while (_pglcsfc.FPop(&csfc))
         {
             ReleasePpo(&_pcfl);
             _pcfl = csfc.pcfl;
         }
-        ReleasePpo(&_pglcsfc);
+        _pglcsfc.Release();
     }
     ReleasePpo(&_pcfl);
     ReleasePpo(&_pchlx);
-    ReleasePpo(&_pglckiLoner);
+    _pglckiLoner.Release();
 }
 
 #ifdef DEBUG
@@ -796,7 +794,7 @@ void CHCM::_ParseBodyPalette(bool fPack, CTG ctg, CNO cno)
     FNI fni;
     BLCK blck;
     TOK tok;
-    PGL pglclr;
+    GLPtr<CLR> pglclr;
 
     if (!_pchlx->FGetPath(&fni))
     {
@@ -818,7 +816,7 @@ void CHCM::_ParseBodyPalette(bool fPack, CTG ctg, CNO cno)
             _Error(ertOom);
         }
     }
-    ReleasePpo(&pglclr);
+    pglclr.Release();
 
     if (_FGetCleanTok(&tok) && ttEndChunk != tok.tt)
     {
@@ -1170,7 +1168,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
     long iv, iiv;
     BLCK blck;
     PGLB pglb = pvNil;
-    PGL pglivFree = pvNil;
+    GLPtr<long> pglivFree;
 
     // get size of entry data
     ClearPb(rgphp, size(rgphp));
@@ -1213,7 +1211,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
             else if (!FError())
             {
                 iv = pglb->IvMac();
-                if (pvNil == pglivFree && pvNil == (pglivFree = GL::PglNew(size(long))) || !pglivFree->FAdd(&iv))
+                if (!pglivFree && !(pglivFree = GLPtr<long>::New()) || !pglivFree.FAdd(&iv))
                 {
                     _Error(ertOom);
                 }
@@ -1241,7 +1239,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
         if (FError())
             continue;
 
-        if (!pglb->FAdd(pvNil, &iv))
+        if (!pglb->FAdd(BlobPtr(), &iv))
             _Error(ertOom);
         else
         {
@@ -1264,12 +1262,12 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
     if (FError())
         goto LFail;
 
-    if (pvNil != pglivFree)
+    if (pglivFree)
     {
         Assert(fAl, "why did GL have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, &iv);
+            pglivFree->Get(iiv, BlobPtr::Make(iv));
             AssertIn(iv, 0, pglb->IvMac());
             pglb->Delete(iv);
         }
@@ -1284,7 +1282,7 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
 
 LFail:
     ReleasePpo(&pglb);
-    ReleasePpo(&pglivFree);
+    pglivFree.Release();
 }
 
 /***************************************************************************
@@ -1302,7 +1300,7 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
     BLCK blck;
     bool fFree;
     PGGB pggb = pvNil;
-    PGL pglivFree = pvNil;
+    GLPtr<long> pglivFree;
 
     // get size of fixed data
     ClearPb(rgphp, size(rgphp));
@@ -1346,7 +1344,7 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
             else if (!FError())
             {
                 iv = pggb->IvMac();
-                if (pvNil == pglivFree && pvNil == (pglivFree = GL::PglNew(size(long))) || !pglivFree->FAdd(&iv))
+                if (!pglivFree && !(pglivFree = GLPtr<long>::New()) || !pglivFree.FAdd(&iv))
                 {
                     _Error(ertOom);
                 }
@@ -1421,12 +1419,12 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
     if (FError())
         goto LFail;
 
-    if (pvNil != pglivFree)
+    if (pglivFree)
     {
         Assert(fAg, "why did GG have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, &iv);
+            pglivFree->Get(iiv, BlobPtr::Make(iv));
             AssertIn(iv, 0, pggb->IvMac());
             pggb->Delete(iv);
         }
@@ -1441,7 +1439,7 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
 
 LFail:
     ReleasePpo(&pggb);
-    ReleasePpo(&pglivFree);
+    pglivFree.Release();
 }
 
 /***************************************************************************
@@ -1459,7 +1457,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
     BLCK blck;
     bool fFree;
     PGSTB pgstb = pvNil;
-    PGL pglivFree = pvNil;
+    GLPtr<long> pglivFree;
     void *pvExtra = pvNil;
 
     // get size of attached data
@@ -1501,7 +1499,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
             else if (!FError())
             {
                 iv = pgstb->IvMac();
-                if (pvNil == pglivFree && pvNil == (pglivFree = GL::PglNew(size(long))) || !pglivFree->FAdd(&iv))
+                if (!pglivFree && !(pglivFree = GLPtr<long>::New()) || !pglivFree.FAdd(&iv))
                 {
                     _Error(ertOom);
                 }
@@ -1566,12 +1564,12 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
     if (FError())
         goto LFail;
 
-    if (pvNil != pglivFree)
+    if (pglivFree)
     {
         Assert(fAst, "why did GST have free entries?");
         for (iiv = pglivFree->IvMac(); iiv-- > 0;)
         {
-            pglivFree->Get(iiv, &iv);
+            pglivFree->Get(iiv, BlobPtr::Make(iv));
             AssertIn(iv, 0, pgstb->IvMac());
             pgstb->Delete(iv);
         }
@@ -1586,7 +1584,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
 
 LFail:
     ReleasePpo(&pgstb);
-    ReleasePpo(&pglivFree);
+    pglivFree.Release();
     FreePpv(&pvExtra);
 }
 
@@ -1659,7 +1657,7 @@ void CHCM::_StartSubFile(bool fPack, CTG ctg, CNO cno)
     AssertThis(0);
     CSFC csfc;
 
-    if (pvNil == _pglcsfc && pvNil == (_pglcsfc = GL::PglNew(size(CSFC))))
+    if (!_pglcsfc && !(_pglcsfc = GLPtr<CSFC>::New()))
         goto LFail;
 
     csfc.pcfl = _pcfl;
@@ -1667,7 +1665,7 @@ void CHCM::_StartSubFile(bool fPack, CTG ctg, CNO cno)
     csfc.cno = cno;
     csfc.fPack = FPure(fPack);
 
-    if (!_pglcsfc->FPush(&csfc))
+    if (!_pglcsfc.FPush(&csfc))
         goto LFail;
 
     if (pvNil == (_pcfl = CFL::PcflCreateTemp()))
@@ -1687,7 +1685,7 @@ void CHCM::_EndSubFile(void)
     AssertThis(0);
     CSFC csfc;
 
-    if (pvNil == _pglcsfc || !_pglcsfc->FPop(&csfc))
+    if (!_pglcsfc || !_pglcsfc.FPop(&csfc))
     {
         _Error(ertSyntax);
         return;
@@ -1839,14 +1837,14 @@ void CHCM::_ParseChunkBody(CTG ctg, CNO cno)
             _ParseBodyParent(ctg, cno);
             break;
         case ttLoner:
-            if (pvNil != _pglcsfc && 0 < _pglcsfc->IvMac())
+            if (_pglcsfc && 0 < _pglcsfc->IvMac())
             {
                 _Error(ertLonerInSub);
                 break;
             }
             cki.ctg = ctg;
             cki.cno = cno;
-            if (pvNil == _pglckiLoner && pvNil == (_pglckiLoner = GL::PglNew(size(CKI))) || !_pglckiLoner->FPush(&cki))
+            if (!_pglckiLoner && !(_pglckiLoner = GLPtr<CKI>::New()) || !_pglckiLoner.FPush(&cki))
             {
                 _Error(ertOom);
             }
@@ -2093,26 +2091,26 @@ PCFL CHCM::PcflCompile(PBSF pbsfSrc, PSTN pstnFile, PFNI pfniDst, PMSNK pmsnk)
     _bsf.FReplace(pvNil, 0, 0, _bsf.IbMac());
 
     // make sure we're not in any subfiles
-    if (pvNil != _pglcsfc && _pglcsfc->IvMac() > 0)
+    if (_pglcsfc && _pglcsfc->IvMac() > 0)
     {
         CSFC csfc;
 
         _Error(ertNoEndSubFile);
-        while (_pglcsfc->FPop(&csfc))
+        while (_pglcsfc.FPop(&csfc))
         {
             ReleasePpo(&_pcfl);
             _pcfl = csfc.pcfl;
         }
     }
 
-    if (!FError() && pvNil != _pglckiLoner)
+    if (!FError() && _pglckiLoner)
     {
         CKI cki;
         long icki;
 
         for (icki = _pglckiLoner->IvMac(); icki-- > 0;)
         {
-            _pglckiLoner->Get(icki, &cki);
+            _pglckiLoner->Get(icki, BlobPtr::Make(cki));
             _pcfl->SetLoner(cki.ctg, cki.cno, fTrue);
         }
     }
@@ -2126,7 +2124,7 @@ PCFL CHCM::PcflCompile(PBSF pbsfSrc, PSTN pstnFile, PFNI pfniDst, PMSNK pmsnk)
         pfniDst->FDelete();
     }
     ReleasePpo(&_pchlx);
-    ReleasePpo(&_pglckiLoner);
+    _pglckiLoner.Release();
 
     pcfl = _pcfl;
     _pcfl = pvNil;

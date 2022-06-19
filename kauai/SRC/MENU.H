@@ -83,12 +83,12 @@ class MUB : public MUB_PAR
         long wcidList;
         long cid;
         bool fSeparator;
-        PGL pgllw;
+        GLPtr<long> pgllw;
     };
 
     HMENU _hmenu; // the menu bar
     long _cmnu;   // number of menus on the menu bar
-    PGL _pglmlst; // menu lists
+    GLPtr<MLST> _pglmlst; // menu lists
 
     bool _FInitLists(void);
     bool _FFindMlst(long wcid, MLST *pmlst, long *pimlst = pvNil);

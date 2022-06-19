@@ -133,7 +133,7 @@ class CRF : public CRF_PAR
     };
 
     PCFL _pcfl;
-    PGL _pglcre; // sorted by (cki, pfnrpo)
+    GLPtr<CRE> _pglcre; // sorted by (cki, pfnrpo)
     long _cbMax;
     long _cbCur;
     long _cactRelease;
@@ -182,7 +182,7 @@ class CRM : public CRM_PAR
     MARKMEM
 
   protected:
-    PGL _pglpcrf;
+    GLPtr<PCRF> _pglpcrf;
 
     CRM(void)
     {

@@ -94,9 +94,9 @@ bool STDIO::FCmdBrowserReady(PCMD pcmd)
     AssertPo(_pmvie, 0);
 
     // Optionally Save/Retrieve Browser Context
-    if (_pglpbrcn == pvNil)
+    if (!_pglpbrcn)
     {
-        if (pvNil == (_pglpbrcn = GL::PglNew(size(PBRCN), kglpbrcnGrow)))
+        if (!(_pglpbrcn = GLPtr<PBRCN>::New(kglpbrcnGrow)))
             goto LFail;
     }
 
@@ -282,9 +282,9 @@ bool STDIO::FCmdBrowserReady(PCMD pcmd)
             goto LFail;
 
         // Create the cno map from tmpl-->gokd
-        if (_pglcmg == pvNil)
+        if (!_pglcmg)
         {
-            if (pvNil == (_pglcmg = GL::PglNew(size(CMG), kglcmgGrow)))
+            if (!(_pglcmg = GLPtr<CMG>::New(kglcmgGrow)))
                 goto LFail;
             _pglcmg->SetMinGrow(kglcmgGrow);
         }
@@ -301,9 +301,9 @@ bool STDIO::FCmdBrowserReady(PCMD pcmd)
             goto LFail;
 
         // Create the cno map from tmpl-->gokd
-        if (_pglcmg == pvNil)
+        if (!_pglcmg)
         {
-            if (pvNil == (_pglcmg = GL::PglNew(size(CMG), kglcmgGrow)))
+            if (!(_pglcmg = GLPtr<CMG>::New(kglcmgGrow)))
                 goto LFail;
             _pglcmg->SetMinGrow(kglcmgGrow);
         }
@@ -326,7 +326,7 @@ bool STDIO::FCmdBrowserReady(PCMD pcmd)
     //
     if (pvNil != pbrcn && pvNil == _PbrcnFromBrwdid(brwdid))
     {
-        if (!_pglpbrcn->FAdd(&pbrcn))
+        if (!_pglpbrcn.FAdd(&pbrcn))
         {
             goto LFail;
         }
@@ -354,15 +354,15 @@ void STDIO::ReleaseBrcn(void)
     long ipbrcn;
     PBRCN pbrcn;
 
-    if (pvNil == _pglpbrcn)
+    if (!_pglpbrcn)
         return;
 
     for (ipbrcn = 0; ipbrcn < _pglpbrcn->IvMac(); ipbrcn++)
     {
-        _pglpbrcn->Get(ipbrcn, &pbrcn);
+        _pglpbrcn.Get(ipbrcn, &pbrcn);
         ReleasePpo(&pbrcn);
     }
-    ReleasePpo(&_pglpbrcn);
+    _pglpbrcn.Release();
 }
 
 /***************************************************************************
@@ -378,7 +378,7 @@ PBRCN STDIO::_PbrcnFromBrwdid(long brwdid)
 
     for (ipbrcn = 0; ipbrcn < _pglpbrcn->IvMac(); ipbrcn++)
     {
-        _pglpbrcn->Get(ipbrcn, &pbrcn);
+        _pglpbrcn.Get(ipbrcn, &pbrcn);
         if (pbrcn->brwdid == brwdid)
         {
             return pbrcn;

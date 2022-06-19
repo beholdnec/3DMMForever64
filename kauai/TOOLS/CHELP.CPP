@@ -431,13 +431,13 @@ bool APP::FLoadResFile(PFNI pfni)
 
     if (pcfl->FGetCkiCtg(kctgColorTable, 0, pvNil, pvNil, &blck))
     {
-        PGL pglclr;
+        GLPtr<CLR> pglclr;
 
-        if (pvNil != (pglclr = GL::PglRead(&blck)) && pglclr->CbEntry() == size(CLR))
+        if ((pglclr = GLPtr<CLR>::Read(&blck)) && pglclr->CbEntry() == size(CLR))
         {
             GPT::SetActiveColors(pglclr, fpalIdentity);
         }
-        ReleasePpo(&pglclr);
+        pglclr.Release();
     }
     ReleasePpo(&pcfl);
 
@@ -537,7 +537,7 @@ LID::LID(void) : LID_PAR()
 LID::~LID(void)
 {
     ReleasePpo(&_pcrm);
-    ReleasePpo(&_pglcach);
+    _pglcach.Release();
 }
 
 #ifdef DEBUG
@@ -588,7 +588,7 @@ bool LID::_FInit(PCRM pcrm, CTG ctg, CHID chid)
     AssertPo(pcrm, 0);
     GCB gcb;
 
-    if (pvNil == (_pglcach = GL::PglNew(size(CACH))))
+    if (!(_pglcach = GLPtr<CACH>::New()))
         return fFalse;
     _pglcach->SetMinGrow(100);
 
@@ -637,7 +637,7 @@ bool LID::FRefresh(void)
             for (ivMin = 0, ivLim = _pglcach->IvMac(); ivMin < ivLim;)
             {
                 iv = (ivMin + ivLim) / 2;
-                _pglcach->Get(iv, &cachT);
+                _pglcach.Get(iv, &cachT);
                 if (cachT.cno < cach.cno)
                     ivMin = iv + 1;
                 else
@@ -645,11 +645,11 @@ bool LID::FRefresh(void)
             }
             if (ivMin < _pglcach->IvMac())
             {
-                _pglcach->Get(ivMin, &cachT);
+                _pglcach.Get(ivMin, &cachT);
                 if (cachT.cno == cach.cno)
                     continue;
             }
-            if (!_pglcach->FInsert(ivMin, &cach))
+            if (!_pglcach.FInsert(ivMin, &cach))
                 goto LFail;
         }
     }
@@ -686,7 +686,7 @@ void LID::GetCki(long icki, CKI *pcki, PCRF *ppcrf)
     AssertNilOrVarMem(ppcrf);
     CACH cach;
 
-    _pglcach->Get(icki, &cach);
+    _pglcach.Get(icki, &cach);
     pcki->ctg = _ctg;
     pcki->cno = cach.cno;
     if (pvNil != ppcrf)
@@ -702,7 +702,7 @@ PMBMP LID::PmbmpGet(long icki)
     AssertIn(icki, 0, _pglcach->IvMac());
     CACH cach;
 
-    _pglcach->Get(icki, &cach);
+    _pglcach.Get(icki, &cach);
     return (PMBMP)cach.pcrf->PbacoFetch(kctgMbmp, cach.cnoMbmp, MBMP::FReadMbmp);
 }
 

@@ -83,7 +83,7 @@
 
 void AssertUnmarkedObjs(void);
 #define MarkMemObj(po)                                                                                                 \
-    if ((po) != pvNil)                                                                                                 \
+    if ((po))                                                                                                 \
     {                                                                                                                  \
         (po)->MarkMemStub();                                                                                           \
     }                                                                                                                  \
@@ -115,7 +115,7 @@ inline void ResumeAssertValid(void)
 }
 
 #define AssertPo(po, grf)                                                                                              \
-    if ((po) != 0)                                                                                                     \
+    if ((po))                                                                                                     \
     {                                                                                                                  \
         if (vcactAV > 0)                                                                                               \
         {                                                                                                              \
@@ -127,7 +127,7 @@ inline void ResumeAssertValid(void)
     else                                                                                                               \
         Bug("nil")
 #define AssertNilOrPo(po, grf)                                                                                         \
-    if ((po) != 0 && vcactAV > 0)                                                                                      \
+    if ((po) && vcactAV > 0)                                                                                      \
     {                                                                                                                  \
         vcactAV--;                                                                                                     \
         (po)->AssertValid(grf);                                                                                        \

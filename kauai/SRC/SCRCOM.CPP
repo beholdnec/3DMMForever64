@@ -268,9 +268,6 @@ SCCB::SCCB(void)
     AssertBaseThis(0);
     _plexb = pvNil;
     _pscpt = pvNil;
-    _pgletnTree = pvNil;
-    _pgletnStack = pvNil;
-    _pglcstd = pvNil;
     _pgstNames = pvNil;
     _pgstLabel = pvNil;
     _pgstReq = pvNil;
@@ -317,7 +314,7 @@ void SCCB::MarkMem(void)
     MarkMemObj(_pscpt);
     MarkMemObj(_pgletnTree);
     MarkMemObj(_pgletnStack);
-    if (pvNil != _pglcstd)
+    if (_pglcstd)
     {
         long icstd;
         CSTD cstd;
@@ -325,7 +322,7 @@ void SCCB::MarkMem(void)
         MarkMemObj(_pglcstd);
         for (icstd = _pglcstd->IvMac(); icstd-- > 0;)
         {
-            _pglcstd->Get(icstd, &cstd);
+            _pglcstd.Get(icstd, &cstd);
             MarkMemObj(cstd.pgletnTree);
         }
     }
@@ -359,8 +356,8 @@ bool SCCB::_FInit(PLEXB plexb, bool fInFix, PMSNK pmsnk)
     {
         // in-fix compilation requires an expression stack, expression parse
         // tree and a control structure stack
-        if (pvNil == (_pgletnTree = GL::PglNew(size(ETN))) || pvNil == (_pgletnStack = GL::PglNew(size(ETN))) ||
-            pvNil == (_pglcstd = GL::PglNew(size(CSTD))))
+        if (!(_pgletnTree = GLPtr<ETN>::New()) || !(_pgletnStack = GLPtr<ETN>::New()) ||
+            !(_pglcstd = GLPtr<CSTD>::New()))
         {
             _Free();
             return fFalse;
@@ -369,7 +366,7 @@ bool SCCB::_FInit(PLEXB plexb, bool fInFix, PMSNK pmsnk)
         _pgletnStack->SetMinGrow(100);
     }
 
-    if (pvNil == (_pscpt = NewObj SCPT) || pvNil == (_pscpt->_pgllw = GL::PglNew(size(long))))
+    if (pvNil == (_pscpt = NewObj SCPT) || !(_pscpt->_pgllw = GLPtr<long>::New()))
     {
         ReleasePpo(&_pscpt);
     }
@@ -384,7 +381,7 @@ bool SCCB::_FInit(PLEXB plexb, bool fInFix, PMSNK pmsnk)
 
     // put version info in the script
     lw = LwHighLow(_SwCur(), _SwBack());
-    if (pvNil == _pscpt || !_pscpt->_pgllw->FPush(&lw))
+    if (pvNil == _pscpt || !_pscpt->_pgllw.FPush(&lw))
         _ReportError(_pszOom);
 
     _lwLastLabel = 0; // for internal labels
@@ -405,13 +402,13 @@ void SCCB::_Free(void)
     ReleasePpo(&_pmsnk);
     ReleasePpo(&_pgstLabel);
     ReleasePpo(&_pgstReq);
-    ReleasePpo(&_pgletnTree);
-    ReleasePpo(&_pgletnStack);
-    if (pvNil != _pglcstd)
+    _pgletnTree.Release();
+    _pgletnStack.Release();
+    if (_pglcstd)
     {
-        while (_pglcstd->FPop(&cstd))
+        while (_pglcstd.FPop(&cstd))
             ReleasePpo(&cstd.pgletnTree);
-        ReleasePpo(&_pglcstd);
+        _pglcstd.Release();
     }
     ReleasePpo(&_pgstNames);
 }
@@ -460,7 +457,7 @@ PSCPT SCCB::PscptCompileLex(PLEXB plexb, bool fInFix, PMSNK pmsnk, long ttEnd)
                 _pgstReq->GetExtra(istn, &ilw);
                 Assert(B3Lw(lw) == kbLabel, 0);
                 AssertIn(ilw, 1, _pscpt->_pgllw->IvMac());
-                _pscpt->_pgllw->Put(ilw, &lw);
+                _pscpt->_pgllw.Put(ilw, &lw);
             }
         }
     }
@@ -584,7 +581,7 @@ void SCCB::_PushLw(long lw)
     AssertPo(_pscpt, 0);
     if (_fForceOp || _pscpt->_pgllw->IvMac() - _ilwOpLast >= kclwLimPush)
         _PushOp(opNil);
-    if (!_fError && !_pscpt->_pgllw->FPush(&lw))
+    if (!_fError && !_pscpt->_pgllw.FPush(&lw))
         _ReportError(_pszOom);
 }
 
@@ -631,7 +628,7 @@ void SCCB::_PushOp(long op)
     _EndOp(); // complete the previous opcode
     _ilwOpLast = _pscpt->_pgllw->IvMac();
     lw = LwHighLow(0, (short)op);
-    if (!_pscpt->_pgllw->FPush(&lw))
+    if (!_pscpt->_pgllw.FPush(&lw))
         _ReportError(_pszOom);
     _fForceOp = fFalse;
 }
@@ -654,9 +651,9 @@ void SCCB::_EndOp(void)
     {
         // set the count of longs in the previous op
         AssertIn(ilw - _ilwOpLast - 1, 1, kclwLimPush);
-        _pscpt->_pgllw->Get(_ilwOpLast, &lw);
+        _pscpt->_pgllw.Get(_ilwOpLast, &lw);
         lw = LwHighLow(SuHighLow(B3Lw(lw), (byte)(ilw - _ilwOpLast - 1)), SuLow(lw));
-        _pscpt->_pgllw->Put(_ilwOpLast, &lw);
+        _pscpt->_pgllw.Put(_ilwOpLast, &lw);
     }
 }
 
@@ -679,8 +676,8 @@ void SCCB::_PushVarOp(long op, RTVN *prtvn)
     AssertPo(_pscpt, 0);
     Assert(SuHigh(prtvn->lu1) == 0, "bad rtvn");
     lw = prtvn->lu1 | (op << 24);
-    _pscpt->_pgllw->Put(_ilwOpLast, &lw);
-    if (!_pscpt->_pgllw->FPush(&prtvn->lu2))
+    _pscpt->_pgllw.Put(_ilwOpLast, &lw);
+    if (!_pscpt->_pgllw.FPush((long*)&prtvn->lu2))
         _ReportError(_pszOom);
 }
 
@@ -1138,7 +1135,7 @@ bool SCCB::_FResolveToOpl(long opl, long oplMin, long *pietn)
     ETN etn, etnT;
     long ietn, cetn;
 
-    _pgletnStack->Get(_pgletnStack->IvMac() - 1, &etn);
+    _pgletnStack.Get(_pgletnStack->IvMac() - 1, &etn);
     if (etn.grfop & fopOp)
     {
         Bug("I think this will only happen if a table entry is wrong");
@@ -1151,11 +1148,11 @@ bool SCCB::_FResolveToOpl(long opl, long oplMin, long *pietn)
         cetn = _pgletnStack->IvMac();
         Assert(cetn > 1, "bad stack");
         Assert((_pgletnStack->QvGet(cetn - 1).Cast<ETN>())->opl >= opl, "bad opl on top of stack");
-        _pgletnStack->Get(cetn - 2, &etn);
+        _pgletnStack.Get(cetn - 2, &etn);
         if (etn.opl < opl)
             break;
 
-        AssertDo(_pgletnStack->FPop(&etnT), 0);
+        AssertDo(_pgletnStack.FPop(&etnT), 0);
         if (!_FAddToTree(&etnT, &ietn))
         {
             _ReportError(_pszOom);
@@ -1174,10 +1171,10 @@ bool SCCB::_FResolveToOpl(long opl, long oplMin, long *pietn)
             etn.ietn3 = ietn;
         }
         etn.grfop &= ~fopOp;
-        _pgletnStack->Put(cetn - 2, &etn);
+        _pgletnStack.Put(cetn - 2, &etn);
     }
 
-    AssertDo(_pgletnStack->FPop(&etnT), 0);
+    AssertDo(_pgletnStack.FPop(&etnT), 0);
     if (etnT.opl < oplMin)
     {
         _ReportError(_pszSyntax);
@@ -1308,9 +1305,9 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
 
         // the second argument is constant, but the first is not, so negate the
         // constant and change the operator to kopAdd
-        _pgletnTree->Get(petn->ietn2, &etnT2);
+        _pgletnTree.Get(petn->ietn2, &etnT2);
         etnT2.lwValue = -etnT2.lwValue;
-        _pgletnTree->Put(petn->ietn2, &etnT2);
+        _pgletnTree.Put(petn->ietn2, &etnT2);
         petn->op = kopAdd;
         // fall thru
     case kopAdd:
@@ -1321,8 +1318,8 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
     case kopLXor:
         // get the two etn's
         fCommute = fTrue;
-        _pgletnTree->Get(petn->ietn1, &etnT1);
-        _pgletnTree->Get(petn->ietn2, &etnT2);
+        _pgletnTree.Get(petn->ietn1, &etnT1);
+        _pgletnTree.Get(petn->ietn2, &etnT2);
 
         if (fConst1)
         {
@@ -1366,17 +1363,17 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
             etnT1.ietn2 = etnT2.ietn1;
             etnT2.ietn1 = petn->ietn1;
             _SetDepth(&etnT1, fTrue);
-            _pgletnTree->Put(petn->ietn1, &etnT1);
+            _pgletnTree.Put(petn->ietn1, &etnT1);
             ietnConst = etnT2.ietn2;
             _SetDepth(&etnT2);
             Assert(ietnConst == etnT2.ietn2, "why did _SetDepth move this?");
-            _pgletnTree->Put(petn->ietn2, &etnT2);
+            _pgletnTree.Put(petn->ietn2, &etnT2);
         LSetConst:
-            _pgletnTree->Get(ietnConst, &etn);
+            _pgletnTree.Get(ietnConst, &etn);
             Assert(opNil == etn.op && ttLong == etn.tt, 0);
             Assert(etn.cetnDeep == 1, 0);
             etn.lwValue = lw;
-            _pgletnTree->Put(ietnConst, &etn);
+            _pgletnTree.Put(ietnConst, &etn);
             return fTrue;
         }
 
@@ -1385,7 +1382,7 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
             // only the first is constant
             SwapVars(&etnT1.ietn2, &petn->ietn2);
             _SetDepth(&etnT1, fTrue);
-            _pgletnTree->Put(petn->ietn1, &etnT1);
+            _pgletnTree.Put(petn->ietn1, &etnT1);
             break;
         }
 
@@ -1415,7 +1412,7 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
 
         Assert(etnT1.op != petn->op && etnT2.op == petn->op, 0);
         // determine if we want to pivot or swap
-        _pgletnTree->Get(etnT2.ietn2, &etn);
+        _pgletnTree.Get(etnT2.ietn2, &etn);
         if (etn.cetnDeep > etnT1.cetnDeep)
         {
             // swap them
@@ -1432,7 +1429,7 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
             etnT2.ietn2 = etnT2.ietn1;
             etnT2.ietn1 = petn->ietn1;
             _SetDepth(&etnT2, fTrue);
-            _pgletnTree->Put(petn->ietn2, &etnT2);
+            _pgletnTree.Put(petn->ietn2, &etnT2);
             petn = &etn;
         }
         break;
@@ -1440,7 +1437,7 @@ bool SCCB::_FAddToTree(ETN *petn, long *pietn)
 
 LAdd:
     _SetDepth(petn, fCommute);
-    return _pgletnTree->FAdd(petn, pietn);
+    return _pgletnTree.FAdd(petn, pietn);
 }
 
 /***************************************************************************
@@ -1457,8 +1454,8 @@ void SCCB::_SetDepth(ETN *petn, bool fCommute)
     if (fCommute && petn->ietn1 != ivNil && petn->ietn2 != ivNil)
     {
         // put the deeper guy on the left
-        _pgletnTree->Get(petn->ietn1, &etn1);
-        _pgletnTree->Get(petn->ietn2, &etn2);
+        _pgletnTree.Get(petn->ietn1, &etn1);
+        _pgletnTree.Get(petn->ietn2, &etn2);
         if (etn1.cetnDeep < etn2.cetnDeep ||
             etn1.cetnDeep == etn2.cetnDeep && etn1.op == petn->op && etn2.op != petn->op)
         {
@@ -1475,23 +1472,23 @@ void SCCB::_SetDepth(ETN *petn, bool fCommute)
             petn->ietn1 = petn->ietn2;
             petn->ietn2 = etn2.ietn2;
             _SetDepth(&etn1, fTrue);
-            _pgletnTree->Put(petn->ietn1, &etn1);
-            _pgletnTree->Get(petn->ietn2, &etn2);
+            _pgletnTree.Put(petn->ietn1, &etn1);
+            _pgletnTree.Get(petn->ietn2, &etn2);
         }
     }
 
     petn->cetnDeep = 1;
     if (petn->ietn1 != ivNil)
     {
-        _pgletnTree->Get(petn->ietn1, &etn1);
+        _pgletnTree.Get(petn->ietn1, &etn1);
         petn->cetnDeep = LwMax(petn->cetnDeep, etn1.cetnDeep + 1);
         if (petn->ietn2 != ivNil)
         {
-            _pgletnTree->Get(petn->ietn2, &etn2);
+            _pgletnTree.Get(petn->ietn2, &etn2);
             petn->cetnDeep = LwMax(petn->cetnDeep, etn2.cetnDeep + 1);
             if (petn->ietn3 != ivNil)
             {
-                _pgletnTree->Get(petn->ietn3, &etn1);
+                _pgletnTree.Get(petn->ietn3, &etn1);
                 petn->cetnDeep = LwMax(petn->cetnDeep, etn1.cetnDeep + 1);
             }
         }
@@ -1512,7 +1509,7 @@ bool SCCB::_FConstEtn(long ietn, long *plw)
     if (ietn != ivNil)
     {
         AssertIn(ietn, 0, _pgletnTree->IvMac());
-        _pgletnTree->Get(ietn, &etn);
+        _pgletnTree.Get(ietn, &etn);
         if (etn.op == opNil && etn.tt == ttLong)
         {
             *plw = etn.lwValue;
@@ -1625,7 +1622,7 @@ void SCCB::_EmitCode(long ietnTop, ulong grfscc, long *pclwArg)
     long lw1, lw2;
     long cst;
 
-    _pgletnTree->Get(ietnTop, &etn);
+    _pgletnTree.Get(ietnTop, &etn);
 
     // all non-nil operands should come before any nils
     Assert((etn.ietn3 == ivNil || etn.ietn2 != ivNil) && (etn.ietn2 == ivNil || etn.ietn1 != ivNil), "bad etn");
@@ -1938,11 +1935,11 @@ void SCCB::_BeginCst(long cst, long ietn)
         // label 1 is used for where to jump if the condition fails
         // label 2 is used for the end of the entire if block
         cstd.cst = cstIf;
-        if (_pglcstd->FPop(&cstdPrev))
+        if (_pglcstd.FPop(&cstdPrev))
         {
             if (cstdPrev.cst != cstIf)
             {
-                _pglcstd->FPush(&cstdPrev);
+                _pglcstd.FPush(&cstdPrev);
                 goto LError;
             }
         }
@@ -1977,7 +1974,7 @@ void SCCB::_BeginCst(long cst, long ietn)
     }
 
     // put the cstd on the stack
-    if (!_pglcstd->FPush(&cstd))
+    if (!_pglcstd.FPush(&cstd))
         _ReportError(_pszOom);
 }
 
@@ -2005,7 +2002,7 @@ bool SCCB::_FHandleCst(long ietn)
             _ReportError(PszLit("unexpected Else"));
             return fTrue;
         }
-        _pglcstd->Get(--icstd, &cstd);
+        _pglcstd.Get(--icstd, &cstd);
         if (cstd.cst != cstIf)
         {
             _ReportError(PszLit("unexpected Else"));
@@ -2023,7 +2020,7 @@ bool SCCB::_FHandleCst(long ietn)
 
         cstd.cst = cstNil; // so we don't accept another else
         cstd.lwLabel1 = cstd.lwLabel2;
-        _pglcstd->Put(icstd, &cstd);
+        _pglcstd.Put(icstd, &cstd);
         return fTrue;
     }
 
@@ -2048,7 +2045,7 @@ bool SCCB::_FHandleCst(long ietn)
                 _ReportError(plwLabel == &cstd.lwLabel1 ? PszLit("unexpected Continue") : PszLit("unexpected Break"));
                 return fTrue;
             }
-            _pglcstd->Get(icstd, &cstd);
+            _pglcstd.Get(icstd, &cstd);
             if (cstd.cst == cstWhile)
                 break;
         }
@@ -2057,7 +2054,7 @@ bool SCCB::_FHandleCst(long ietn)
         {
             Assert(plwLabel == &cstd.lwLabel3, 0);
             *plwLabel = ++_lwLastLabel;
-            _pglcstd->Put(icstd, &cstd);
+            _pglcstd.Put(icstd, &cstd);
         }
         _PushLabelRequestLw(*plwLabel);
         _PushOp(kopGo);
@@ -2067,7 +2064,7 @@ bool SCCB::_FHandleCst(long ietn)
     if (stn.FEqualSz(_rgpszKey[kipszEnd]))
     {
         // an End
-        if (!_pglcstd->FPop(&cstd))
+        if (!_pglcstd.FPop(&cstd))
         {
             _ReportError(PszLit("unexpected End"));
             return fTrue;
@@ -2141,7 +2138,7 @@ void SCCB::_EmitVarAccess(long ietn, RTVN *prtvn, long *popPush, long *popPop, l
     long opPop, opPush;
     long clwStack = 0;
 
-    _pgletnTree->Get(ietn, &etn);
+    _pgletnTree.Get(ietn, &etn);
     switch (etn.tt)
     {
     default:
@@ -2176,7 +2173,7 @@ void SCCB::_EmitVarAccess(long ietn, RTVN *prtvn, long *popPush, long *popPop, l
         break;
     }
 
-    _pgletnTree->Get(ietn, &etn);
+    _pgletnTree.Get(ietn, &etn);
     if (etn.tt == ttCloseRef)
     {
         // an array reference
@@ -2307,7 +2304,7 @@ void SCCB::_GetIstnNameFromIetn(long ietn, long *pistn)
     AssertVarMem(pistn);
     ETN etn;
 
-    _pgletnTree->Get(ietn, &etn);
+    _pgletnTree.Get(ietn, &etn);
     Assert(etn.tt == ttName && etn.opl == koplName && etn.op == opNil && etn.ietn1 == ivNil && etn.ietn2 == ivNil &&
                etn.ietn3 == ivNil,
            "bad name etn");
@@ -2427,7 +2424,7 @@ void SCCB::_CompileIn(void)
     ClearPb(&etn, size(etn));
     etn.tt = ttNil;
     etn.grfop = fopOp;
-    if (!_pgletnStack->FPush(&etn))
+    if (!_pgletnStack.FPush(&etn))
     {
         _ReportError(_pszOom);
         return;
@@ -2466,7 +2463,7 @@ void SCCB::_CompileIn(void)
             continue;
         }
 
-        _pgletnStack->Get(_pgletnStack->IvMac() - 1, &etn);
+        _pgletnStack.Get(_pgletnStack->IvMac() - 1, &etn);
         ptome = _PtomeFromTt(tok.tt, etn.grfop & fopOp);
         if (pvNil == ptome)
         {
@@ -2497,7 +2494,7 @@ void SCCB::_CompileIn(void)
         // pop an operator
         if (ttNil != ptome->ttPop)
         {
-            if (!_pgletnStack->FPop(&etnT) || etnT.tt != ptome->ttPop || !(etnT.grfop & fopOp))
+            if (!_pgletnStack.FPop(&etnT) || etnT.tt != ptome->ttPop || !(etnT.grfop & fopOp))
             {
                 _ReportError(_pszSyntax);
                 goto LNextLine;
@@ -2513,7 +2510,7 @@ void SCCB::_CompileIn(void)
         }
 
         // push the new record
-        if (!_pgletnStack->FPush(&etn))
+        if (!_pgletnStack.FPush(&etn))
         {
             _ReportError(_pszOom);
             goto LNextLine;
@@ -2559,7 +2556,7 @@ bool SCCB::FDisassemble(PSCPT pscpt, PMSNK pmsnk, PMSNK pmsnkError)
     long op;
     STN stn;
     DVER dver;
-    PGL pgllw = pscpt->_pgllw;
+    GLPtr<long> pgllw = pscpt->_pgllw;
     PSZ pszError = pvNil;
     AssertPo(pgllw, 0);
     Assert(pgllw->CbEntry() == size(long), "bad script");
@@ -2572,7 +2569,7 @@ bool SCCB::FDisassemble(PSCPT pscpt, PMSNK pmsnk, PMSNK pmsnkError)
     }
 
     // check the version
-    pgllw->Get(0, &lw);
+    pgllw.Get(0, &lw);
     dver.Set(SwHigh(lw), SwLow(lw));
     if (!dver.FReadable(_SwCur(), _SwMin()))
     {
@@ -2588,7 +2585,7 @@ bool SCCB::FDisassemble(PSCPT pscpt, PMSNK pmsnk, PMSNK pmsnkError)
         if (ilw >= ilwMac)
             break;
 
-        pgllw->Get(ilw++, &lw);
+        pgllw.Get(ilw++, &lw);
         clwPush = B2Lw(lw);
         if (!FIn(clwPush, 0, ilwMac - ilw + 1))
         {
@@ -2607,7 +2604,7 @@ bool SCCB::FDisassemble(PSCPT pscpt, PMSNK pmsnk, PMSNK pmsnkError)
             }
             clwPush--;
             rtvn.lu1 = (ulong)SuLow(lw);
-            pgllw->Get(ilw++, &rtvn.lu2);
+            pgllw.Get(ilw++, (long*)&rtvn.lu2);
             if (rtvn.lu1 == 0)
             {
                 if (op != kopPushLocVar)
@@ -2696,7 +2693,7 @@ bool SCCB::FDisassemble(PSCPT pscpt, PMSNK pmsnk, PMSNK pmsnkError)
         // dump the stack stuff
         while (clwPush-- > 0)
         {
-            pgllw->Get(ilw++, &lw);
+            pgllw.Get(ilw++, &lw);
             if (B3Lw(lw) == kbLabel && FIn(lw &= 0x00FFFFFF, 1, ilwMac + 1))
             {
                 // REVIEW shonk: label identification: this isn't foolproof

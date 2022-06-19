@@ -827,11 +827,11 @@ void APPB::BuryCmh(PCMH pcmh)
     if (pvNil != vpcex)
         vpcex->BuryCmh(pcmh);
 
-    if (pvNil != _pglmodcx && 0 < (imodcx = _pglmodcx->IvMac()))
+    if (_pglmodcx && 0 < (imodcx = _pglmodcx->IvMac()))
     {
         while (imodcx-- > 0)
         {
-            _pglmodcx->Get(imodcx, &modcx);
+            _pglmodcx.Get(imodcx, &modcx);
             AssertPo(modcx.pcex, 0);
             modcx.pcex->BuryCmh(pcmh);
         }
@@ -919,16 +919,16 @@ void APPB::_MarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
         pregn->Offset(pt.xp, pt.yp);
     hwnd = pgobCoo->HwndContainer();
 
-    if (pvNil == _pglmkrgn)
+    if (!_pglmkrgn)
     {
-        if (pvNil == (_pglmkrgn = GL::PglNew(size(MKRGN))))
+        if (!(_pglmkrgn = GLPtr<MKRGN>::New()))
             goto LFail;
     }
     else
     {
         for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
         {
-            _pglmkrgn->Get(imkrgn, &mkrgn);
+            _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
             if (mkrgn.hwnd == hwnd)
             {
                 // already something marked dirty, union in the new stuff
@@ -944,7 +944,7 @@ void APPB::_MarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
     // create a new entry
     mkrgn.hwnd = hwnd;
     if (pvNil == (mkrgn.pregn = REGN::PregnNew(prc)) || pvNil != pregn && !mkrgn.pregn->FUnion(pregn) ||
-        !_pglmkrgn->FPush(&mkrgn))
+        !_pglmkrgn.FPush(&mkrgn))
     {
         ReleasePpo(&mkrgn.pregn);
     LFail:
@@ -1001,7 +1001,7 @@ void APPB::_UnmarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
     PT pt;
     HWND hwnd;
 
-    if (pvNil == _pglmkrgn || _pglmkrgn->IvMac() == 0)
+    if (!_pglmkrgn || _pglmkrgn->IvMac() == 0)
         return;
 
     // get the mkrgn and imkrgn
@@ -1010,7 +1010,7 @@ void APPB::_UnmarkRegnRc(PREGN pregn, RC *prc, PGOB pgobCoo)
     {
         if (imkrgn-- <= 0)
             return;
-        _pglmkrgn->Get(imkrgn, &mkrgn);
+        _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
         if (mkrgn.hwnd == hwnd)
             break;
     }
@@ -1068,12 +1068,12 @@ bool APPB::FGetMarkedRc(HWND hwnd, RC *prc)
     MKRGN mkrgn;
     long imkrgn;
 
-    if (pvNil != _pglmkrgn)
+    if (_pglmkrgn)
     {
         // get the mkrgn and imkrgn
         for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
         {
-            _pglmkrgn->Get(imkrgn, &mkrgn);
+            _pglmkrgn.Get(imkrgn, &mkrgn);
             if (mkrgn.hwnd == hwnd)
                 return !mkrgn.pregn->FEmpty(prc);
         }
@@ -1098,12 +1098,12 @@ void APPB::InvalMarked(HWND hwnd)
     RC rc;
     RCS rcs;
 
-    if (pvNil == _pglmkrgn)
+    if (!_pglmkrgn)
         return;
 
     for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
     {
-        _pglmkrgn->Get(imkrgn, &mkrgn);
+        _pglmkrgn->Get(imkrgn, BlobPtr::Make(mkrgn));
         if (mkrgn.hwnd == hwnd)
         {
             if (!mkrgn.pregn->FEmpty(&rc))
@@ -1127,10 +1127,10 @@ void APPB::UpdateMarked(void)
     MKRGN mkrgn;
     PGOB pgob;
 
-    if (pvNil == _pglmkrgn)
+    if (!_pglmkrgn)
         return;
 
-    while (_pglmkrgn->FPop(&mkrgn))
+    while (_pglmkrgn.FPop(&mkrgn))
     {
         if (pvNil != (pgob = GOB::PgobFromHwnd(mkrgn.hwnd)))
             _FastUpdate(pgob, mkrgn.pregn);
@@ -1187,7 +1187,7 @@ void APPB::_FastUpdate(PGOB pgob, PREGN pregnClip, ulong grfapp, PGPT pgpt)
     If pglclr is not nil, this AddRef's it and holds onto it until after
     the transition is done.
 ***************************************************************************/
-void APPB::SetGft(long gft, long lwGft, ulong dts, PGL pglclr, ACR acr)
+void APPB::SetGft(long gft, long lwGft, ulong dts, GLPtr<CLR> pglclr, ACR acr)
 {
     AssertThis(0);
     AssertNilOrPo(pglclr, 0);
@@ -1196,8 +1196,8 @@ void APPB::SetGft(long gft, long lwGft, ulong dts, PGL pglclr, ACR acr)
     _gft = gft;
     _lwGft = lwGft;
     _dtsGft = dts;
-    ReleasePpo(&_pglclr);
-    if (pvNil != pglclr)
+    _pglclr.Release();
+    if (pglclr)
     {
         _pglclr = pglclr;
         _pglclr->AddRef();
@@ -1252,7 +1252,7 @@ void APPB::_CopyPixels(PGNV pgnvSrc, RC *prcSrc, PGNV pgnvDst, RC *prcDst)
     }
 
     _gft = gftNil;
-    ReleasePpo(&_pglclr);
+    _pglclr.Release();
 }
 
 /***************************************************************************
@@ -1299,7 +1299,7 @@ bool APPB::_FFindProp(long prid, PROP *pprop, long *piprop)
     long ivMin, ivLim, iv;
     PROP prop;
 
-    if (pvNil == _pglprop)
+    if (!_pglprop)
     {
         if (pvNil != piprop)
             *piprop = 0;
@@ -1310,7 +1310,7 @@ bool APPB::_FFindProp(long prid, PROP *pprop, long *piprop)
     for (ivMin = 0, ivLim = _pglprop->IvMac(); ivMin < ivLim;)
     {
         iv = (ivMin + ivLim) / 2;
-        _pglprop->Get(iv, &prop);
+        _pglprop->Get(iv, BlobPtr::Make(prop));
         if (prop.prid < prid)
             ivMin = iv + 1;
         else if (prop.prid > prid)
@@ -1344,20 +1344,20 @@ bool APPB::_FSetProp(long prid, long lw)
     {
         Assert(prop.prid == prid, 0);
         prop.lw = lw;
-        _pglprop->Put(iprop, &prop);
+        _pglprop.Put(iprop, &prop);
         return fTrue;
     }
 
-    if (pvNil == _pglprop)
+    if (!_pglprop)
     {
         Assert(iprop == 0, 0);
-        if (pvNil == (_pglprop = GL::PglNew(size(PROP))))
+        if (!(_pglprop = GLPtr<PROP>::New()))
             return fFalse;
     }
 
     prop.prid = prid;
     prop.lw = lw;
-    return _pglprop->FInsert(iprop, &prop);
+    return _pglprop.FInsert(iprop, &prop);
 }
 
 /***************************************************************************
@@ -1533,7 +1533,7 @@ bool APPB::FPushModal(PCEX pcex)
     MODCX modcx;
     PUSAC pusacNew = pvNil;
 
-    if (pvNil == _pglmodcx && pvNil == (_pglmodcx = GL::PglNew(size(MODCX))))
+    if (!_pglmodcx && !(_pglmodcx = GLPtr<MODCX>::New()))
     {
         return fFalse;
     }
@@ -1543,7 +1543,7 @@ bool APPB::FPushModal(PCEX pcex)
     modcx.pusac = vpusac;
     modcx.luScale = vpusac->LuScale();
 
-    if (!_pglmodcx->FPush(&modcx))
+    if (!_pglmodcx.FPush(&modcx))
         return fFalse;
 
     if (pcex != pvNil)
@@ -1611,7 +1611,7 @@ void APPB::PopModal(void)
     AssertThis(0);
     MODCX modcx;
 
-    if (pvNil == _pglmodcx || !_pglmodcx->FPop(&modcx))
+    if (!_pglmodcx || !_pglmodcx.FPop(&modcx))
     {
         Bug("Unbalanced call to PopModal");
         return;
@@ -1654,13 +1654,13 @@ void APPB::BadModalCmd(PCMD pcmd)
     long imodcx;
     MODCX modcx;
 
-    if (pvNil == _pglmodcx || 0 >= (imodcx = _pglmodcx->IvMac()))
+    if (!_pglmodcx || 0 >= (imodcx = _pglmodcx->IvMac()))
     {
         Bug("Don't know what to do with the modal command");
         return;
     }
 
-    _pglmodcx->Get(--imodcx, &modcx);
+    _pglmodcx->Get(--imodcx, BlobPtr::Make(modcx));
     if (pvNil != pcmd->pgg)
         pcmd->pgg->AddRef();
     modcx.pcex->EnqueueCmd(pcmd);
@@ -1730,7 +1730,7 @@ void APPB::MarkMem(void)
     MarkMemObj(_pglclr);
     MarkMemObj(_pglprop);
 
-    if (pvNil != _pglmkrgn)
+    if (_pglmkrgn)
     {
         long imkrgn;
         MKRGN mkrgn;
@@ -1738,12 +1738,12 @@ void APPB::MarkMem(void)
         MarkMemObj(_pglmkrgn);
         for (imkrgn = _pglmkrgn->IvMac(); imkrgn-- > 0;)
         {
-            _pglmkrgn->Get(imkrgn, &mkrgn);
+            _pglmkrgn.Get(imkrgn, &mkrgn);
             MarkMemObj(mkrgn.pregn);
         }
     }
 
-    if (pvNil != _pglmodcx)
+    if (_pglmodcx)
     {
         long imodcx;
         MODCX modcx;
@@ -1751,7 +1751,7 @@ void APPB::MarkMem(void)
         MarkMemObj(_pglmodcx);
         for (imodcx = _pglmodcx->IvMac(); imodcx-- > 0;)
         {
-            _pglmodcx->Get(imodcx, &modcx);
+            _pglmodcx.Get(imodcx, &modcx);
             MarkMemObj(modcx.pcex);
             MarkMemObj(modcx.pusac);
         }

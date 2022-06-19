@@ -138,8 +138,8 @@ class SCEN : public SCEN_PAR
     // Global information
     //
     STN _stnName;         // Name of this scene
-    PGL _pglpactr;        // List of actors in the scene.
-    PGL _pglptbox;        // List of text boxes in the scene.
+    GLPtr<PACTR> _pglpactr;        // List of actors in the scene.
+    GLPtr<PTBOX> _pglptbox;        // List of text boxes in the scene.
     PGG _pggsevStart;     // List of frame independent events.
     PMVIE _pmvie;         // Movie this scene is a part of.
     PBKGD _pbkgd;         // Background for this scene.
@@ -292,7 +292,7 @@ class SCEN : public SCEN_PAR
     }
     void SelectActr(ACTR *pactr);                      // Sets the selected actor
     PACTR PactrFromPt(long xp, long yp, long *pibset); // Gets actor pointed at by the mouse.
-    PGL PglRollCall(void)                              // Return a list of all actors in scene.
+    GLPtr<PACTR> PglRollCall(void)                              // Return a list of all actors in scene.
     {
         return (_pglpactr);
     } // Only to be used by the movie-class
@@ -301,7 +301,7 @@ class SCEN : public SCEN_PAR
     PACTR PactrFromArid(long arid); // Finds a current actor in this scene.
     long Cactr(void)
     {
-        return (_pglpactr == pvNil ? 0 : _pglpactr->IvMac());
+        return (!_pglpactr ? 0 : _pglpactr->IvMac());
     }
 
     //
@@ -315,7 +315,7 @@ class SCEN : public SCEN_PAR
     bool FRemSnd(long sty);                             // Removes the sound from current frame, and undo
     bool FGetSnd(long sty, bool *pfFound, PSSE *ppsse); // Allows for retrieval of sounds.
     void PlayBkgdSnd(void);
-    bool FQuerySnd(long sty, PGL *pgltagSnd, long *pvlm, bool *pfLoop);
+    bool FQuerySnd(long sty, GLPtr<TAG> *pgltagSnd, long *pvlm, bool *pfLoop);
     void SetSndVlmCore(long sty, long vlmNew);
     void UpdateSndFrame(void);
     bool FResolveAllSndTags(CNO cnoScen);
@@ -336,7 +336,7 @@ class SCEN : public SCEN_PAR
     void HideTboxes(void);        // Hides all text boxes.
     long Ctbox(void)
     {
-        return (_pglptbox == pvNil ? 0 : _pglptbox->IvMac());
+        return (!_pglptbox ? 0 : _pglptbox->IvMac());
     }
 
     //

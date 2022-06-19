@@ -185,9 +185,9 @@ class SCCB : public SCCB_PAR
 
     PLEXB _plexb;       // the lexer
     PSCPT _pscpt;       // the script we're building
-    PGL _pgletnTree;    // expression tree (in-fix only)
-    PGL _pgletnStack;   // token stack for building expression tree (in-fix only)
-    PGL _pglcstd;       // control structure stack (in-fix only)
+    GLPtr<struct ETN> _pgletnTree;    // expression tree (in-fix only)
+    GLPtr<struct ETN> _pgletnStack;   // token stack for building expression tree (in-fix only)
+    GLPtr<struct CSTD> _pglcstd;       // control structure stack (in-fix only)
     PGST _pgstNames;    // encountered names (in-fix only)
     PGST _pgstLabel;    // encountered labels, sorted, extra long is label value
     PGST _pgstReq;      // label references, extra long is address of reference

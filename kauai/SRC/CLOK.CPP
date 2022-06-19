@@ -94,7 +94,6 @@ CLOK::CLOK(long hid, ulong grfclok) : CMH(hid)
     _timNext = kluMax;
     _tsBase = 0;
     _grfclok = grfclok;
-    _pglalad = pvNil;
     AssertThis(0);
 }
 
@@ -113,7 +112,7 @@ CLOK::~CLOK(void)
     else
         Bug("clok not in linked list");
 
-    ReleasePpo(&_pglalad);
+    _pglalad.Release();
 }
 
 /***************************************************************************
@@ -153,7 +152,7 @@ void CLOK::RemoveCmh(PCMH pcmh)
     ALAD *qalad;
     long ialad;
 
-    if (pvNil == _pglalad)
+    if (!_pglalad)
         return;
 
     for (ialad = _pglalad->IvMac(); ialad-- > 0;)
@@ -220,7 +219,7 @@ bool CLOK::FSetAlarm(long dtim, PCMH pcmhNotify, long lwUser, bool fAdjustForDel
     alad.pcmh = pcmhNotify;
     alad.tim = TimCur(fAdjustForDelay) + LwMax(dtim, 1);
     alad.lw = lwUser;
-    if (pvNil == _pglalad && pvNil == (_pglalad = GL::PglNew(size(ALAD), 1)))
+    if (!_pglalad && !(_pglalad = GLPtr<ALAD>::New(1)))
         return fFalse;
     for (ialadMin = 0, ialadLim = _pglalad->IvMac(); ialadMin < ialadLim;)
     {
@@ -231,7 +230,7 @@ bool CLOK::FSetAlarm(long dtim, PCMH pcmhNotify, long lwUser, bool fAdjustForDel
         else
             ialadMin = ialad + 1;
     }
-    if (!_pglalad->FInsert(ialadMin, &alad))
+    if (!_pglalad.FInsert(ialadMin, &alad))
         return fFalse;
     if (_timNext > alad.tim)
         _timNext = alad.tim;
@@ -289,12 +288,12 @@ bool CLOK::FCmdAll(PCMD pcmd)
     // sound any alarms
     for (;;)
     {
-        if (pvNil == _pglalad || 0 > (ialad = _pglalad->IvMac() - 1))
+        if (!_pglalad || 0 > (ialad = _pglalad->IvMac() - 1))
         {
             _timNext = kluMax;
             break;
         }
-        _pglalad->Get(ialad, &alad);
+        _pglalad.Get(ialad, &alad);
         if (alad.tim > timCur)
         {
             _timNext = alad.tim;

@@ -345,7 +345,7 @@ class GOK : public GOK_PAR
         long hid;
         CHID chidScript;
     };
-    PGL _pglcmflt; // list of cmd filtering structs, sorted by cid
+    GLPtr<CMFLT> _pglcmflt; // list of cmd filtering structs, sorted by cid
 
     long _hidToolTipSrc; // get the tool tip info from this GOK
 

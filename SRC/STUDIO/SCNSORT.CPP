@@ -40,7 +40,7 @@ void SCRT::AssertValid(ulong grf)
 
     /* The CMVI has loose rules about the format of its data structures, but
         it's important to the SCRT that we keep things in the right order. */
-    if (_cmvi.pglscend != pvNil)
+    if (_cmvi.pglscend)
     {
         long imviedMac;
 
@@ -51,7 +51,7 @@ void SCRT::AssertValid(ulong grf)
         {
             SCEND scend;
 
-            _cmvi.pglscend->Get(iscend, &scend);
+            _cmvi.pglscend.Get(iscend, &scend);
             Assert(iscend < _iscenMac ? !scend.fNuked : scend.fNuked, "Bad GL of SCENDs");
             Assert(scend.imvied < imviedMac, "Bogus scene entry in pglscend");
         }
@@ -72,8 +72,8 @@ SCRT::SCRT(PGCB pgcb) : SCRT_PAR(pgcb)
 {
     Assert(_pmvie == pvNil, "SCRT block not cleared");
     Assert(_pstdio == pvNil, "SCRT block not cleared");
-    Assert(_cmvi.pglscend == pvNil, "SCRT block not cleared");
-    Assert(_cmvi.pglmvied == pvNil, "SCRT block not cleared");
+    Assert(!_cmvi.pglscend, "SCRT block not cleared");
+    Assert(!_cmvi.pglmvied, "SCRT block not cleared");
     Assert(_fError == fFalse, "SCRT block not cleared");
     Assert(_fInited == fFalse, "SCRT block not cleared");
     Assert(_iscenMac == 0, "SCRT block not cleared");
@@ -84,7 +84,7 @@ SCRT::~SCRT(void)
     PGOB pgob;
 
     /* We might get released on Quit without exiting the Scene Sorter. */
-    if (_cmvi.pglscend != pvNil || _cmvi.pglmvied != pvNil)
+    if (_cmvi.pglscend || _cmvi.pglmvied)
         _cmvi.Empty();
     if (_pmvie != pvNil)
         ReleasePpo(&_pmvie);
@@ -410,10 +410,10 @@ bool SCRT::FCmdNuke(PCMD pcmd)
 
     SCEND scend;
 
-    _cmvi.pglscend->Get(_iscenCur, &scend);
+    _cmvi.pglscend.Get(_iscenCur, &scend);
     Assert(!scend.fNuked, "Nuking an already nuked scene");
     scend.fNuked = fTrue;
-    _cmvi.pglscend->Put(_iscenCur, &scend);
+    _cmvi.pglscend.Put(_iscenCur, &scend);
     _cmvi.pglscend->Move(_iscenCur, _cmvi.pglscend->IvMac());
     _iscenMac--;
     if (_iscenMac > 0 && _iscenMac == _iscenCur)
@@ -541,9 +541,9 @@ bool SCRT::FCmdTransition(PCMD pcmd)
     Assert(pgokFrame->FIs(kclsGOK), "kid isn't a GOK");
 
     AssertIn(iscen, 0, _iscenMac);
-    _cmvi.pglscend->Get(iscen, &scend);
+    _cmvi.pglscend.Get(iscen, &scend);
     scend.trans = _TransFromLw(pcmd->rglw[1] - 1);
-    _cmvi.pglscend->Put(iscen, &scend);
+    _cmvi.pglscend.Put(iscen, &scend);
 
     if (_FResetTransition(pgokFrame, scend.trans))
         pgokFrame->InvalRc(pvNil);
@@ -625,7 +625,7 @@ bool SCRT::_FResetThumbnails(bool fHideSel)
         {
             long lwStateNew;
 
-            _cmvi.pglscend->Get(iscen, &scend);
+            _cmvi.pglscend.Get(iscen, &scend);
             pmbmp = scend.pmbmp;
             lwStateNew = (iscen == _iscenCur) ? lwSelState : kstBrowserEnabled;
             if (pgokFrame->Sno() != lwStateNew && !pgokFrame->FChangeState(lwStateNew))
@@ -657,7 +657,7 @@ bool SCRT::_FResetThumbnails(bool fHideSel)
         frames. */
     if (_iscenMac > 0)
     {
-        _cmvi.pglscend->Get(_iscenCur, &scend);
+        _cmvi.pglscend.Get(_iscenCur, &scend);
         pgokFrame = (PGOK)vapp.Pkwa()->PgobFromHid(kidFrameCur);
         Assert(pgokFrame != pvNil, "Selection GOK is missing");
         Assert(pgokFrame->FIs(kclsGOK), "Frame GOB isn't a GOK");
