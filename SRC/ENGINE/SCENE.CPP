@@ -133,7 +133,7 @@ struct SSE
   public:
     static PSSE PsseNew(long ctagc);
     static PSSE PsseNew(long vlm, long sty, bool fLoop, long ctagc, TAGC *prgtagc);
-    static PSSE PsseDupFromGg(PGG pgg, long iv, bool fDupTags = fTrue);
+    static PSSE PsseDupFromGg(GGPtr<SEV> pgg, long iv, bool fDupTags = fTrue);
 
     PTAG Ptag(long itagc)
     {
@@ -514,8 +514,8 @@ PSCEN SCEN::PscenNew(PMVIE pmvie)
     //
     // Initialize event list
     //
-    pscen->_pggsevFrm = GG::PggNew(size(SEV));
-    if (pscen->_pggsevFrm == pvNil)
+    pscen->_pggsevFrm = GGPtr<SEV>::New();
+    if (!pscen->_pggsevFrm)
     {
         goto LFail;
     }
@@ -616,7 +616,7 @@ SCEN::~SCEN(void)
     //
     // Walk and delete all frame events.
     //
-    if (_pggsevFrm != pvNil)
+    if (_pggsevFrm)
     {
         for (isev = 0; isev < _pggsevFrm->IvMac(); isev++)
         {
@@ -658,7 +658,7 @@ SCEN::~SCEN(void)
     //
     // Delete frame event list.
     //
-    ReleasePpo(&_pggsevFrm);
+    _pggsevFrm.Release();
 
     //
     // Remove the GL of actors.  We do not Release the actors
@@ -3853,8 +3853,8 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
         goto LFail0;
     }
 
-    pscen->_pggsevFrm = GG::PggRead(&blck, &bo);
-    if (pscen->_pggsevFrm == pvNil)
+    pscen->_pggsevFrm = GGPtr<SEV>::Read(&blck, &bo);
+    if (!pscen->_pggsevFrm)
     {
         goto LFail0;
     }
@@ -4099,7 +4099,7 @@ LFail1:
             break;
         }
     }
-    ReleasePpo(&pscen->_pggsevFrm);
+    pscen->_pggsevFrm.Release();
 
 LFail0:
     ReleasePpo(&pscen);
@@ -5067,7 +5067,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
     long isev;
     PSEV qsev;
     short bo;
-    PGG pggsev;
+    GGPtr<SEV> pggsev;
     TAG tag;
     TAG tagBkgd;
     GLPtr<TAG> pgltagSrc;
@@ -5090,9 +5090,9 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         return fFalse;
     }
 
-    pggsev = GG::PggRead(&blck, &bo);
+    pggsev = GGPtr<SEV>::Read(&blck, &bo);
 
-    if (pggsev == pvNil)
+    if (!pggsev)
     {
         return fFalse;
     }
@@ -5129,7 +5129,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
 
             if (!pcfl->FGetKidChidCtg(kctgScen, cno, chid, kctgActr, &kid))
             {
-                ReleasePpo(&pggsev);
+                pggsev.Release();
                 return fFalse;
             }
             else
@@ -5140,7 +5140,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
                 if (fError)
                 {
                     pgltagSrc.Release();
-                    ReleasePpo(&pggsev);
+                    pggsev.Release();
                     return fFalse;
                 }
 
@@ -5153,7 +5153,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
                         if (!ptagl->FInsertTag(&tagSrc))
                         {
                             pgltagSrc.Release();
-                            ReleasePpo(&pggsev);
+                            pggsev.Release();
                             return fFalse;
                         }
                     }
@@ -5172,7 +5172,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
 
             if (!BKGD::FAddTagsToTagl(&tag, ptagl))
             {
-                ReleasePpo(&pggsev);
+                pggsev.Release();
                 return fFalse;
             }
             tagBkgd = tag;
@@ -5191,7 +5191,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         }
     }
 
-    ReleasePpo(&pggsev);
+    pggsev.Release();
 
     //
     // Read in GG of Frame events
@@ -5206,9 +5206,9 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         return fFalse;
     }
 
-    pggsev = GG::PggRead(&blck, &bo);
+    pggsev = GGPtr<SEV>::Read(&blck, &bo);
 
-    if (pggsev == pvNil)
+    if (!pggsev)
     {
         return fFalse;
     }
@@ -5244,12 +5244,12 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
             if (tagBkgd.sid == ksidInvalid)
             {
                 Bug("no background event!?");
-                ReleasePpo(&pggsev);
+                pggsev.Release();
                 return fFalse;
             }
             if (!ptagl->FInsertChild(&tagBkgd, chid, kctgCam))
             {
-                ReleasePpo(&pggsev);
+                pggsev.Release();
                 return fFalse;
             }
             break;
@@ -5265,7 +5265,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
             psse = SSE::PsseDupFromGg(pggsev, isev, fFalse);
             if (pvNil == psse)
             {
-                ReleasePpo(&pggsev);
+                pggsev.Release();
                 return fFalse;
             }
             if (bo == kboOther)
@@ -5281,7 +5281,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
                 if (!ptagl->FInsertTag(psse->Ptag(itag)))
                 {
                     ReleasePpsse(&psse);
-                    ReleasePpo(&pggsev);
+                    pggsev.Release();
                     return fFalse;
                 }
             }
@@ -5297,7 +5297,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         }
     }
 
-    ReleasePpo(&pggsev);
+    pggsev.Release();
 
     return fTrue;
 }
@@ -5571,14 +5571,14 @@ bool SCEN::FChopBackCore()
     {
         _isevFrmLim--;
 
-        _pggsevFrm->GetFixed(_isevFrmLim, BlobPtr::Make(sev));
+        _pggsevFrm.GetFixed(_isevFrmLim, &sev);
 
         if ((sev.sevt == sevtChngCamera) && (fCopyCam))
         {
 
             fCopyCam = fFalse;
             sev.nfrm = _nfrmCur;
-            _pggsevFrm->PutFixed(_isevFrmLim, BlobPtr::Make(sev));
+            _pggsevFrm.PutFixed(_isevFrmLim, &sev);
         }
         else
         {
@@ -5596,7 +5596,7 @@ bool SCEN::FChopBackCore()
     for (; _isevFrmLim < _pggsevFrm->IvMac(); _isevFrmLim++)
     {
 
-        _pggsevFrm->GetFixed(_isevFrmLim, BlobPtr::Make(sev));
+        _pggsevFrm.GetFixed(_isevFrmLim, &sev);
         if (sev.nfrm != _nfrmCur)
         {
             break;
@@ -7212,7 +7212,7 @@ void ReleasePpsse(PSSE *ppsse)
     because I can't do a pgg->Get() since the SSE is variable-sized, and
     I need to do QvGet twice since I'm allocating memory in this function.
 ***************************************************************************/
-PSSE SSE::PsseDupFromGg(PGG pgg, long iv, bool fDupTags)
+PSSE SSE::PsseDupFromGg(GGPtr<SEV> pgg, long iv, bool fDupTags)
 {
     AssertPo(pgg, 0);
     AssertIn(iv, 0, pgg->IvMac());

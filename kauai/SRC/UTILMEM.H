@@ -418,7 +418,7 @@ public:
         return _pgl->FAdd(BlobPtr::Make(*pv), piv);
     }
 
-    bool FInsert(long iv, T* pv = pvNil, long cv = 1)
+    bool FInsert(long iv, T* pv = pvNil, long cv = 1) const
     {
         return _pgl->FInsert(iv, BlobPtr::Make(*pv), cv);
     }
@@ -451,6 +451,66 @@ private:
     }
 
     PGL _pgl = pvNil;
+};
+
+/****************************************
+    GGPtr provides a template-typed wrapper around a PGG.
+****************************************/
+// TODO: Implement typename TVar?
+template<typename TFixed>
+class GGPtr
+{
+public:
+    GGPtr() = default;
+
+    PGG operator->() const
+    {
+        return _pgg;
+    }
+
+    explicit operator bool() const
+    {
+        return _pgg != pvNil;
+    }
+
+    static GGPtr New(long cvInit = 0, long cbInit = 0)
+    {
+        return GGPtr(GG::PggNew(sizeof(TFixed), cvInit, cbInit));
+    }
+
+    static GGPtr Read(PBLCK pblck, short* pbo = pvNil, short* posk = pvNil)
+    {
+        return GGPtr(GG::PggRead(pblck, pbo, posk));
+    }
+
+    GGPtr Dup() const
+    {
+        return GGPtr(_pgg->PggDup());
+    }
+
+    void Release()
+    {
+        ReleasePpo(&_pgg);
+    }
+
+    void GetFixed(long iv, TFixed* pv) const
+    {
+        _pgg->GetFixed(iv, BlobPtr::Make(*pv));
+    }
+
+    void PutFixed(long iv, TFixed* pv) const
+    {
+        _pgg->PutFixed(iv, BlobPtr::Make(*pv));
+    }
+
+private:
+    explicit GGPtr(PGG pgg) : _pgg(pgg)
+    {
+        // FIXME: should this be _pgg->CbFixed() == sizeof(TFixed)?
+        AssertH(_pgg == pvNil || _pgg->CbFixed() >= sizeof(TFixed));
+    }
+
+    PGG _pgg = pvNil;
 };
 
 #endif //! UTILMEM_H

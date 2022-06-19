@@ -131,7 +131,7 @@ class SCEN : public SCEN_PAR
     // Frames with events in them.  This stuff works as follows.
     //   _isevFrmLim is the index into the GG of a sev with nfrm > nCurFrm.
     //
-    PGG _pggsevFrm;   // List of events that occur in frames.
+    GGPtr<SEV> _pggsevFrm;   // List of events that occur in frames.
     long _isevFrmLim; // Next event to process.
 
     //

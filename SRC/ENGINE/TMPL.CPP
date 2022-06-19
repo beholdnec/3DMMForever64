@@ -72,7 +72,7 @@ RTCLASS(TMPL)
 /***************************************************************************
     Create a new action
 ***************************************************************************/
-PACTN ACTN::PactnNew(PGG pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn)
+PACTN ACTN::PactnNew(GGPtr<CEL> pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn)
 {
     AssertPo(pggcel, 0);
     AssertPo(pglbmat34, 0);
@@ -85,8 +85,8 @@ PACTN ACTN::PactnNew(PGG pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn)
     pactn->_grfactn = grfactn;
 
     // Duplicate pggcel into pactn->_pggcel
-    pactn->_pggcel = pggcel->PggDup();
-    if (pvNil == pactn->_pggcel)
+    pactn->_pggcel = pggcel.Dup();
+    if (!pactn->_pggcel)
         goto LFail;
 
     // Duplicate pglbmat34 into pactn->_pglbmat34
@@ -167,8 +167,8 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         return fFalse;
     if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
         return fFalse;
-    _pggcel = GG::PggRead(&blck, &bo);
-    if (pvNil == _pggcel)
+    _pggcel = GGPtr<CEL>::Read(&blck, &bo);
+    if (!_pggcel)
         return fFalse;
     AssertBomRglw(kbomCel, size(CEL));
     AssertBomRgsw(kbomCps, size(CPS));
@@ -219,7 +219,7 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
 ACTN::~ACTN(void)
 {
     AssertBaseThis(0);
-    ReleasePpo(&_pggcel);
+    _pggcel.Release();
     _pglbmat34.Release();
 }
 
@@ -232,7 +232,7 @@ void ACTN::GetCel(long icel, CEL *pcel)
     AssertIn(icel, 0, Ccel());
     AssertVarMem(pcel);
 
-    _pggcel->GetFixed(icel, BlobPtr::Make(*pcel));
+    _pggcel.GetFixed(icel, pcel);
 }
 
 /***************************************************************************

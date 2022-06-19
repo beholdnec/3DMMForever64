@@ -82,7 +82,7 @@ class TDT : public TDT_PAR
     GLPtr<short> _PglibsetBuild(void);
     PGG _PggcmidBuild(void);
     GLPtr<BMAT34> _Pglbmat34Build(long tda);
-    PGG _PggcelBuild(long tda);
+    GGPtr<CEL> _PggcelBuild(long tda);
     virtual PACTN _PactnFetch(long tda);
     PACTN _PactnBuild(long tda);
     virtual PMODL _PmodlFetch(CHID chidModl);

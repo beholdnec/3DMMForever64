@@ -292,12 +292,12 @@ PACTN TDT::_PactnBuild(long tda)
     AssertIn(tda, 0, tdaLim);
 
     PACTN pactn;
-    PGG pggcel;
+    GGPtr<CEL> pggcel;
     GLPtr<BMAT34> pglbmat34;
     ulong grfactn;
 
     pggcel = _PggcelBuild(tda);
-    if (pvNil == pggcel)
+    if (!pggcel)
         goto LFail;
     pglbmat34 = _Pglbmat34Build(tda);
     if (!pglbmat34)
@@ -306,11 +306,11 @@ PACTN TDT::_PactnBuild(long tda)
     pactn = ACTN::PactnNew(pggcel, pglbmat34, grfactn);
     if (pvNil == pactn)
         goto LFail;
-    ReleasePpo(&pggcel);
+    pggcel.Release();
     pglbmat34.Release();
     return pactn;
 LFail:
-    ReleasePpo(&pggcel);
+    pggcel.Release();
     pglbmat34.Release();
     return pvNil;
 }
@@ -537,14 +537,14 @@ LFail:
 /***************************************************************************
     Build a GG of cels for the action
 ***************************************************************************/
-PGG TDT::_PggcelBuild(long tda)
+GGPtr<CEL> TDT::_PggcelBuild(long tda)
 {
     AssertBaseThis(0);
     AssertIn(tda, 0, tdaLim);
 
     long cch = _stn.Cch();
     long ich;
-    PGG pggcel;
+    GGPtr<CEL> pggcel;
     CEL cel;
     CPS *prgcps = pvNil;
     long iv;
@@ -553,8 +553,8 @@ PGG TDT::_PggcelBuild(long tda)
 
     ccel = _CcelOfTda(tda);
 
-    pggcel = GG::PggNew(size(CEL));
-    if (pvNil == pggcel)
+    pggcel = GGPtr<CEL>::New();
+    if (!pggcel)
         goto LFail;
     if (!FAllocPv((void **)&prgcps, LwMul(cch, size(CPS)), fmemClear, mprNormal))
     {
@@ -576,8 +576,8 @@ PGG TDT::_PggcelBuild(long tda)
     return pggcel;
 LFail:
     FreePpv((void **)&prgcps);
-    ReleasePpo(&pggcel);
-    return pvNil;
+    pggcel.Release();
+    return {};
 }
 
 /***************************************************************************

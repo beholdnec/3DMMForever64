@@ -27,7 +27,7 @@ class TAGL : public TAGL_PAR
     MARKMEM
 
   protected:
-    PGG _pggtagf; // TAGF for fixed part, array of cc's for variable part
+    GGPtr<struct TAGF> _pggtagf; // TAGF for fixed part, array of cc's for variable part
 
   protected:
     bool _FInit(void);

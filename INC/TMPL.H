@@ -93,7 +93,7 @@ class ACTN : public ACTN_PAR
     MARKMEM
 
   protected:
-    PGG _pggcel;    // GG of CELs; variable part is a rgcps[]
+    GGPtr<CEL> _pggcel;    // GG of CELs; variable part is a rgcps[]
     GLPtr<BMAT34> _pglbmat34; // GL of transformation matrices used in this action
     GLPtr<TAG> _pgltagSnd; // GL of motion-match sounds for this action
     ulong _grfactn; // various flags for this action
@@ -105,7 +105,7 @@ class ACTN : public ACTN_PAR
     bool _FInit(PCFL pcfl, CTG ctg, CNO cno);
 
   public:
-    static PACTN PactnNew(PGG pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn);
+    static PACTN PactnNew(GGPtr<CEL> pggcel, GLPtr<BMAT34> pglbmat34, ulong grfactn);
     static bool FReadActn(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, long *pcb);
     ~ACTN(void);
 
