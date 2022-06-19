@@ -375,7 +375,7 @@ void CHSE::DumpGroup(PGGB pggb)
         if (0 < (cb = pggb->Cb(iv)))
         {
             DumpSz(PszLit("\tVAR"));
-            _bsf.FReplace(pggb->PvLock(iv), cb, 0, _bsf.IbMac());
+            _bsf.FReplace(pggb->PvLock(iv).Ptr(), cb, 0, _bsf.IbMac());
             pggb->Unlock();
             _DumpBsf(2);
         }

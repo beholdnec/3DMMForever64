@@ -124,7 +124,7 @@ bool ACTR::FWrite(PCFL pcfl, CNO cnoActr, CNO cnoScene)
         paev = (AEV *)(_pggaev->QvFixedGet(iaev));
         if (aetSnd != paev->aet)
             continue;
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (aevsnd.tag.sid != ksidUseCrf)
             continue;
 
@@ -371,38 +371,38 @@ void ACTR::_SwapBytesPggaev(GGPtr<AEV> pggaev)
         switch (((AEV *)pggaev->QvFixedGet(iaev))->aet)
         {
         case aetCost:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevcost);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevcost);
             break;
         case aetSnd:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevsnd);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevsnd);
             break;
         case aetSize:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevsize);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevsize);
             break;
         case aetPull:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevpull);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevpull);
             break;
         case aetRotF:
         case aetRotH:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevrot);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevrot);
             break;
         case aetActn:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevactn);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevactn);
             break;
         case aetAdd:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevadd);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevadd);
             break;
         case aetFreeze:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevfreeze);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevfreeze);
             break;
         case aetMove:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevmove);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevmove);
             break;
         case aetTweak:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevtweak);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevtweak);
             break;
         case aetStep:
-            SwapBytesBom(pggaev->QvGet(iaev), kbomAevstep);
+            SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevstep);
             break;
         case aetRem:
             // no var data
@@ -594,14 +594,14 @@ bool ACTR::_FIsIaevTag(GGPtr<AEV> pggaev, long iaev, PTAG *pptag, PAEV *pqaev)
     switch (qaev->aet)
     {
     case aetCost:
-        if (!((AEVCOST *)pggaev->QvGet(iaev))->fCmtl)
+        if (!(pggaev->QvGet(iaev).Cast<AEVCOST>())->fCmtl)
         {
-            *pptag = &((AEVCOST *)pggaev->QvGet(iaev))->tag;
+            *pptag = &(pggaev->QvGet(iaev).Cast<AEVCOST>())->tag;
             return fTrue;
         }
         break;
     case aetSnd:
-        *pptag = &((AEVSND *)pggaev->QvGet(iaev))->tag;
+        *pptag = &(pggaev->QvGet(iaev).Cast<AEVSND>())->tag;
         return fTrue;
     case aetSize:
     case aetPull:

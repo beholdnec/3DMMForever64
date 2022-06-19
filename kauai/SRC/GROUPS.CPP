@@ -320,9 +320,8 @@ void GLB::Get(long iv, BlobPtr pv)
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     AssertPvCb(pv.Ptr(), _cbEntry);
-    Assert(pv.Size() <= _cbEntry, "getting too many bytes");
-    //CopyPb(QvGet(iv).Ptr(), pv, _cbEntry);
-    CopyPb(QvGet(iv).Ptr(), pv.Ptr(), pv.Size());
+    Assert(pv.Size() >= _cbEntry, "getting too many bytes");
+    CopyPb(QvGet(iv).Ptr(), pv.Ptr(), _cbEntry);
 }
 
 /***************************************************************************
@@ -333,9 +332,8 @@ void GLB::Put(long iv, BlobPtr pv)
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     AssertPvCb(pv.Ptr(), _cbEntry);
-    Assert(pv.Size() <= _cbEntry, "put too many bytes");
-    //CopyPb(pv, QvGet(iv).Ptr(), _cbEntry);
-    CopyPb(pv.Ptr(), QvGet(iv).Ptr(), pv.Size());
+    Assert(pv.Size() >= _cbEntry, "put too many bytes");
+    CopyPb(pv.Ptr(), QvGet(iv).Ptr(), _cbEntry);
     AssertThis(0);
 }
 
@@ -1385,14 +1383,14 @@ void GGB::GetFixed(long iv, BlobPtr pv)
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
     AssertPvCb(pv.Ptr(), _cbFixed);
-    Assert(pv.Size() <= _cbFixed, "get too much data");
+    // FIXME: change these asserts to == ?
+    Assert(pv.Size() >= _cbFixed, "not enough space to get item");
 
     LOC loc;
 
     loc = *_Qloc(iv);
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    //CopyPb(_Qb1(loc.bv), pv, _cbFixed);
-    CopyPb(_Qb1(loc.bv), pv.Ptr(), pv.Size());
+    CopyPb(_Qb1(loc.bv), pv.Ptr(), _cbFixed);
 }
 
 /***************************************************************************
@@ -1405,14 +1403,13 @@ void GGB::PutFixed(long iv, BlobPtr pv)
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
     AssertPvCb(pv.Ptr(), _cbFixed);
-    Assert(pv.Size() <= _cbFixed, "put too much data");
+    Assert(pv.Size() >= _cbFixed, "not enough space to put item");
 
     LOC loc;
 
     loc = *_Qloc(iv);
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    //CopyPb(pv, _Qb1(loc.bv), _cbFixed);
-    CopyPb(pv.Ptr(), _Qb1(loc.bv), pv.Size());
+    CopyPb(pv.Ptr(), _Qb1(loc.bv), _cbFixed);
     AssertThis(0);
 }
 
@@ -1433,7 +1430,7 @@ long GGB::Cb(long iv)
     If pcb is not nil, sets *pcb to the length of the (variable part of the)
     item.
 ***************************************************************************/
-void *GGB::QvGet(long iv, long *pcb)
+BlobPtr GGB::QvGet(long iv, long *pcb)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
@@ -1446,7 +1443,7 @@ void *GGB::QvGet(long iv, long *pcb)
     if (pcb != pvNil)
         *pcb = loc.cb - _cbFixed;
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    return _Qb1(loc.bv + _cbFixed);
+    return BlobPtr(_Qb1(loc.bv + _cbFixed), loc.cb - _cbFixed);
 }
 
 /***************************************************************************
@@ -1454,7 +1451,7 @@ void *GGB::QvGet(long iv, long *pcb)
     item.  If pcb is not nil, sets *pcb to the length of the (variable part
     of the) item.
 ***************************************************************************/
-void *GGB::PvLock(long iv, long *pcb)
+BlobPtr GGB::PvLock(long iv, long *pcb)
 {
     AssertThis(0);
     Lock();
@@ -1464,7 +1461,7 @@ void *GGB::PvLock(long iv, long *pcb)
 /***************************************************************************
     Copy the (variable part of the) iv'th element to pv.
 ***************************************************************************/
-void GGB::Get(long iv, void *pv)
+void GGB::Get(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
@@ -1473,14 +1470,15 @@ void GGB::Get(long iv, void *pv)
     LOC loc;
 
     loc = *_Qloc(iv);
-    AssertPvCb(pv, loc.cb - _cbFixed);
-    CopyPb(_Qb1(loc.bv + _cbFixed), pv, loc.cb - _cbFixed);
+    AssertPvCb(pv.Ptr(), loc.cb - _cbFixed);
+    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough space to get item");
+    CopyPb(_Qb1(loc.bv + _cbFixed), pv.Ptr(), loc.cb - _cbFixed);
 }
 
 /***************************************************************************
     Copy *pv to the (variable part of the) iv'th element.
 ***************************************************************************/
-void GGB::Put(long iv, void *pv)
+void GGB::Put(long iv, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
@@ -1489,8 +1487,9 @@ void GGB::Put(long iv, void *pv)
     LOC loc;
 
     loc = *_Qloc(iv);
-    AssertPvCb(pv, loc.cb - _cbFixed);
-    CopyPb(pv, _Qb1(loc.bv + _cbFixed), loc.cb - _cbFixed);
+    AssertPvCb(pv.Ptr(), loc.cb - _cbFixed);
+    Assert(pv.Size() >= loc.cb - _cbFixed, "not enough space to put item");
+    CopyPb(pv.Ptr(), _Qb1(loc.bv + _cbFixed), loc.cb - _cbFixed);
 }
 
 /***************************************************************************
@@ -1517,7 +1516,7 @@ bool GGB::FPut(long iv, long cb, void *pv)
     if (pv != pvNil && cb > 0)
     {
         AssertPvCb(pv, cb);
-        CopyPb(pv, QvGet(iv), cb);
+        CopyPb(pv, QvGet(iv).Ptr(), cb);
     }
 
     AssertThis(0);

@@ -1404,7 +1404,7 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
             _Error(ertOom);
         else
         {
-            prgb = (byte *)pggb->PvLock(iv);
+            prgb = (byte *)pggb->PvLock(iv).Ptr();
             _bsf.FetchRgb(0, cb, prgb);
             pggb->Unlock();
         }

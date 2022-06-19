@@ -3102,7 +3102,7 @@ bool TXRG::FCmdApplyProperty(PCMD pcmd)
         chpNew.grfont ^= fontUnderline;
         goto LApplyChp;
     case cidChooseFont:
-        if (pvNil == pcmd->pgg || pcmd->pgg->IvMac() != 1 || !stn.FSetData(pcmd->pgg->QvGet(0), pcmd->pgg->Cb(0)))
+        if (pvNil == pcmd->pgg || pcmd->pgg->IvMac() != 1 || !stn.FSetData(pcmd->pgg->QvGet(0).Ptr(), pcmd->pgg->Cb(0)))
         {
             break;
         }
@@ -3264,7 +3264,7 @@ bool TXRG::FEnablePropCmd(PCMD pcmd, ulong *pgrfeds)
     case cidChooseFont:
         if (pvNil == pcmd->pgg || pcmd->pgg->IvMac() != 1)
             break;
-        if (!stnT.FSetData(pcmd->pgg->PvLock(0), pcmd->pgg->Cb(0)))
+        if (!stnT.FSetData(pcmd->pgg->PvLock(0).Ptr(), pcmd->pgg->Cb(0)))
         {
             pcmd->pgg->Unlock();
             break;

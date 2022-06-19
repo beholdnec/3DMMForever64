@@ -294,10 +294,10 @@ class GGB : public GGB_PAR
 
     // access to the variable portion
     long Cb(long iv);
-    void *QvGet(long iv, long *pcb = pvNil);
-    void *PvLock(long iv, long *pcb = pvNil);
-    void Get(long iv, void *pv);
-    void Put(long iv, void *pv);
+    BlobPtr QvGet(long iv, long *pcb = pvNil);
+    BlobPtr PvLock(long iv, long *pcb = pvNil);
+    void Get(long iv, BlobPtr pv);
+    void Put(long iv, BlobPtr pv);
     bool FPut(long iv, long cb, void *pv);
     void GetRgb(long iv, long bv, long cb, void *pv);
     void PutRgb(long iv, long bv, long cb, void *pv);

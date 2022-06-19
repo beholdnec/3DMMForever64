@@ -426,7 +426,7 @@ class ACTR : public ACTR_PAR
     void _UpdateXyzRte(void);
     bool _FInsertAev(long iaev, long cbNew, void *pvVar, void *paev, bool fUpdateState = fTrue);
     void _RemoveAev(long iaev, bool fUpdateState = fTrue);
-    void _PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long iaevCmp = ivNil, ulong grfaet = faetNil);
+    void _PrepXfrmFill(long aet, BlobPtr pvVar, long cbVar, long iaevMin, long iaevCmp = ivNil, ulong grfaet = faetNil);
     void _PrepActnFill(long iaevMin, long anidPrev, long anidNew, ulong grfaet);
     void _PrepCostFill(long iaevMin, AEVCOST *paevcost);
     void _AdjustAevForRteIns(long irptAdjust, long iaevMin);

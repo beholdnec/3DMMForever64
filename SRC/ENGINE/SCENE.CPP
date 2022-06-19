@@ -585,13 +585,13 @@ SCEN::~SCEN(void)
             switch (qsev->sevt)
             {
             case sevtAddActr:
-                _pggsevStart->Get(isev, &pactr);
+                _pggsevStart.Get(isev, &pactr);
                 AssertPo(pactr, 0);
                 ReleasePpo(&pactr);
                 break;
 
             case sevtAddTbox:
-                _pggsevStart->Get(isev, &ptbox);
+                _pggsevStart.Get(isev, &ptbox);
                 AssertPo(ptbox, 0);
                 ReleasePpo(&ptbox);
                 break;
@@ -637,7 +637,7 @@ SCEN::~SCEN(void)
             case sevtPlaySnd: {
                 PSSE psse;
                 long itagc;
-                psse = (PSSE)_pggsevFrm->QvGet(isev);
+                psse = _pggsevFrm->QvGet(isev).Cast<SSE>();
                 for (itagc = 0; itagc < psse->ctagc; itagc++)
                 {
                     TAGM::CloseTag(psse->Ptag(itagc));
@@ -913,7 +913,7 @@ bool SCEN::FGotoFrm(long nfrm)
     bool fSoundInFrame = fFalse, fUpdateSndFrame = nfrm != _nfrmCur;
     SEV sev;
     PMVU pmvu;
-    void *qvVar;
+    BlobPtr qvVar;
     long isev;
     long nfrmOld = _nfrmCur;
 
@@ -951,7 +951,7 @@ bool SCEN::FGotoFrm(long nfrm)
             }
 
             qvVar = _pggsevFrm->QvGet(_isevFrmLim - 1);
-            if (!_FUnPlaySev(&sev, qvVar))
+            if (!_FUnPlaySev(&sev, qvVar.Ptr()))
             {
                 PushErc(ercSocGotoFrameFailure);
                 return (fFalse);
@@ -969,7 +969,7 @@ bool SCEN::FGotoFrm(long nfrm)
                 break;
             }
             qvVar = _pggsevFrm->QvGet(isev);
-            if (!_FPlaySev(&sev, qvVar, _grfscen))
+            if (!_FPlaySev(&sev, qvVar.Ptr(), _grfscen))
             {
                 PushErc(ercSocGotoFrameFailure);
                 return (fFalse);
@@ -1016,7 +1016,7 @@ bool SCEN::FGotoFrm(long nfrm)
                 break;
             }
             qvVar = _pggsevFrm->QvGet(_isevFrmLim);
-            if (!_FPlaySev(&sev, qvVar, (sev.nfrm == _nfrmCur ? _grfscen : (_grfscen | fscenSounds | fscenPauses))))
+            if (!_FPlaySev(&sev, qvVar.Ptr(), (sev.nfrm == _nfrmCur ? _grfscen : (_grfscen | fscenSounds | fscenPauses))))
             {
                 PushErc(ercSocGotoFrameFailure);
                 return (fFalse);
@@ -1232,7 +1232,7 @@ bool SCEN::FReplayFrm(ulong grfscen)
     AssertThis(0);
 
     SEV sev;
-    void *qvVar;
+    BlobPtr qvVar;
     long isev, iactr;
     long nfrmOld = _nfrmCur;
     PACTR pactr;
@@ -1249,7 +1249,7 @@ bool SCEN::FReplayFrm(ulong grfscen)
         }
         qvVar = _pggsevFrm->QvGet(isev);
         // Note: FReplayFrm always suppresses camera changes
-        if (!_FPlaySev(&sev, qvVar, (~grfscen) | fscenCams))
+        if (!_FPlaySev(&sev, qvVar.Ptr(), (~grfscen) | fscenCams))
         {
             PushErc(ercSocGotoFrameFailure);
             return (fFalse);
@@ -1536,7 +1536,7 @@ bool SCEN::_FUnPlaySev(PSEV psev, void *qvVar)
             if ((qsevTmp->sevt == sevtPlaySnd) && (qsevTmp->nfrm < _nfrmCur))
             {
                 sev = *qsevTmp;
-                _FPlaySev(&sev, _pggsevFrm->QvGet(isev), _grfscen | fscenSounds); // Ignore failure.
+                _FPlaySev(&sev, _pggsevFrm->QvGet(isev).Ptr(), _grfscen | fscenSounds); // Ignore failure.
                 return (fTrue);
             }
         }
@@ -1566,7 +1566,7 @@ bool SCEN::_FUnPlaySev(PSEV psev, void *qvVar)
             if ((qsevTmp->sevt == sevtChngCamera) && (qsevTmp->nfrm < _nfrmCur))
             {
                 sev = *qsevTmp;
-                AssertDo(_FPlaySev(&sev, _pggsevFrm->QvGet(isev), _grfscen), "Should not fail.");
+                AssertDo(_FPlaySev(&sev, _pggsevFrm->QvGet(isev).Ptr(), _grfscen), "Should not fail.");
                 return (fTrue);
             }
         }
@@ -1685,7 +1685,7 @@ bool SCEN::FAddSndCore(bool fLoop, bool fQueue, long vlm, long sty, long ctag, P
             break;
         if (sev.sevt == sevtPlaySnd)
         {
-            psseOld = (PSSE)_pggsevFrm->QvGet(isev);
+            psseOld = _pggsevFrm->QvGet(isev).Cast<SSE>();
             if (psseOld->sty == sty)
             {
                 // Found a match, which we will either add to or replace
@@ -1745,7 +1745,7 @@ bool SCEN::FAddSndCore(bool fLoop, bool fQueue, long vlm, long sty, long ctag, P
             // Delete old event, if any
             PSSE psse;
             long itagc;
-            psse = (PSSE)_pggsevFrm->QvGet(isevSnd);
+            psse = _pggsevFrm->QvGet(isevSnd).Cast<SSE>();
             for (itagc = 0; itagc < psse->ctagc; itagc++)
             {
                 TAGM::CloseTag(psse->Ptag(itagc));
@@ -1866,7 +1866,7 @@ bool SCEN::FAddSndCoreTagc(bool fLoop, bool fQueue, long vlm, long sty, long cta
             break;
         if (sev.sevt == sevtPlaySnd)
         {
-            psseOld = (PSSE)_pggsevFrm->QvGet(isev);
+            psseOld = _pggsevFrm->QvGet(isev).Cast<SSE>();
             if (psseOld->sty == sty)
             {
                 // Found a match, which we will either add to or replace
@@ -1900,7 +1900,7 @@ bool SCEN::FAddSndCoreTagc(bool fLoop, bool fQueue, long vlm, long sty, long cta
             // Delete old event, if any
             PSSE psse;
             long itagc;
-            psse = (PSSE)_pggsevFrm->QvGet(isevSnd);
+            psse = _pggsevFrm->QvGet(isevSnd).Cast<SSE>();
             for (itagc = 0; itagc < psse->ctagc; itagc++)
             {
                 TAGM::CloseTag(psse->Ptag(itagc));
@@ -2028,14 +2028,14 @@ void SCEN::RemSndCore(long sty)
             return;
         }
 
-        if ((qsev->sevt == sevtPlaySnd) && ((PSSE)_pggsevFrm->QvGet(isev))->sty == sty)
+        if ((qsev->sevt == sevtPlaySnd) && (_pggsevFrm->QvGet(isev).Cast<SSE>())->sty == sty)
         {
             //
             // Remove it
             //
             PSSE psse;
             long itagc;
-            psse = (PSSE)_pggsevFrm->QvGet(isev);
+            psse = _pggsevFrm->QvGet(isev).Cast<SSE>();
             for (itagc = 0; itagc < psse->ctagc; itagc++)
             {
                 TAGM::CloseTag(psse->Ptag(itagc));
@@ -2101,7 +2101,7 @@ bool SCEN::FRemSnd(long sty)
             return fTrue;
         }
 
-        if ((qsev->sevt == sevtPlaySnd) && ((PSSE)_pggsevFrm->QvGet(isev))->sty == sty)
+        if ((qsev->sevt == sevtPlaySnd) && (_pggsevFrm->QvGet(isev).Cast<SSE>())->sty == sty)
         {
             psse = SSE::PsseDupFromGg(_pggsevFrm, isev);
             if (psse == pvNil)
@@ -2167,7 +2167,7 @@ bool SCEN::FGetSnd(long sty, bool *pfFound, PSSE *ppsse)
 
         if (qsev->sevt == sevtPlaySnd)
         {
-            if (sty == ((PSSE)_pggsevFrm->QvGet(isev))->sty)
+            if (sty == (_pggsevFrm->QvGet(isev).Cast<SSE>())->sty)
             {
                 *ppsse = SSE::PsseDupFromGg(_pggsevFrm, isev);
                 if (*ppsse == pvNil)
@@ -2305,7 +2305,7 @@ void SCEN::SetSndVlmCore(long sty, long vlmNew)
 
         if (qsev->sevt == sevtPlaySnd)
         {
-            psse = ((PSSE)_pggsevFrm->QvGet(isev));
+            psse = (_pggsevFrm->QvGet(isev).Cast<SSE>());
             if (sty == psse->sty)
             {
                 psse->vlm = vlmNew;
@@ -2542,7 +2542,7 @@ bool SCEN::FAddActrCore(ACTR *pactr)
             continue;
         }
 
-        _pggsevStart->Get(isev, (void *)&pactrOld);
+        _pggsevStart.Get(isev, &pactrOld);
 
         if (pactrOld->Arid() != pactr->Arid())
         {
@@ -2574,7 +2574,7 @@ bool SCEN::FAddActrCore(ACTR *pactr)
                 //
                 // Replace starting actor
                 //
-                _pggsevStart->Put(isev, &pactr);
+                _pggsevStart.Put(isev, &pactr);
                 _pglpactr.Put(ipactr, &pactr);
 
                 SelectActr(pactr);
@@ -2697,7 +2697,7 @@ void SCEN::RemActrCore(long arid)
             continue;
         }
 
-        _pggsevStart->Get(isev, &pactrTmp);
+        _pggsevStart.Get(isev, &pactrTmp);
         if (pactrTmp->Arid() != arid)
         {
             continue;
@@ -2895,7 +2895,7 @@ bool SCEN::FAddTboxCore(PTBOX ptbox)
     for (isev = 0; isev < _pggsevStart->IvMac(); isev++)
     {
         qsev = (PSEV)_pggsevStart->QvFixedGet(isev);
-        if ((qsev->sevt == sevtAddTbox) && (ptbox == (PTBOX)_pggsevStart->QvGet(isev)))
+        if ((qsev->sevt == sevtAddTbox) && (ptbox == _pggsevStart->QvGet(isev).Cast<TBOX>()))
         {
             Bug("Error, adding same text box twice");
             return (fTrue);
@@ -3032,7 +3032,7 @@ bool SCEN::FRemTboxCore(PTBOX ptbox)
     {
         qsev = (PSEV)_pggsevStart->QvFixedGet(isev);
 
-        if ((qsev->sevt == sevtAddTbox) && ((*(PTBOX *)_pggsevStart->QvGet(isev)) == ptbox))
+        if ((qsev->sevt == sevtAddTbox) && ((*_pggsevStart->QvGet(isev).Cast<PTBOX>()) == ptbox))
         {
 
             //
@@ -3216,7 +3216,7 @@ bool SCEN::FPauseCore(WIT *pwit, long *pdts)
             //
             // Replace the event
             //
-            _pggsevFrm->Get(isev, &sevp);
+            _pggsevFrm.Get(isev, &sevp);
             witOld = sevp.wit;
             dtsOld = sevp.dts;
 
@@ -3229,7 +3229,7 @@ bool SCEN::FPauseCore(WIT *pwit, long *pdts)
             {
                 sevp.wit = *pwit;
                 sevp.dts = *pdts;
-                _pggsevFrm->Put(isev, &sevp);
+                _pggsevFrm.Put(isev, &sevp);
             }
 
             *pwit = witOld;
@@ -3339,7 +3339,7 @@ bool SCEN::FSetBkgdCore(PTAG ptag, PTAG ptagOld)
 
             if (sev.sevt == sevtSetBkgd)
             {
-                _pggsevStart->Get(isev, ptagOld);
+                _pggsevStart.Get(isev, ptagOld);
                 if (!_pggsevStart->FPut(isev, size(TAG), ptag))
                 {
                     return (fFalse);
@@ -3588,7 +3588,7 @@ bool SCEN::FChangeCamCore(long icam, long *picamOld)
                     qsevOld = (PSEV)_pggsevFrm->QvFixedGet(isevCam);
                     if (qsevOld->sevt == sevtChngCamera)
                     {
-                        _pggsevFrm->Get(isevCam, picamOld);
+                        _pggsevFrm.Get(isevCam, picamOld);
                         break;
                     }
                 }
@@ -3600,7 +3600,7 @@ bool SCEN::FChangeCamCore(long icam, long *picamOld)
                 if (*picamOld == icam)
                 {
                     qsevOld = (PSEV)_pggsevFrm->QvFixedGet(isev);
-                    _pggsevFrm->Get(isev, picamOld);
+                    _pggsevFrm.Get(isev, picamOld);
                     if (_FPlaySev(qsevOld, &icam, _grfscen))
                     {
                         _pggsevFrm->Delete(isev);
@@ -3614,8 +3614,8 @@ bool SCEN::FChangeCamCore(long icam, long *picamOld)
                 //
                 // Change it
                 //
-                _pggsevFrm->Get(isev, picamOld);
-                _pggsevFrm->Put(isev, &icam);
+                _pggsevFrm.Get(isev, picamOld);
+                _pggsevFrm.Put(isev, &icam);
                 _MarkMovieDirty();
                 if (_FPlaySev(qsev, &icam, _grfscen))
                 {
@@ -3625,7 +3625,7 @@ bool SCEN::FChangeCamCore(long icam, long *picamOld)
             }
             else
             {
-                _pggsevFrm->Get(isev, picamOld);
+                _pggsevFrm.Get(isev, picamOld);
                 break;
             }
         }
@@ -3667,7 +3667,7 @@ LSuccess:
         qsev = (PSEV)_pggsevFrm->QvFixedGet(isev);
         if (qsev->sevt == sevtChngCamera)
         {
-            _pggsevFrm->Get(isev, &icamNext);
+            _pggsevFrm.Get(isev, &icamNext);
             if (icamNext == icam)
             {
                 _pggsevFrm->Delete(isev);
@@ -3906,7 +3906,8 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
                 }
             }
             // Put SSE with opened tags back in GG
-            pscen->_pggsevFrm->Put(isevFrm, psse);
+            // FIXME: .Put causes assert, please investigate
+            pscen->_pggsevFrm->Put(isevFrm, BlobPtr::Make(psse, 1024)); // FIXME FIXME BAD BAD use correct count
             FreePpv((void **)&psse); // don't ReleasePpsse because GG keeps the tags
             break;
 
@@ -3964,7 +3965,7 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
         {
         case sevtAddActr:
 
-            pscen->_pggsevStart->Get(isevStart, &chid);
+            pscen->_pggsevStart.Get(isevStart, &chid);
             if (bo == kboOther)
             {
                 SwapBytesBom((void *)&chid, kbomLong);
@@ -3983,12 +3984,12 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
                 goto LFail1;
             }
 
-            pscen->_pggsevStart->Put(isevStart, &pactr);
+            pscen->_pggsevStart.Put(isevStart, &pactr);
             break;
 
         case sevtAddTbox:
 
-            pscen->_pggsevStart->Get(isevStart, &chid);
+            pscen->_pggsevStart.Get(isevStart, &chid);
             if (bo == kboOther)
             {
                 SwapBytesBom((void *)&chid, kbomLong);
@@ -4007,7 +4008,7 @@ SCEN *SCEN::PscenRead(PMVIE pmvie, PCRF pcrf, CNO cno)
                 goto LFail1;
             }
 
-            pscen->_pggsevStart->Put(isevStart, &ptbox);
+            pscen->_pggsevStart.Put(isevStart, &ptbox);
             break;
 
         case sevtSetBkgd:
@@ -4042,11 +4043,11 @@ LFail1:
         switch (sev.sevt)
         {
         case sevtAddActr:
-            pscen->_pggsevStart->Get(isevStart, &pactr);
+            pscen->_pggsevStart.Get(isevStart, &pactr);
             ReleasePpo(&pactr);
             break;
         case sevtAddTbox:
-            pscen->_pggsevStart->Get(isevStart, &ptbox);
+            pscen->_pggsevStart.Get(isevStart, &ptbox);
             ReleasePpo(&ptbox);
             break;
 
@@ -4075,7 +4076,7 @@ LFail1:
             PSSE qsse;
             long itag;
 
-            qsse = (PSSE)pscen->_pggsevFrm->QvGet(isevFrm);
+            qsse = pscen->_pggsevFrm->QvGet(isevFrm).Cast<SSE>();
             if (qsse->Cb() != (pscen->_pggsevFrm->CbFixed() + pscen->_pggsevFrm->Cb(isevFrm)))
             {
                 Bug("Wrong size for SSE in GG");
@@ -4088,7 +4089,7 @@ LFail1:
                 can be safe-not-sorry.  */
             for (itag = 0; itag < qsse->ctagc; itag++)
             {
-                qsse = (PSSE)pscen->_pggsevFrm->QvGet(isevFrm);
+                qsse = pscen->_pggsevFrm->QvGet(isevFrm).Cast<SSE>();
                 TAGM::CloseTag(qsse->Ptag(itag));
             }
             break;
@@ -4134,7 +4135,7 @@ bool SCEN::FPlayStartEvents(bool fActorsOnly)
         if (fActorsOnly && sev.sevt != sevtAddActr)
             continue;
 
-        if (!_FPlaySev(&sev, _pggsevStart->QvGet(isev), _grfscen))
+        if (!_FPlaySev(&sev, _pggsevStart->QvGet(isev).Ptr(), _grfscen))
         {
             return (fFalse);
         }
@@ -4161,7 +4162,7 @@ bool SCEN::FGetTagBkgd(PTAG ptag)
         sev = *(PSEV)_pggsevStart->QvFixedGet(isevStart);
         if (sevtSetBkgd == sev.sevt)
         {
-            *ptag = *(PTAG)_pggsevStart->QvGet(isevStart);
+            *ptag = *_pggsevStart->QvGet(isevStart).Cast<TAG>();
             return fTrue;
         }
     }
@@ -4278,14 +4279,14 @@ bool SCEN::FWrite(PCRF pcrf, CNO *pcno)
         }
 
         case sevtChngCamera:
-            if (!pggFrmTemp->FInsert(isevFrm, size(long), _pggsevFrm->QvGet(isevFrm), &sev))
+            if (!pggFrmTemp->FInsert(isevFrm, size(long), _pggsevFrm->QvGet(isevFrm).Ptr(), &sev))
             {
                 goto LFail;
             }
             break;
 
         case sevtPause:
-            if (!pggFrmTemp->FInsert(isevFrm, size(SEVP), _pggsevFrm->QvGet(isevFrm), &sev))
+            if (!pggFrmTemp->FInsert(isevFrm, size(SEVP), _pggsevFrm->QvGet(isevFrm).Ptr(), &sev))
             {
                 goto LFail;
             }
@@ -4325,7 +4326,7 @@ bool SCEN::FWrite(PCRF pcrf, CNO *pcno)
                 goto LFail;
             }
 
-            if (!(*(PACTR *)_pggsevStart->QvGet(isevStart))->FWrite(pcfl, cnoChild, *pcno))
+            if (!(*_pggsevStart->QvGet(isevStart).Cast<PACTR>())->FWrite(pcfl, cnoChild, *pcno))
             {
                 goto LFail;
             }
@@ -4339,19 +4340,19 @@ bool SCEN::FWrite(PCRF pcrf, CNO *pcno)
             break;
 
         case sevtSetBkgd:
-            if (!TAGM::FSaveTag((PTAG)_pggsevStart->QvGet(isevStart), pcrf, fFalse))
+            if (!TAGM::FSaveTag(_pggsevStart->QvGet(isevStart).Cast<TAG>(), pcrf, fFalse))
             {
                 goto LFail;
             }
 
-            if (!pggStartTemp->FInsert(isevStart, size(TAG), _pggsevStart->QvGet(isevStart), &sev))
+            if (!pggStartTemp->FInsert(isevStart, size(TAG), _pggsevStart->QvGet(isevStart).Ptr(), &sev))
             {
                 goto LFail;
             }
             break;
 
         case sevtChngCamera:
-            if (!pggStartTemp->FInsert(isevStart, size(long), _pggsevStart->QvGet(isevStart), &sev))
+            if (!pggStartTemp->FInsert(isevStart, size(long), _pggsevStart->QvGet(isevStart).Ptr(), &sev))
             {
                 goto LFail;
             }
@@ -4363,7 +4364,7 @@ bool SCEN::FWrite(PCRF pcrf, CNO *pcno)
                 goto LFail;
             }
 
-            if (!(*(PTBOX *)_pggsevStart->QvGet(isevStart))->FWrite(pcfl, cnoChild))
+            if (!(*_pggsevStart->QvGet(isevStart).Cast<PTBOX>())->FWrite(pcfl, cnoChild))
             {
                 goto LFail;
             }
@@ -4535,7 +4536,7 @@ bool SCEN::FResolveAllSndTags(CNO cnoScen)
         if (sev.sevt != sevtPlaySnd)
             continue;
 
-        psse = (PSSE)_pggsevFrm->QvGet(isev);
+        psse = _pggsevFrm->QvGet(isev).Cast<SSE>();
         for (itag = 0; itag < psse->ctagc; itag++)
         {
             if (psse->Ptag(itag)->sid == ksidUseCrf)
@@ -5121,7 +5122,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         {
         case sevtAddActr:
 
-            pggsev->Get(isev, &chid);
+            pggsev.Get(isev, &chid);
             if (bo == kboOther)
             {
                 SwapBytesBom((void *)&chid, kbomLong);
@@ -5164,7 +5165,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
             break;
 
         case sevtSetBkgd:
-            pggsev->Get(isev, &tag);
+            pggsev.Get(isev, &tag);
             if (bo == kboOther)
             {
                 SwapBytesBom((void *)&tag, kbomTag);
@@ -5236,7 +5237,7 @@ bool SCEN::FAddTagsToTagl(PCFL pcfl, CNO cno, PTAGL ptagl)
         switch (qsev->sevt)
         {
         case sevtChngCamera:
-            pggsev->Get(isev, &chid);
+            pggsev.Get(isev, &chid);
             if (bo == kboOther)
             {
                 SwapBytesBom((void *)&chid, kbomLong);
@@ -7222,10 +7223,10 @@ PSSE SSE::PsseDupFromGg(GGPtr<SEV> pgg, long iv, bool fDupTags)
     PSSE psse;
     long itagc;
 
-    ctagc = ((PSSE)pgg->QvGet(iv))->ctagc;
+    ctagc = (pgg->QvGet(iv).Cast<SSE>())->ctagc;
 
     psse = PsseNew(ctagc);
-    CopyPb(pgg->QvGet(iv), psse, _Cb(ctagc));
+    CopyPb(pgg->QvGet(iv).Ptr(), psse, _Cb(ctagc));
 
     for (itagc = 0; itagc < psse->ctagc; itagc++)
     {

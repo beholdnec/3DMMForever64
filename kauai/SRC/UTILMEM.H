@@ -308,14 +308,13 @@ inline long LwThreadCur(void)
 class BlobPtr
 {
 public:
-    BlobPtr() : _ptr(pvNil), _size(0) { }
-
+    BlobPtr() = default;
     BlobPtr(void* ptr, size_t size) : _ptr(ptr), _size(size) { }
 
     template<typename T>
-    static BlobPtr Make(T& data)
+    static BlobPtr Make(T& data, size_t count = 1)
     {
-        return BlobPtr(&data, sizeof(T));
+        return BlobPtr(&data, sizeof(T) * count);
     }
 
     template<typename T>
@@ -327,7 +326,7 @@ public:
 
     explicit operator bool() const
     {
-        return _ptr != NULL;
+        return _ptr != pvNil;
     }
 
     void* Ptr() const
@@ -341,8 +340,8 @@ public:
     }
 
 private:
-    void* _ptr;
-    size_t _size;
+    void* _ptr = pvNil;
+    size_t _size = 0;
 };
 
 /****************************************
@@ -456,7 +455,6 @@ private:
 /****************************************
     GGPtr provides a template-typed wrapper around a PGG.
 ****************************************/
-// TODO: Implement typename TVar?
 template<typename TFixed>
 class GGPtr
 {
@@ -509,7 +507,19 @@ public:
         _pgg->PutFixed(iv, BlobPtr::Make(*pv));
     }
 
-    bool FCopyEntries(GGPtr pggSrc, long ivSrc, long ivDst, long cv)
+    template<typename U>
+    void Get(long iv, U* pv) const
+    {
+        _pgg->Get(iv, BlobPtr::Make(*pv));
+    }
+
+    template<typename U>
+    void Put(long iv, U* pv) const
+    {
+        _pgg->Put(iv, BlobPtr::Make(*pv));
+    }
+
+    bool FCopyEntries(GGPtr pggSrc, long ivSrc, long ivDst, long cv) const
     {
         return _pgg->FCopyEntries(pggSrc._pgg, ivSrc, ivDst, cv);
     }
@@ -528,7 +538,6 @@ private:
 /****************************************
     AGPtr provides a template-typed wrapper around a PAG.
 ****************************************/
-// TODO: Implement typename TVar?
 template<typename TFixed>
 class AGPtr
 {

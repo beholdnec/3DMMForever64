@@ -503,7 +503,7 @@ bool MUB::_FGetCmdForWcid(long wcid, PCMD pcmd)
         if (cch == 0 || (pcmd->pgg = GG::PggNew(0, 1, stn.CbData())) == pvNil)
             return fFalse;
         AssertDo(pcmd->pgg->FInsert(0, stn.CbData(), pvNil), 0);
-        stn.GetData(pcmd->pgg->PvLock(0));
+        stn.GetData(pcmd->pgg->PvLock(0).Ptr());
         pcmd->pgg->Unlock();
         pcmd->cid = mlst.cid;
         pcmd->rglw[0] = lw;

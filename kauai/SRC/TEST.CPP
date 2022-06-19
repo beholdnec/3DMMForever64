@@ -368,7 +368,7 @@ void TestGg(void)
     for (iv = pgg->IvMac(); iv--;)
     {
         cb = pgg->Cb(iv);
-        qb = (byte *)pgg->QvGet(iv);
+        qb = (byte *)pgg->QvGet(iv).Ptr();
         AssertDo(FEqualRgb(psz, qb, cb), 0);
         grf |= 1L << cb;
         if (cb & 1)
@@ -381,8 +381,9 @@ void TestGg(void)
     {
         cb = pgg->Cb(iv);
         AssertDo(!(cb & 1), 0);
-        pgg->Get(iv, rgch);
-        qb = (byte *)pgg->QvGet(iv);
+        // I have carefully verified that BlobPtr::Make(rgch) works as expected.
+        pgg->Get(iv, BlobPtr::Make(rgch));
+        qb = (byte *)pgg->QvGet(iv).Ptr();
         AssertDo(FEqualRgb(rgch, qb, cb), 0);
         AssertDo(FEqualRgb(rgch, psz, cb), 0);
         grf |= 1L << cb;
@@ -400,7 +401,7 @@ void TestGg(void)
         grf |= 1L << cb;
         pgg->DeleteRgb(iv, LwMin(cb, iv), cb);
 
-        qb = (byte *)pgg->QvGet(iv);
+        qb = (byte *)pgg->QvGet(iv).Ptr();
         AssertDo(FEqualRgb(psz, qb, cb), 0);
     }
     AssertDo(grf == 0x00010554, 0);

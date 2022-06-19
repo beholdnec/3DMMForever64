@@ -587,7 +587,7 @@ bool TXHD::FGrouped(long cp, long *pcpMin, long *pcpLim, byte *pbGroup, CNO *pcn
         byte *prgb;
         long cb;
 
-        prgb = (byte *)_pagcact->PvLock(mpe.lw - 1, &cb);
+        prgb = (byte *)_pagcact->PvLock(mpe.lw - 1, &cb).Ptr();
         cb -= size(byte) + size(CNO); // group number, cnoTopic
         if (cb < 0)
             goto LFail;

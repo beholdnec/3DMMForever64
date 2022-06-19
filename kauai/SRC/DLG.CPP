@@ -139,7 +139,7 @@ void DLG::SetValues(long iditMin, long iditLim)
                 _SetEditText(idit, &stn);
                 break;
             }
-            prgb = (byte *)PvLock(idit);
+            prgb = (byte *)PvLock(idit).Ptr();
             if (!stn.FSetData(prgb, cb, &cbT))
             {
                 Bug("bad combo item");
@@ -222,7 +222,7 @@ void DLG::GetStn(long idit, PSTN pstn)
         pstn->SetNil();
     else
     {
-        AssertDo(pstn->FSetData(PvLock(idit), cb, &cb), 0);
+        AssertDo(pstn->FSetData(PvLock(idit).Ptr(), cb, &cb), 0);
         Unlock();
     }
 }
@@ -257,7 +257,7 @@ bool DLG::FPutStn(long idit, PSTN pstn)
         {
             STN stn;
 
-            if (!stn.FSetData(PvLock(idit), cbOld, &cbOld))
+            if (!stn.FSetData(PvLock(idit).Ptr(), cbOld, &cbOld))
             {
                 Bug("why did setting the data fail?");
                 cbOld = Cb(idit);
@@ -271,7 +271,7 @@ bool DLG::FPutStn(long idit, PSTN pstn)
         break;
     }
 
-    pstn->GetData(PvLock(idit));
+    pstn->GetData(PvLock(idit).Ptr());
     Unlock();
     return fTrue;
 }
@@ -416,14 +416,14 @@ bool DLG::FAddToList(long idit, PSTN pstn)
         stn.SetNil();
         if (!FPut(idit, cbTot = stn.CbData(), pvNil))
             return fFalse;
-        stn.GetData(PvLock(idit));
+        stn.GetData(PvLock(idit).Ptr());
         Unlock();
     }
     cb = pstn->CbData();
     if (!FInsertRgb(idit, cbTot, cb, pvNil))
         return fFalse;
 
-    pstn->GetData(PvAddBv(PvLock(idit), cbTot));
+    pstn->GetData(PvAddBv(PvLock(idit).Ptr(), cbTot));
     Unlock();
     return fTrue;
 }
@@ -448,7 +448,7 @@ void DLG::ClearList(long idit)
     if (cbOld <= 0)
         return;
 
-    if (!stn.FSetData(PvLock(idit), cbOld, &cbNew))
+    if (!stn.FSetData(PvLock(idit).Ptr(), cbOld, &cbNew))
     {
         Bug("why did setting the data fail?");
         cbNew = 0;

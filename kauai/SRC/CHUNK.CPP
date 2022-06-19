@@ -1419,7 +1419,7 @@ bool CFL::_FReadIndex(void)
             }
             if (bomNil != bom && pcrpbg->ckid > 0)
             {
-                SwapBytesRglw(_pggcrp->QvGet(icrp), pcrpbg->ckid * (size(KID) / size(long)));
+                SwapBytesRglw(_pggcrp->QvGet(icrp).Ptr(), pcrpbg->ckid * (size(KID) / size(long)));
             }
             pcrpbg->rti = rtiNil;
 
@@ -1450,7 +1450,7 @@ bool CFL::_FReadIndex(void)
                 {
                     long cbNew;
 
-                    CopyPb(PvAddBv(_pggcrp->QvGet(icrp), bvRgch), szsName, cbRgch);
+                    CopyPb(PvAddBv(_pggcrp->QvGet(icrp).Ptr(), bvRgch), szsName, cbRgch);
                     szsName[cbRgch] = 0;
                     stn.SetSzs(szsName);
                     cbNew = stn.CbData();
@@ -1468,7 +1468,7 @@ bool CFL::_FReadIndex(void)
                             _pggcrp->DeleteRgb(icrp, bvRgch, cbRgch - cbNew);
                         _pggcrp->Lock();
                     }
-                    stn.GetData(PvAddBv(_pggcrp->QvGet(icrp), bvRgch));
+                    stn.GetData(PvAddBv(_pggcrp->QvGet(icrp).Ptr(), bvRgch));
                 }
                 else
                 {
@@ -1501,7 +1501,7 @@ bool CFL::_FReadIndex(void)
             }
             if (pcrpsm->ckid > 0 && bomNil != bom)
             {
-                SwapBytesRglw(_pggcrp->QvGet(icrp), pcrpsm->ckid * (size(KID) / size(long)));
+                SwapBytesRglw(_pggcrp->QvGet(icrp).Ptr(), pcrpsm->ckid * (size(KID) / size(long)));
             }
 
             pcrpsm->ClearGrfcrp(fcrpOnExtra);
@@ -1539,7 +1539,7 @@ bool CFL::_FReadIndex(void)
             crp.rti = rtiNil;
 #endif // CHUNK_BIG_INDEX
 
-            if (!pggcrp->FInsert(icrp, _pggcrp->Cb(icrp), _pggcrp->QvGet(icrp), &crp))
+            if (!pggcrp->FInsert(icrp, _pggcrp->Cb(icrp), _pggcrp->QvGet(icrp).Ptr(), &crp))
             {
                 pggcrp.Release();
             LFail:
@@ -1840,7 +1840,7 @@ bool CFL::FSaveACopy(CTG ctgCreator, FNI *pfni)
         crp.fp = floDst.fp;
         crp.SetCb(floDst.cb);
         crp.ClearGrfcrp(fcrpOnExtra);
-        if (!pcflDst->_pggcrp->FInsert(icrp, _pggcrp->Cb(icrp), _pggcrp->QvGet(icrp), &crp))
+        if (!pcflDst->_pggcrp->FInsert(icrp, _pggcrp->Cb(icrp), _pggcrp->QvGet(icrp).Ptr(), &crp))
         {
             _pggcrp->Unlock();
             goto LFail;
@@ -2794,7 +2794,7 @@ void CFL::Move(CTG ctg, CNO cno, CTG ctgNew, CNO cnoNew)
         Debug(ccrpRef++;) for (icrp = _pggcrp->IvMac(); icrp-- > 0 && ccrpRef > 0;)
         {
             _pggcrp.GetFixed(icrp, &crp);
-            qkid = (KID *)_pggcrp->QvGet(icrp);
+            qkid = _pggcrp->QvGet(icrp).Cast<KID>();
             for (ikid = 0; ikid < crp.ckid;)
             {
                 if (qkid->cki.ctg != ctg || qkid->cki.cno != cno)
@@ -2808,7 +2808,7 @@ void CFL::Move(CTG ctg, CNO cno, CTG ctgNew, CNO cnoNew)
                 AssertDo(!_FFindChild(icrp, ctgNew, cnoNew, qkid->chid, &ikidNew), "already a child");
 
                 // refresh the qkid and qrgkid pointers
-                qkid = (qrgkid = (KID *)_pggcrp->QvGet(icrp)) + ikid;
+                qkid = (qrgkid = _pggcrp->QvGet(icrp).Cast<KID>()) + ikid;
                 qkid->cki.ctg = ctgNew;
                 qkid->cki.cno = cnoNew;
 
@@ -3220,7 +3220,7 @@ bool CFL::_FSetName(long icrp, PSTN pstn)
 
     if (cbNew > 0)
     {
-        pstn->GetData(PvAddBv(_pggcrp->PvLock(icrp), bvRgch));
+        pstn->GetData(PvAddBv(_pggcrp->PvLock(icrp).Ptr(), bvRgch));
         _pggcrp->Unlock();
     }
 
@@ -3272,7 +3272,7 @@ bool CFL::_FGetName(long icrp, PSTN pstn)
     }
     bvRgch = qcrp->BvRgch();
 
-    if (!pstn->FSetData(PvAddBv(_pggcrp->PvLock(icrp), bvRgch), cbRgch))
+    if (!pstn->FSetData(PvAddBv(_pggcrp->PvLock(icrp).Ptr(), bvRgch), cbRgch))
         pstn->SetNil();
     _pggcrp->Unlock();
 
@@ -3388,7 +3388,7 @@ void CFL::ChangeChid(CTG ctgPar, CNO cnoPar, CTG ctgChild, CNO cnoChild, CHID ch
         return;
     }
 
-    qkid = (qrgkid = (KID *)_pggcrp->QvGet(icrp)) + ikidOld;
+    qkid = (qrgkid = _pggcrp->QvGet(icrp).Cast<KID>()) + ikidOld;
     qkid->chid = chidNew;
 
     MoveElement(qrgkid, size(KID), ikidOld, ikidNew);
@@ -3623,7 +3623,7 @@ bool CFL::_FFindChidCtg(CTG ctgPar, CNO cnoPar, CHID chid, CTG ctg, KID *pkid)
         goto LFail;
     }
 
-    qrgkid = (KID *)_pggcrp->QvGet(icrp);
+    qrgkid = _pggcrp->QvGet(icrp).Cast<KID>();
     for (ikidMin = 0, ikidLim = ckid; ikidMin < ikidLim;)
     {
         ikid = (ikidMin + ikidLim) / 2;
@@ -3697,7 +3697,7 @@ bool CFL::_FFindChild(long icrpPar, CTG ctgChild, CNO cnoChild, CHID chid, long 
         return fFalse;
     }
 
-    qrgkid = (KID *)_pggcrp->QvGet(icrpPar);
+    qrgkid = _pggcrp->QvGet(icrpPar).Cast<KID>();
     for (ikidMin = 0, ikidLim = ckid; ikidMin < ikidLim;)
     {
         ikid = (ikidMin + ikidLim) / 2;

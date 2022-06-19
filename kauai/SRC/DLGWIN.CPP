@@ -219,7 +219,7 @@ bool DLG::_FInit(void)
 
             // zero the extra data
             if (cbEntry > 0)
-                ClearPb(QvGet(idit), cbEntry);
+                ClearPb(QvGet(idit).Ptr(), cbEntry);
             idit++;
         }
     }

@@ -1001,7 +1001,7 @@ void DCGG::Draw(PGNV pgnv, RC *prcClip)
 
             if (dln == 0)
             {
-                CopyPb(pggb->QvGet(iv), rgb, cbDisp);
+                CopyPb(pggb->QvGet(iv).Ptr(), rgb, cbDisp);
                 stn.FFormatSz(PszLit("%5d) "), iv);
             }
             else
@@ -1088,7 +1088,7 @@ bool DCGG::FCmdAddItem(PCMD pcmd)
         return fTrue;
 
     if (cb > 0)
-        ClearPb(pggb->QvGet(ivNew), cb);
+        ClearPb(pggb->QvGet(ivNew).Ptr(), cb);
     else
         ClearPb(pggb->QvFixedGet(ivNew), pggb->CbFixed());
 
@@ -1530,7 +1530,7 @@ HQ DOCI::_HqRead(void)
     case kclsGG:
     case kclsAG:
         if (_dln == 0)
-            ((PGGB)_pgrpb)->Get(_iv, pv);
+            ((PGGB)_pgrpb)->Get(_iv, BlobPtr(pv, cb));
         else
             ((PGGB)_pgrpb)->GetFixed(_iv, BlobPtr(pv, cb));
         break;

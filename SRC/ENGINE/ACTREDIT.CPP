@@ -67,7 +67,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
         switch (aev.aet)
         {
         case aetActn: // Copy, editing current cel only
-            _pggaev->Get(iaev, &aevactn);
+            _pggaev.Get(iaev, &aevactn);
             aevactn.celn = _celnCur;
             break;
 
@@ -84,14 +84,14 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
 
         // The following events are not automatically copied
         case aetSnd:
-            _pggaev->Get(iaev, &aevsnd);
+            _pggaev.Get(iaev, &aevsnd);
             // Update the cno for the chid from the original movie
             // The scene this came from may be lost later
             if (!_pscen->Pmvie()->FResolveSndTag(&aevsnd.tag, aevsnd.chid))
             {
                 goto LFail;
             }
-            _pggaev->Put(iaev, &aevsnd);
+            _pggaev.Put(iaev, &aevsnd);
             if (aevsnd.celn == smmNil && iaev >= _iaevFrmMin)
                 break;
             if (iaev > _iaevActnCur && aevsnd.celn != smmNil)
@@ -129,7 +129,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
 
         // Insert aev.  Tag ref count will be updated.
         _pggaev->Lock();
-        if (!(*ppactr)->_FInsertAev(iaevLast, _pggaev->Cb(iaev), (aev.aet == aetActn) ? &aevactn : _pggaev->QvGet(iaev),
+        if (!(*ppactr)->_FInsertAev(iaevLast, _pggaev->Cb(iaev), (aev.aet == aetActn) ? &aevactn : _pggaev->QvGet(iaev).Ptr(),
                                     &aev, fFalse))
         {
             _pggaev->Unlock();
@@ -182,7 +182,7 @@ bool ACTR::FCopy(PACTR *ppactr, bool fEntireScene)
         // Insert will update the tag ref count
         iaevLast = (*ppactr)->_pggaev->IvMac();
         _pggaev->Lock();
-        if (!(*ppactr)->_FInsertAev(iaevLast, _pggaev->Cb(iaev), _pggaev->QvGet(iaev), &aev, fFalse))
+        if (!(*ppactr)->_FInsertAev(iaevLast, _pggaev->Cb(iaev), _pggaev->QvGet(iaev).Ptr(), &aev, fFalse))
         {
             _pggaev->Unlock();
             goto LFail;
@@ -817,7 +817,7 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
     _dxyzFullRte.dxr = BrsSub(xr, rpt.xyz.dxr);
     _dxyzFullRte.dyr = BrsSub(yr, rpt.xyz.dyr);
     _dxyzFullRte.dzr = BrsSub(zr, rpt.xyz.dzr);
-    _pggaev->Get(0, &aevadd);
+    _pggaev.Get(0, &aevadd);
     _dxyzFullRte.dxr = BrsSub(_dxyzFullRte.dxr, aevadd.dxr);
     _dxyzFullRte.dyr = BrsSub(_dxyzFullRte.dyr, aevadd.dyr);
     _dxyzFullRte.dzr = BrsSub(_dxyzFullRte.dzr, aevadd.dzr);
@@ -835,7 +835,7 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
         }
         if (aetSnd != aev.aet)
             continue;
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (aevsnd.tag.sid != ksidUseCrf)
             continue;
         // Save tag (this may be a new movie)
@@ -858,16 +858,16 @@ bool ACTR::FPaste(long nfrm, SCEN *pscen)
             if (!_pscen->Pmvie()->FChidFromUserSndCno(aevsnd.tag.cno, &aevsnd.chid))
                 return fFalse;
             // Update event
-            _pggaev->Put(iaev, &aevsnd);
+            _pggaev.Put(iaev, &aevsnd);
         }
     }
 
     // Rotate 3D spletters to face the camera
     if (_ptmpl->FIsTdt())
     {
-        _pggaev->Get(0, &aevadd);
+        _pggaev.Get(0, &aevadd);
         aevadd.ya = _pscen->Pbkgd()->BraRotYCamera();
-        _pggaev->Put(0, &aevadd);
+        _pggaev.Put(0, &aevadd);
     }
 
     _UpdateXyzRte();

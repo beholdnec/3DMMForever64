@@ -1246,7 +1246,7 @@ bool TXRD::_FOpenArg(long icact, byte sprm, short bo, short osk)
             return fFalse;
         }
         _pagcact->GetRgb(icact, size(long), size(short), &osk);
-        prgb = (byte *)PvAddBv(_pagcact->PvLock(icact), size(long) + size(short));
+        prgb = (byte *)PvAddBv(_pagcact->PvLock(icact).Ptr(), size(long) + size(short));
         if (!stn.FSetData(prgb, cb))
         {
             Bug("bad font entry");
@@ -1655,7 +1655,7 @@ bool TXRD::_FEnsureInAg(byte sprm, void *pv, long cb, long *pjv)
     AssertPvCb(pv, cb);
     AssertVarMem(pjv);
     long cact, iv, cbT;
-    void *qv;
+    BlobPtr qv;
 
     if (!_pagcact && !(_pagcact = AGPtr<long>::New(1, cb)))
     {
@@ -1671,7 +1671,7 @@ bool TXRD::_FEnsureInAg(byte sprm, void *pv, long cb, long *pjv)
         qv = _pagcact->QvGet(iv, &cbT);
         if (cb != cbT)
             continue;
-        if (FEqualRgb(qv, pv, cb))
+        if (FEqualRgb(qv.Ptr(), pv, cb))
         {
             _pagcact.GetFixed(iv, &cact);
             if (B3Lw(cact) == sprm)
@@ -2122,7 +2122,7 @@ void TXRD::FetchChp(long cp, PCHP pchp, long *pcpMin, long *pcpLim)
             {
                 byte *qrgb;
 
-                qrgb = (byte *)_pagcact->QvGet(mpe.lw - 1, &cb);
+                qrgb = (byte *)_pagcact->QvGet(mpe.lw - 1, &cb).Ptr();
                 cb -= size(long) + size(short); // onn, osk
                 if (!FIn(cb, 0, kcbMaxDataStn + 1))
                 {
@@ -2857,7 +2857,7 @@ bool TXRD::FReplaceTxrd(PTXRD ptxrd, long cpSrc, long ccpSrc, long cpDst, long c
         byte sprm;
         long impe, impeNew;
         MPE mpe, mpeNew;
-        void *pv;
+        BlobPtr pv;
         bool fRet;
 
         ptxrd->_FFindMpe(_SpcpFromSprmCp(sprmMinObj, cpSrc), pvNil, pvNil, &impe);
@@ -2870,7 +2870,7 @@ bool TXRD::FReplaceTxrd(PTXRD ptxrd, long cpSrc, long ccpSrc, long cpDst, long c
             sprm = _SprmFromSpcp(mpe.spcp);
             mpeNew.spcp = _SpcpFromSprmCp(sprm, cpDst + cp - cpSrc);
             pv = ptxrd->_pagcact->PvLock(mpe.lw - 1);
-            fRet = _FEnsureInAg(sprm, pv, ptxrd->_pagcact->Cb(mpe.lw - 1), &mpeNew.lw);
+            fRet = _FEnsureInAg(sprm, pv.Ptr(), ptxrd->_pagcact->Cb(mpe.lw - 1), &mpeNew.lw);
             ptxrd->_pagcact->Unlock();
             if (!fRet)
                 continue;
@@ -2908,7 +2908,7 @@ void TXRD::_CopyProps(PTXRD ptxrd, long cpSrc, long cpDst, long ccpSrc, long ccp
     bool fRet;
     long lw;
     long cb;
-    void *pv;
+    BlobPtr pv;
 
     // zero the character properties over the inserted text
     spvm.sprm = sprmNil;
@@ -2955,7 +2955,7 @@ void TXRD::_CopyProps(PTXRD ptxrd, long cpSrc, long cpDst, long ccpSrc, long ccp
         {
             cb = ptxrd->_pagcact->Cb(lw - 1);
             pv = ptxrd->_pagcact->PvLock(lw - 1);
-            fRet = _FEnsureInAg(sprm, pv, cb, &spvm.lw);
+            fRet = _FEnsureInAg(sprm, pv.Ptr(), cb, &spvm.lw);
             ptxrd->_pagcact->Unlock();
             if (!fRet)
             {
@@ -3017,7 +3017,7 @@ bool TXRD::FFetchObject(long cpMin, long *pcp, void **ppv, long *pcb)
         AssertIn(mpe.lw, 0, _pagcact->IvMac());
         cb = _pagcact->Cb(mpe.lw);
         if (FAllocPv(ppv, cb, fmemNil, mprNormal))
-            CopyPb((byte *)_pagcact->QvGet(mpe.lw), *ppv, cb);
+            CopyPb((byte *)_pagcact->QvGet(mpe.lw).Ptr(), *ppv, cb);
     }
 
     return fTrue;

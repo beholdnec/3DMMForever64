@@ -463,7 +463,7 @@ bool BSF::FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbD
             if (pvNil == flo.pfil)
             {
                 // a memory piece
-                pb = (byte *)pbsfSrc->_pggflo->PvLock(ifloMinSrc);
+                pb = (byte *)pbsfSrc->_pggflo->PvLock(ifloMinSrc).Ptr();
                 fRet = FReplace(pb + ibSrc - ibMinSrc, cbT, ibDst, 0);
                 pbsfSrc->_pggflo->Unlock();
             }
@@ -497,7 +497,7 @@ bool BSF::FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbD
             if (pvNil == flo.pfil)
             {
                 // a memory piece
-                pb = (byte *)pbsfSrc->_pggflo->PvLock(ifloLimSrc);
+                pb = (byte *)pbsfSrc->_pggflo->PvLock(ifloLimSrc).Ptr();
                 fRet = FReplace(pb + ib - ibLimSrc, cbT, ibDst + cbIns, cbDel);
                 pbsfSrc->_pggflo->Unlock();
             }
@@ -834,7 +834,7 @@ bool BSF::FWriteRgb(PBLCK pblck, long ib)
         {
             // the data is in the GG
             Assert(_pggflo->Cb(iflo) == flo.cb, "group element wrong size");
-            fRet = pblck->FWrite(PvAddBv(_pggflo->QvGet(iflo), ib));
+            fRet = pblck->FWrite(PvAddBv(_pggflo->QvGet(iflo).Ptr(), ib));
         }
         else
         {

@@ -177,7 +177,7 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         for (icel = 0; icel < _pggcel->IvMac(); icel++)
         {
             SwapBytesRglw(_pggcel->QvFixedGet(icel), size(CEL) / size(long));
-            SwapBytesRgsw(_pggcel->QvGet(icel), _pggcel->Cb(icel) / size(short));
+            SwapBytesRgsw(_pggcel->QvGet(icel).Ptr(), _pggcel->Cb(icel) / size(short));
         }
     }
 
@@ -245,7 +245,7 @@ void ACTN::GetCps(long icel, long icps, CPS *pcps)
     AssertIn(icps, 0, _pggcel->Cb(icel) / size(CPS));
     AssertVarMem(pcps);
 
-    CPS *prgcps = (CPS *)_pggcel->QvGet(icel);
+    CPS *prgcps = _pggcel->QvGet(icel).Cast<CPS>();
     *pcps = prgcps[icps];
 }
 
@@ -496,7 +496,7 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
         for (ibset = 0; ibset < _cbset; ibset++)
         {
             SwapBytesRglw(_pggcmid->QvFixedGet(ibset), 1);
-            SwapBytesRglw(_pggcmid->QvGet(ibset), *(long *)_pggcmid->QvFixedGet(ibset));
+            SwapBytesRglw(_pggcmid->QvGet(ibset).Ptr(), *(long *)_pggcmid->QvFixedGet(ibset));
         }
     }
     return fTrue;
@@ -895,7 +895,7 @@ long TMPL::CmidOfBset(long ibset, long icmid)
 
     long *prgcmid;
 
-    prgcmid = (long *)_pggcmid->QvGet(ibset);
+    prgcmid = _pggcmid->QvGet(ibset).Cast<long>();
     return prgcmid[icmid];
 }
 

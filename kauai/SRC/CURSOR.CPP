@@ -95,7 +95,7 @@ bool CURS::FReadCurs(PCRF pcrf, CTG ctg, CNO cno, PBLCK pblck, PBACO *ppbaco, lo
         goto LFail;
 
     FillPb(prgb, LwMul(cbRowDst, dyp), 0xFF);
-    qrgb = (byte *)pggcurf->QvGet(icurfBest);
+    qrgb = (byte *)pggcurf->QvGet(icurfBest).Ptr();
     cbT = LwMin(cbRowSrc, cbRowDst);
     for (dzpT = LwMin(dyp, curf.dyp); dzpT-- > 0;)
     {

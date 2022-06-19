@@ -425,7 +425,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
         LWriteCore:
             // just write the data
             pchse->DumpSz(PszLit("\t\tVAR"));
-            pchse->DumpRgb(pag->PvLock(iv), cb, 3);
+            pchse->DumpRgb(pag->PvLock(iv).Ptr(), cb, 3);
             pag->Unlock();
             break;
         }

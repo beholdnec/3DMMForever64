@@ -187,6 +187,7 @@ bool TAGL::FInsertTag(PTAG ptag, bool fCacheChildren)
     {
         // FIXME(bruxisma): The compiler has correctly identified that this
         // should be an assignment.
+        // FIXME(beholdnec): wtf is this?
         tagf.fCacheChildren == fTrue;
         _pggtagf.PutFixed(itag, &tagf);
     }
@@ -228,7 +229,7 @@ bool TAGL::FInsertChild(PTAG ptag, CHID chid, CTG ctg)
             return fFalse;
         return fTrue;
     }
-    prgcc = (CC *)_pggtagf->QvGet(itagf);
+    prgcc = _pggtagf->QvGet(itagf).Cast<CC>(ccc);
     // linear search through prgcc to find where to insert ccNew
     for (icc = 0; icc < ccc; icc++)
     {

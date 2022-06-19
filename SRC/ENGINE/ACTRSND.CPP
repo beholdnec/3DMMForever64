@@ -133,7 +133,7 @@ bool ACTR::FSetSndCore(PTAG ptag, tribool fLoop, tribool fQueue, tribool fMotion
             break;
         if (aetSnd != paev->aet)
             continue;
-        _pggaev->Get(iaev, &aevsndT);
+        _pggaev.Get(iaev, &aevsndT);
         if (MSND::SqnActr(aevsndT.sty, _arid) != sqn)
             continue;
 
@@ -173,7 +173,7 @@ bool ACTR::_FEnqueueSnd(long iaev)
     PMSND pmsnd = pvNil;
     long tool;
 
-    _pggaev->Get(iaev, &aevsnd);
+    _pggaev.Get(iaev, &aevsnd);
 
     //
     // Motion match sounds are not enqueued when event iaev is seen
@@ -198,7 +198,7 @@ bool ACTR::_FEnqueueSnd(long iaev)
             Bug("Actrsnd: Expected to resolve snd tag");
             goto LFail;
         }
-        _pggaev->Put(iaev, &aevsnd); // Update event
+        _pggaev.Put(iaev, &aevsnd); // Update event
     }
 
     pmsnd = (PMSND)vptagm->PbacoFetch(&aevsnd.tag, MSND::FReadMsnd);
@@ -300,7 +300,7 @@ bool ACTR::_FInsertSmm(long iaev)
     AEVSND *paevsnd;
 
     paev = (AEV *)_pggaev->QvFixedGet(iaev);
-    paevsnd = (AEVSND *)_pggaev->QvGet(iaev);
+    paevsnd = _pggaev->QvGet(iaev).Cast<AEVSND>();
 
     smm.aev = *paev;
     smm.aevsnd = *paevsnd;
@@ -345,7 +345,7 @@ bool ACTR::_FRemoveAevMm(long anid)
             break;
         if (aetActn == paev->aet)
         {
-            _pggaev->Get(iaev, &aevactn);
+            _pggaev.Get(iaev, &aevactn);
             if (aevactn.anid != anid)
                 break;
             continue;
@@ -354,7 +354,7 @@ bool ACTR::_FRemoveAevMm(long anid)
             continue;
 
         // Test if sound is motion match
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (smmNil == aevsnd.celn)
             continue;
         _RemoveAev(iaev);
@@ -449,14 +449,14 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
         if (aev.aet != aetSnd)
             continue;
 
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (FPure(aevsnd.celn != smmNil) != fMotionMatch)
             continue;
 
         if (aevsnd.sty != sty)
             continue;
         aevsnd.vlm = vlm;
-        _pggaev->Put(iaev, &aevsnd);
+        _pggaev.Put(iaev, &aevsnd);
     }
 
     // Set the volume for any earlier motion match sounds
@@ -473,7 +473,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
 
             if (aev.aet != aetSnd)
                 continue;
-            _pggaev->Get(iaev, &aevsnd);
+            _pggaev.Get(iaev, &aevsnd);
 
             if (aevsnd.sty != sty)
                 continue;
@@ -482,7 +482,7 @@ bool ACTR::FSetVlmSnd(long sty, bool fMotionMatch, long vlm)
             if (aevsnd.celn != celn)
                 continue;
             aevsnd.vlm = vlm;
-            _pggaev->Put(iaev, &aevsnd);
+            _pggaev.Put(iaev, &aevsnd);
             nfrmMM = aev.nfrm;
             // There are no queued motion match sounds by spec
             break;
@@ -547,7 +547,7 @@ bool ACTR::FQuerySnd(long sty, bool fMotionMatch, GLPtr<TAG> *pglTagSnd, long *p
             if (aev.aet != aetSnd)
                 continue;
 
-            _pggaev->Get(iaev, &aevsnd);
+            _pggaev.Get(iaev, &aevsnd);
             if (aevsnd.sty != sty)
                 continue;
 
@@ -644,7 +644,7 @@ bool ACTR::FDeleteSndCore(long sty, bool fMotionMatch)
         if (aev.aet != aetSnd)
             continue;
 
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (aevsnd.sty != sty)
             continue;
         if ((aevsnd.celn != smmNil) != fMotionMatch)
@@ -729,7 +729,7 @@ bool ACTR::FResolveAllSndTags(CNO cnoScen)
         paev = (AEV *)_pggaev->QvFixedGet(iaev);
         if (paev->aet != aetSnd)
             continue;
-        _pggaev->Get(iaev, &aevsnd);
+        _pggaev.Get(iaev, &aevsnd);
         if (aevsnd.tag.sid == ksidUseCrf)
         {
             if (!_pscen->Pmvie()->FResolveSndTag(&aevsnd.tag, aevsnd.chid, cnoScen))
@@ -737,7 +737,7 @@ bool ACTR::FResolveAllSndTags(CNO cnoScen)
                 fSuccess = fFalse;
                 continue;
             }
-            _pggaev->Put(iaev, &aevsnd);
+            _pggaev.Put(iaev, &aevsnd);
         }
     }
     return fSuccess;

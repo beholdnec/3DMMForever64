@@ -737,7 +737,7 @@ bool ACTR::_FDoFrm(bool fPositionBody, bool *pfPositionDirty, bool *pfSoundInFra
                 // Motion match sounds must be entered in the smm
                 // whether this is the final frame or not
                 AEVSND aevsnd;
-                _pggaev->Get(iaev, &aevsnd);
+                _pggaev.Get(iaev, &aevsnd);
                 if (aevsnd.celn != smmNil)
                 {
                     if (!_FDoAevCur())
@@ -1006,7 +1006,7 @@ bool ACTR::_FDoAevCore(long iaev)
         AEVACTN aevactn;
         ulong grfactn;
 
-        _pggaev->Get(iaev, &aevactn);
+        _pggaev.Get(iaev, &aevactn);
 
         // Empty the motion match sound list	if the action <changed>
         if (aevactn.anid != _anidCur)
@@ -1053,7 +1053,7 @@ bool ACTR::_FDoAevCore(long iaev)
         _pglsmm->FSetIvMac(0);
 
         // Set the translation for the subroute
-        _pggaev->Get(iaev, &aevadd);
+        _pggaev.Get(iaev, &aevadd);
         _dxyzSubRte.dxr = aevadd.dxr;
         _dxyzSubRte.dyr = aevadd.dyr;
         _dxyzSubRte.dzr = aevadd.dzr;
@@ -1082,7 +1082,7 @@ bool ACTR::_FDoAevCore(long iaev)
 
     case aetCost:
         AEVCOST aevcost;
-        _pggaev->Get(iaev, &aevcost);
+        _pggaev.Get(iaev, &aevcost);
         if (aevcost.fCmtl)
         {
             PCMTL pcmtl = _ptmpl->PcmtlFetch(aevcost.cmid);
@@ -1104,28 +1104,28 @@ bool ACTR::_FDoAevCore(long iaev)
 
     case aetRotF:
         // Actors are xformed in _FDoFrm, Rotate or Scale
-        _pggaev->Get(iaev, &_xfrm.bmat34Fwd);
+        _pggaev.Get(iaev, &_xfrm.bmat34Fwd);
         _fUseBmat34Cur = fFalse;
         break;
 
     case aetRotH:
         // Actors are xformed in _FDoFrm, Rotate or Scale
-        _pggaev->Get(iaev, &_xfrm.bmat34Cur);
+        _pggaev.Get(iaev, &_xfrm.bmat34Cur);
         _fUseBmat34Cur = fTrue;
         break;
 
     case aetPull:
         // Actors are xformed in _FDoFrm, Rotate or Scale
-        _pggaev->Get(iaev, &_xfrm.aevpull);
+        _pggaev.Get(iaev, &_xfrm.aevpull);
         break;
 
     case aetSize:
         // Actors are xformed in _FDoFrm, Rotate or Scale
-        _pggaev->Get(iaev, &_xfrm.rScaleStep);
+        _pggaev.Get(iaev, &_xfrm.rScaleStep);
         break;
 
     case aetStep: // Exists for timing control (eg walk in place)
-        _pggaev->Get(iaev, &_dwrStep);
+        _pggaev.Get(iaev, &_dwrStep);
         // Force the location to the step event
         // Avoids incorrect event ordering on static segments
         if (rZero == _dwrStep)
@@ -1137,13 +1137,13 @@ bool ACTR::_FDoAevCore(long iaev)
 
     case aetFreeze:
         long fFrozen; //_fFrozen is a bit
-        _pggaev->Get(iaev, &fFrozen);
+        _pggaev.Get(iaev, &fFrozen);
         _fFrozen = FPure(fFrozen);
         break;
 
     case aetTweak:
         if (aev.rtel.dnfrm == _rtelCur.dnfrm)
-            _pggaev->Get(iaev, &_xyzCur);
+            _pggaev.Get(iaev, &_xyzCur);
         // The actual locating of the actor is done in _FDoFrm or FTweakRoute
         break;
 
@@ -1155,7 +1155,7 @@ bool ACTR::_FDoAevCore(long iaev)
 
     case aetMove:
         XYZ dxyz;
-        _pggaev->Get(iaev, &dxyz);
+        _pggaev.Get(iaev, &dxyz);
         _dxyzSubRte.dxr = BrsAdd(dxyz.dxr, _dxyzSubRte.dxr);
         _dxyzSubRte.dyr = BrsAdd(dxyz.dyr, _dxyzSubRte.dyr);
         _dxyzSubRte.dzr = BrsAdd(dxyz.dzr, _dxyzSubRte.dzr);
@@ -1267,7 +1267,7 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
 
     AEV aev;
     AEV aevNew;
-    void *pvVar;
+    BlobPtr pvVar;
     long cbVar;
     long iaev;
     BMAT34 bmat34;
@@ -1312,8 +1312,8 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
         case aetMove: // Move is accumulation of previous moves
             XYZ dxyz;
             XYZ dxyzNew;
-            _pggaev->Get(iaev, &dxyz);
-            _pggaev->Get(iaevNew, &dxyzNew);
+            _pggaev.Get(iaev, &dxyz);
+            _pggaev.Get(iaevNew, &dxyzNew);
             // Note: Merging moves should not alter state variables!
 #ifndef BUG1870
             // Remove these lines of code
@@ -1324,7 +1324,7 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
             dxyz.dxr = BrsAdd(dxyz.dxr, dxyzNew.dxr);
             dxyz.dyr = BrsAdd(dxyz.dyr, dxyzNew.dyr);
             dxyz.dzr = BrsAdd(dxyz.dzr, dxyzNew.dzr);
-            _pggaev->Put(iaev, &dxyz);
+            _pggaev.Put(iaev, &dxyz);
             goto LDeleteNew;
             break;
 
@@ -1333,15 +1333,15 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
             AEVCOST aevcostNew;
 
             // Check that the body parts match
-            _pggaev->Get(iaev, &aevcost);
-            _pggaev->Get(iaevNew, &aevcostNew);
+            _pggaev.Get(iaev, &aevcost);
+            _pggaev.Get(iaevNew, &aevcostNew);
 
             if (aevcost.ibset != aevcostNew.ibset)
                 continue;
 
             if (aev.rtel != aevNew.rtel)
                 goto LDeleteOld;
-            _pggaev->Put(iaev, &aevcostNew);
+            _pggaev.Put(iaev, &aevcostNew);
             goto LDeleteNew;
             break;
 
@@ -1351,8 +1351,8 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
             long ismm;
             SMM *psmm;
             // Check that the sound types match
-            _pggaev->Get(iaev, &aevsnd);
-            _pggaev->Get(iaevNew, &aevsndNew);
+            _pggaev.Get(iaev, &aevsnd);
+            _pggaev.Get(iaevNew, &aevsndNew);
             if (MSND::SqnActr(aevsnd.sty, _arid) != MSND::SqnActr(aevsndNew.sty, _arid))
                 continue;
             // Queued sounds need to have multiple events reside in a single frame
@@ -1387,8 +1387,8 @@ void ACTR::_MergeAev(long iaevFirst, long iaevNew, long *piaevRtn)
                 continue;
             if (aev.rtel != aevNew.rtel)
                 goto LDeleteOld;
-            _pggaev->Get(iaevNew, &bmat34);
-            _pggaev->Put(iaev, &bmat34);
+            _pggaev.Get(iaevNew, &bmat34);
+            _pggaev.Put(iaev, &bmat34);
             goto LDeleteNew;
             break;
 
@@ -2281,7 +2281,7 @@ void ACTR::SetAddOrient(BRA xa, BRA ya, BRA za, ulong grfbra, XYZ *pdxyz)
 
     AEVADD aevadd;
 
-    _pggaev->Get(_iaevAddCur, &aevadd);
+    _pggaev.Get(_iaevAddCur, &aevadd);
 
     if (pvNil == pdxyz)
     {
@@ -2307,7 +2307,7 @@ void ACTR::SetAddOrient(BRA xa, BRA ya, BRA za, ulong grfbra, XYZ *pdxyz)
     }
 
     // Modify the event
-    _pggaev->Put(_iaevAddCur, &aevadd);
+    _pggaev.Put(_iaevAddCur, &aevadd);
     _xfrm.xaPath = aevadd.xa;
     _xfrm.yaPath = aevadd.ya;
     _xfrm.zaPath = aevadd.za;
@@ -2420,7 +2420,7 @@ bool ACTR::FRotate(BRA xa, BRA ya, BRA za, bool fFromHereFwd)
 
     // Add the event
     if (fFromHereFwd)
-        _PrepXfrmFill(aetRotF, pbmat34, kcbVarRot, _iaevCur, ivNil, faetNil);
+        _PrepXfrmFill(aetRotF, BlobPtr::Make(pbmat34), kcbVarRot, _iaevCur, ivNil, faetNil);
     AssertDo(_FAddDoAev(aet, kcbVarRot, pbmat34), "Ensure space insufficient");
 
     _PositionBody(&_xyzCur);
@@ -2453,7 +2453,7 @@ bool ACTR::FNormalizeCore(ulong grfnorm)
     {
         _InitXfrmRot(&_xfrm.bmat34Fwd);
         _InitXfrmRot(&_xfrm.bmat34Cur);
-        _PrepXfrmFill(aetRotF, &_xfrm.bmat34Fwd, kcbVarRot, _iaevCur);
+        _PrepXfrmFill(aetRotF, BlobPtr::Make(_xfrm.bmat34Fwd), kcbVarRot, _iaevCur);
         AssertDo(_FAddDoAev(aetRotF, kcbVarRot, &_xfrm.bmat34Fwd), "EnsureSpace insufficient");
     }
 
@@ -2464,8 +2464,8 @@ bool ACTR::FNormalizeCore(ulong grfnorm)
         _xfrm.aevpull.rScaleZ = rOne;
         faet = (_xfrm.rScaleStep != rOne) ? faetTweak : faetNil;
         _xfrm.rScaleStep = rOne;
-        _PrepXfrmFill(aetPull, &_xfrm.aevpull, kcbVarPull, _iaevCur);
-        _PrepXfrmFill(aetSize, &_xfrm.rScaleStep, kcbVarSize, _iaevCur, ivNil, faet);
+        _PrepXfrmFill(aetPull, BlobPtr::Make(_xfrm.aevpull), kcbVarPull, _iaevCur);
+        _PrepXfrmFill(aetSize, BlobPtr::Make(_xfrm.rScaleStep), kcbVarSize, _iaevCur, ivNil, faet);
 
         AssertDo(_FAddDoAev(aetPull, kcbVarPull, &_xfrm.aevpull), "EnsureSpace insufficient");
         AssertDo(_FAddDoAev(aetSize, kcbVarSize, &_xfrm.rScaleStep), "EnsureSpace insufficient");
@@ -2512,7 +2512,7 @@ bool ACTR::FScale(BRS rScale)
 
     // Remove tweaks when a transformation that changes stepsize occurs
     faet = (_xfrm.rScaleStep != rScale) ? faetTweak : faetNil;
-    _PrepXfrmFill(aetSize, &_xfrm.rScaleStep, kcbVarSize, _iaevCur, ivNil, faet);
+    _PrepXfrmFill(aetSize, BlobPtr::Make(_xfrm.rScaleStep), kcbVarSize, _iaevCur, ivNil, faet);
 
     if (!_FAddDoAev(aetSize, kcbVarSize, &_xfrm.rScaleStep))
         return fFalse;
@@ -2657,7 +2657,7 @@ bool ACTR::FPull(BRS rScaleX, BRS rScaleY, BRS rScaleZ)
     _xfrm.aevpull.rScaleY = LwBound(rScaleYT, krPullMin, krPullMax);
     _xfrm.aevpull.rScaleZ = LwBound(rScaleZT, krPullMin, krPullMax);
 
-    _PrepXfrmFill(aetPull, &_xfrm.aevpull, kcbVarPull, _iaevCur);
+    _PrepXfrmFill(aetPull, BlobPtr::Make(_xfrm.aevpull), kcbVarPull, _iaevCur);
 
     if (!_FAddDoAev(aetPull, kcbVarPull, &_xfrm.aevpull))
         return fFalse;
@@ -2800,7 +2800,7 @@ bool ACTR::FMoveRoute(BRS dxr, BRS dyr, BRS dzr, bool *pfMoved, ulong grfmaf)
             }
 #endif // DEBUG
        //  Set dwra = angular change (in scalar form)
-            _pggaev->Get(_iaevAddCur, &aevadd);
+            _pggaev.Get(_iaevAddCur, &aevadd);
             ra1 = BrAngleToScalar(xa);
             ra2 = BrAngleToScalar(aevadd.xa);
             drxa = BrsAbs(BrsSub(ra1, ra2));
@@ -2858,7 +2858,7 @@ bool ACTR::FMoveRoute(BRS dxr, BRS dyr, BRS dzr, bool *pfMoved, ulong grfmaf)
         {
             paev = (AEV *)_pggaev->QvFixedGet(iaev);
             if (aetRotH == paev->aet)
-                _pggaev->Put(iaev, &_xfrm.bmat34Cur);
+                _pggaev.Put(iaev, &_xfrm.bmat34Cur);
             if (aetRotF == paev->aet)
             {
                 // Insert orientation-rotation event
@@ -2906,11 +2906,11 @@ bool ACTR::FMoveRoute(BRS dxr, BRS dyr, BRS dzr, bool *pfMoved, ulong grfmaf)
             _dxyzSubRte.dzr = BrsAdd(dzr, _dxyzSubRte.dzr);
 
             // Adjust the position in the add event
-            _pggaev->Get(_iaevAddCur, &aevadd);
+            _pggaev.Get(_iaevAddCur, &aevadd);
             aevadd.dxr = BrsAdd(aevadd.dxr, dxr);
             aevadd.dyr = BrsAdd(aevadd.dyr, dyr);
             aevadd.dzr = BrsAdd(aevadd.dzr, dzr);
-            _pggaev->Put(_iaevAddCur, &aevadd);
+            _pggaev.Put(_iaevAddCur, &aevadd);
         }
     }
     _UpdateXyzRte();
@@ -2968,11 +2968,12 @@ void ACTR::_LoadAddOrien(AEVADD *paevadd, bool fNoReset)
         grfaet == faetNil or types of events to nuke along the way
 
 ***************************************************************************/
-void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long iaevCmp, ulong grfaet)
+void ACTR::_PrepXfrmFill(long aet, BlobPtr pvVar, long cbVar, long iaevMin, long iaevCmp, ulong grfaet)
 {
     AssertBaseThis(0);
     Assert(aet == aetSize || aet == aetRotF || aet == aetPull, "Illegal argument aet");
-    AssertPvCb(pvVar, cbVar);
+    AssertPvCb(pvVar.Ptr(), cbVar);
+    Assert(pvVar.Size() >= cbVar, "Invalid var size");
     AssertIn(cbVar, 0, 100); // Approximate bound
     AssertIn(iaevMin, 0, _pggaev->IvMac() + 1);
     AssertIn(iaevCmp, -1, _pggaev->IvMac() + 1);
@@ -2981,7 +2982,7 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
     long iaev;
     AEV aev;
     bool fReplacePrev = fTrue;
-    void *pvVarCmp = pvNil;
+    BlobPtr pvVarCmp;
     long cb;
 
     _pggaev->Lock();
@@ -3006,7 +3007,7 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
         }
     }
 
-    if (pvNil == pvVarCmp)
+    if (!pvVarCmp)
         pvVarCmp = pvVar;
 
     for (iaev = iaevMin; iaev < _pggaev->IvMac(); iaev++)
@@ -3023,8 +3024,9 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
         case aetSize:
         case aetPull:
         case aetRotF:
-            void *pv1;
-            void *pv2;
+        {
+            BlobPtr pv1;
+            BlobPtr pv2;
             if (aev.aet != aet)
                 continue;
 
@@ -3032,7 +3034,7 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
             {
                 pv1 = pvVarCmp;
                 pv2 = _pggaev->QvGet(iaev);
-                if (fcmpEq != FcmpCompareRgb(pv1, pv2, cbVar))
+                if (fcmpEq != FcmpCompareRgb(pv1.Ptr(), pv2.Ptr(), cbVar))
                 {
                     // Prepare to test for a match with new event
                     fReplacePrev = fFalse;
@@ -3049,12 +3051,13 @@ void ACTR::_PrepXfrmFill(long aet, void *pvVar, long cbVar, long iaevMin, long i
             Assert(!fReplacePrev, "Logic Error");
             pv1 = pvVarCmp;
             pv2 = _pggaev->QvGet(iaev);
-            if (fcmpEq != FcmpCompareRgb(pv1, pv2, cbVar))
+            if (fcmpEq != FcmpCompareRgb(pv1.Ptr(), pv2.Ptr(), cbVar))
                 goto LEnd;
 
             // Events equal : delete event at iaev
             fDelete = fTrue;
             break;
+        }
 
         case aetTweak:
             if ((grfaet & faetTweak) && (aev.rtel >= _rtelCur))
@@ -3210,7 +3213,7 @@ void ACTR::_PrepActnFill(long iaevMin, long anidPrev, long anidNew, ulong grfaet
         if (aetActn == aev.aet)
         {
             AEVACTN aevactn;
-            _pggaev->Get(iaev, &aevactn);
+            _pggaev.Get(iaev, &aevactn);
 
             if (!(grfaet & faetActn))
             {
@@ -3296,7 +3299,7 @@ void ACTR::_PrepCostFill(long iaevMin, AEVCOST *paevcost)
         if (aetCost != aev.aet)
             continue;
 
-        _pggaev->Get(iaev, &aevcost);
+        _pggaev.Get(iaev, &aevcost);
         if (aevcost.ibset != paevcost->ibset)
             continue;
 
@@ -3704,7 +3707,7 @@ void ACTR::_MatrixRotUpdate(XYZ *pxyz, BMAT34 *pbmat34)
             // Single point	subroute ->
             // Post apply single point orientation to event rotations
             AEVADD aevadd;
-            _pggaev->Get(_iaevAddCur, &aevadd);
+            _pggaev.Get(_iaevAddCur, &aevadd);
             BrMatrix34PostRotateX(&bmat34TR, aevadd.xa);
             BrMatrix34PostRotateY(&bmat34TR, aevadd.ya);
             BrMatrix34PostRotateZ(&bmat34TR, aevadd.za);
@@ -4123,19 +4126,19 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
 
             case aetFreeze:
                 long ffriz;
-                _pggaev->Get(iaev, &ffriz);
+                _pggaev.Get(iaev, &ffriz);
                 fFrozen = FPure(ffriz);
                 break;
 
             case aetSize: // Uniform size transformation
                 // Adjust step size : affects actor lifetime
-                _pggaev->Get(iaev, &rScale);
+                _pggaev.Get(iaev, &rScale);
                 break;
 
             case aetActn:
                 AEVACTN aevactn;
 
-                _pggaev->Get(iaev, &aevactn);
+                _pggaev.Get(iaev, &aevactn);
                 anid = aevactn.anid;
                 celn = aevactn.celn;
                 fFrozen = fFalse;
@@ -4143,7 +4146,7 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
                 break;
 
             case aetStep:
-                _pggaev->Get(iaev, &dwrStep);
+                _pggaev.Get(iaev, &dwrStep);
                 break;
 
             default:
@@ -4257,7 +4260,7 @@ bool ACTR::_FIsStalled(long iaevFirst, RTEL *prtel, long *piaevLast)
             if (aetStep == aev.aet)
             {
                 BRS dwrAev;
-                _pggaev->Get(iaev, &dwrAev);
+                _pggaev.Get(iaev, &dwrAev);
                 if (rZero != dwrAev)
                     return fFalse;
             }
@@ -5122,7 +5125,7 @@ void ACTR::DeleteBackCore(bool *pfAlive)
             // Note: events prior to _iaevFrmMin need to be included
             // 		due to orient-rotations lasting the lifetime of static
             // 		segments.
-            _pggaev->Put(iaev, &_xfrm.bmat34Cur);
+            _pggaev.Put(iaev, &_xfrm.bmat34Cur);
             goto LDefault;
 #endif // BUG1870
         case aetTweak:
@@ -5139,9 +5142,9 @@ void ACTR::DeleteBackCore(bool *pfAlive)
 
         case aetActn:
             AEVACTN aevactn;
-            _pggaev->Get(iaev, &aevactn);
+            _pggaev.Get(iaev, &aevactn);
             aevactn.celn = _celnCur;
-            _pggaev->Put(iaev, &aevactn);
+            _pggaev.Put(iaev, &aevactn);
             goto LDefault;
 
         case aetRem:
@@ -5467,7 +5470,7 @@ bool ACTR::FChangeTagTmpl(TAG *ptagTmplNew)
         _pggaev.GetFixed(iaev, &aev);
         if (aev.aet == aetCost)
         {
-            _pggaev->Get(iaev, &aevcost);
+            _pggaev.Get(iaev, &aevcost);
             if (aevcost.ibset >= cbsetNew)
             {
                 _RemoveAev(iaev, fTrue);
@@ -5569,12 +5572,12 @@ void ACTR::AssertValid(ulong grfobj)
             case aetAdd: {
                 AEVADD aevadd;
                 Assert(_pggaev->Cb(iaev) == kcbVarAdd, "Corrupt size in event list");
-                _pggaev->Get(iaev, &aevadd);
+                _pggaev.Get(iaev, &aevadd);
                 break;
             }
             case aetActn: {
                 AEVACTN aevactn;
-                _pggaev->Get(iaev, &aevactn);
+                _pggaev.Get(iaev, &aevactn);
                 Assert(_pggaev->Cb(iaev) == kcbVarActn, "Corrupt size in event list");
                 break;
             }
@@ -5595,7 +5598,7 @@ void ACTR::AssertValid(ulong grfobj)
                 break;
             case aetFreeze: {
                 long faevfrz;
-                _pggaev->Get(iaev, &faevfrz);
+                _pggaev.Get(iaev, &faevfrz);
                 Assert(_pggaev->Cb(iaev) == kcbVarFreeze, "Corrupt size in event list");
                 break;
             }
@@ -5604,7 +5607,7 @@ void ACTR::AssertValid(ulong grfobj)
                 break;
             case aetStep: {
                 BRS dwrAev;
-                _pggaev->Get(iaev, &dwrAev);
+                _pggaev.Get(iaev, &dwrAev);
                 Assert(_pggaev->Cb(iaev) == kcbVarStep, "Corrupt size in event list");
                 break;
             }
@@ -5638,7 +5641,7 @@ void ACTR::MarkMem(void)
         paev = (AEV *)_pggaev->QvFixedGet(iaev);
         if (aetSnd == paev->aet)
         {
-            paevsnd = (AEVSND *)_pggaev->QvGet(iaev);
+            paevsnd = (AEVSND *)_pggaev->QvGet(iaev).Cast<AEVSND>();
             if (paevsnd->tag.sid == ksidUseCrf)
                 paevsnd->tag.MarkMem();
         }
