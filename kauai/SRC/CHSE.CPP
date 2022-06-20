@@ -245,7 +245,7 @@ void CHSE::_DumpBsf(long cactTab)
             stn1.FAppendCh(kchTab);
 
         cb = LwMin(ibMac - ib, size(rgb));
-        _bsf.FetchRgb(ib, cb, rgb);
+        _bsf.FetchRgb(ib, cb, BlobPtr::Make(rgb));
 
         // append the hex
         for (ibT = 0; ibT < size(rgb); ibT++)
@@ -368,7 +368,7 @@ void CHSE::DumpGroup(PGGB pggb)
         DumpSz(PszLit("\tITEM"));
         if (cbFixed > 0)
         {
-            _bsf.FReplace(pggb->PvFixedLock(iv), cbFixed, 0, _bsf.IbMac());
+            _bsf.FReplace(pggb->PvFixedLock(iv).Ptr(), cbFixed, 0, _bsf.IbMac());
             pggb->Unlock();
             _DumpBsf(2);
         }

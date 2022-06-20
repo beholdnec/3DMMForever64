@@ -445,7 +445,7 @@ bool TXDD::_FFetchCh(long ich, achar *pch)
                 ichMinCache = LwMax(0, ichLimCache - size(_rgchCache));
             }
             BltPb(_rgchCache, _rgchCache + (_ichMinCache - ichMinCache), ichLimCache - _ichMinCache);
-            _pbsf->FetchRgb(ichMinCache, _ichMinCache - ichMinCache, _rgchCache);
+            _pbsf->FetchRgb(ichMinCache, _ichMinCache - ichMinCache, BlobPtr::Make(_rgchCache));
         }
         else if (FIn(_ichLimCache, ichMinCache, ich + 1))
         {
@@ -455,12 +455,12 @@ bool TXDD::_FFetchCh(long ich, achar *pch)
                 ichLimCache = LwMin(ichLim, ichMinCache + size(_rgchCache));
             }
             BltPb(_rgchCache + (ichMinCache - _ichMinCache), _rgchCache, _ichLimCache - ichMinCache);
-            _pbsf->FetchRgb(_ichLimCache, ichLimCache - _ichLimCache, _rgchCache + (_ichLimCache - ichMinCache));
+            _pbsf->FetchRgb(_ichLimCache, ichLimCache - _ichLimCache, BlobPtr(_rgchCache + (_ichLimCache - ichMinCache), sizeof(long)));
         }
         else
         {
         LFetchAll:
-            _pbsf->FetchRgb(ichMinCache, ichLimCache - ichMinCache, _rgchCache);
+            _pbsf->FetchRgb(ichMinCache, ichLimCache - ichMinCache, BlobPtr::Make(_rgchCache));
         }
         _ichMinCache = ichMinCache;
         _ichLimCache = ichLimCache;
@@ -658,7 +658,7 @@ void TXDD::_FetchLineLn(long ln, achar *prgch, long cchMax, long *pcch, long *pi
     ichMin = _IchMinLn(ln);
     ichLim = _IchMinLn(ln + 1);
     *pcch = LwMin(cchMax, ichLim - ichMin);
-    _pbsf->FetchRgb(ichMin, *pcch, prgch);
+    _pbsf->FetchRgb(ichMin, *pcch, BlobPtr(prgch, sizeof(achar)));
     if (pvNil != pichMin)
         *pichMin = ichMin;
 }
@@ -1140,7 +1140,7 @@ long TXDD::_XpFromIch(long ich)
     GNV gnv(this);
 
     cch = LwMin(size(rgch), ich - ichMin);
-    _pbsf->FetchRgb(ichMin, cch, rgch);
+    _pbsf->FetchRgb(ichMin, cch, BlobPtr::Make(rgch));
     return _XpFromRgch(&gnv, rgch, cch);
 }
 

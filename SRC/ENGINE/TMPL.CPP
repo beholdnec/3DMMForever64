@@ -176,7 +176,7 @@ bool ACTN::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     {
         for (icel = 0; icel < _pggcel->IvMac(); icel++)
         {
-            SwapBytesRglw(_pggcel->QvFixedGet(icel), size(CEL) / size(long));
+            SwapBytesRglw(_pggcel.QvFixedGet(icel), size(CEL) / size(long));
             SwapBytesRgsw(_pggcel->QvGet(icel).Ptr(), _pggcel->Cb(icel) / size(short));
         }
     }
@@ -486,8 +486,8 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     }
     if (!pcfl->FFind(kid.cki.ctg, kid.cki.cno, &blck))
         return fFalse;
-    _pggcmid = GG::PggRead(&blck, &bo);
-    if (pvNil == _pggcmid)
+    _pggcmid = GGPtr<long>::Read(&blck, &bo);
+    if (!_pggcmid)
         return fFalse;
     Assert(_pggcmid->CbFixed() == size(long), "Bad TMPL _pggcmid");
     Assert(_pggcmid->IvMac() == _cbset, "Bad TMPL _pggcmid");
@@ -495,8 +495,8 @@ bool TMPL::_FInit(PCFL pcfl, CTG ctg, CNO cno)
     {
         for (ibset = 0; ibset < _cbset; ibset++)
         {
-            SwapBytesRglw(_pggcmid->QvFixedGet(ibset), 1);
-            SwapBytesRglw(_pggcmid->QvGet(ibset).Ptr(), *(long *)_pggcmid->QvFixedGet(ibset));
+            SwapBytesRglw(_pggcmid.QvFixedGet(ibset), 1);
+            SwapBytesRglw(_pggcmid->QvGet(ibset).Ptr(), *_pggcmid.QvFixedGet(ibset));
         }
     }
     return fTrue;
@@ -514,8 +514,8 @@ LBuildGgcm:
     if (pvNil == pcrf)
         return fFalse;
 
-    _pggcmid = GG::PggNew(size(long));
-    if (pvNil == _pggcmid)
+    _pggcmid = GGPtr<long>::New();
+    if (!_pggcmid)
     {
         ReleasePpo(&pcrf);
         return fFalse;
@@ -559,7 +559,7 @@ TMPL::~TMPL(void)
     AssertBaseThis(0);
     _pglibactPar.Release();
     _pglibset.Release();
-    ReleasePpo(&_pggcmid);
+    _pggcmid.Release();
 }
 
 /***************************************************************************
@@ -881,7 +881,7 @@ long TMPL::CcmidOfBset(long ibset)
     AssertThis(0);
     AssertIn(ibset, 0, _cbset);
 
-    return *(long *)_pggcmid->QvFixedGet(ibset);
+    return *_pggcmid.QvFixedGet(ibset);
 }
 
 /***************************************************************************
@@ -1042,7 +1042,7 @@ void TMPL::AssertValid(ulong grftmpl)
     Assert(_pggcmid->IvMac() == _cbset, 0);
     for (ibset = 0; ibset < _cbset; ibset++)
     {
-        ccmid = *(long *)_pggcmid->QvFixedGet(ibset);
+        ccmid = *_pggcmid.QvFixedGet(ibset);
         Assert(_pggcmid->Cb(ibset) / size(long) == ccmid, 0);
     }
 }

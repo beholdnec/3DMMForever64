@@ -911,7 +911,7 @@ void GPT::DrawPoly(HQ hqoly, GDD *pgdd)
     AssertHq(hqoly);
     AssertVarMem(pgdd);
 
-    _Fill(PvLockHq(hqoly), pgdd, (PFNDRW)&GPT::_FillPoly);
+    _Fill(PvLockHq(hqoly).Ptr(), pgdd, (PFNDRW)&GPT::_FillPoly);
     UnlockHq(hqoly);
 }
 

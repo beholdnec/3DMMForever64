@@ -17,7 +17,7 @@
 #define UTILCOPY_H
 
 void BltPb(void *pv1, void *pv2, long cb);
-void CopyPb(void *pv1, void *pv2, long cb);
+void CopyPb(const void *src, void *dst, long cb);
 void ClearPb(void *pv, long cb);
 void FillPb(void *pv1, long cb, byte b);
 void ReversePb(void *pv, long cb);

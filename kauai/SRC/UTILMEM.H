@@ -91,7 +91,7 @@ void FreePhq(HQ *phq);
 long CbOfHq(HQ hq);
 bool FCopyHq(HQ hqSrc, HQ *phqDst, long mpr);
 bool FResizePhq(HQ *phq, long cb, ulong grfmem, long mpr);
-void *PvLockHq(HQ hq);
+class BlobPtr PvLockHq(HQ hq);
 void UnlockHq(HQ hq);
 
 #ifdef DEBUG
@@ -344,6 +344,12 @@ private:
     size_t _size = 0;
 };
 
+inline BlobPtr PvAddBv(BlobPtr pv, long bv)
+{
+    AssertH(bv >= 0 && bv <= pv.Size());
+    return BlobPtr(PvAddBv(pv.Ptr(), bv), pv.Size() - bv);
+}
+
 /****************************************
     GLPtr provides a template-typed wrapper around a PGL.
 ****************************************/
@@ -507,6 +513,11 @@ public:
         _pgg->PutFixed(iv, BlobPtr::Make(*pv));
     }
 
+    TFixed* QvFixedGet(long iv, long* pcbVar = pvNil) const
+    {
+        return _pgg->QvFixedGet(iv, pcbVar).Cast<TFixed>();
+    }
+
     template<typename U>
     void Get(long iv, U* pv) const
     {
@@ -517,6 +528,18 @@ public:
     void Put(long iv, U* pv) const
     {
         _pgg->Put(iv, BlobPtr::Make(*pv));
+    }
+
+    template<typename U>
+    void GetRgb(long iv, long bv, long cb, U* pv) const
+    {
+        _pgg->GetRgb(iv, bv, cb, BlobPtr::Make(*pv));
+    }
+
+    template<typename U>
+    void PutRgb(long iv, long bv, long cb, U* pv) const
+    {
+        _pgg->PutRgb(iv, bv, cb, BlobPtr::Make(*pv));
     }
 
     bool FCopyEntries(GGPtr pggSrc, long ivSrc, long ivDst, long cv) const
@@ -577,6 +600,18 @@ public:
     void PutFixed(long iv, TFixed* pv) const
     {
         _pag->PutFixed(iv, BlobPtr::Make(*pv));
+    }
+
+    template<typename U>
+    void GetRgb(long iv, long bv, long cb, U* pv)
+    {
+        _pag->GetRgb(iv, bv, cb, BlobPtr::Make(*pv));
+    }
+
+    template<typename U>
+    void PutRgb(long iv, long bv, long cb, U* pv)
+    {
+        _pag->PutRgb(iv, bv, cb, BlobPtr::Make(*pv));
     }
 
 private:
@@ -645,11 +680,7 @@ public:
     }
 
 private:
-    explicit GSTPtr(PGST pgst) : _pgst(pgst)
-    {
-        // FIXME: should this be _pgst->CbExtra() == sizeof(TExtra)?
-        AssertH(_pgst == pvNil || _pgst->CbExtra() >= sizeof(TExtra));
-    }
+    explicit GSTPtr(PGST pgst) : _pgst(pgst) { }
 
     PGST _pgst = pvNil;
 };

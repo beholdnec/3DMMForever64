@@ -880,7 +880,7 @@ bool DCGL::FCmdAddItem(PCMD pcmd)
 {
     HQ hq;
     long cb;
-    void *pv;
+    BlobPtr pv;
     long ivNew;
     bool fT;
     PGLB pglb;
@@ -895,13 +895,13 @@ bool DCGL::FCmdAddItem(PCMD pcmd)
     switch (pcmd->cid)
     {
     case cidAddItem:
-        fT = pglb->FAdd(BlobPtr(pv, cb), &ivNew);
+        fT = pglb->FAdd(pv, &ivNew);
         break;
     case cidInsertItem:
         if (_fAllocated)
             break;
         Assert(pglb->FIs(kclsGL), "bad grpb");
-        fT = ((PGL)pglb)->FInsert(ivNew = _ivCur, BlobPtr(pv, cb));
+        fT = ((PGL)pglb)->FInsert(ivNew = _ivCur, pv);
     }
     UnlockHq(hq);
     FreePhq(&hq);
@@ -1006,7 +1006,7 @@ void DCGG::Draw(PGNV pgnv, RC *prcClip)
             }
             else
             {
-                CopyPb(pggb->QvFixedGet(iv), rgb, cbDisp);
+                CopyPb(pggb->QvFixedGet(iv).Ptr(), rgb, cbDisp);
                 stn = PszLit("       ");
             }
 
@@ -1090,7 +1090,7 @@ bool DCGG::FCmdAddItem(PCMD pcmd)
     if (cb > 0)
         ClearPb(pggb->QvGet(ivNew).Ptr(), cb);
     else
-        ClearPb(pggb->QvFixedGet(ivNew), pggb->CbFixed());
+        ClearPb(pggb->QvFixedGet(ivNew).Ptr(), pggb->CbFixed());
 
     // turn off the selection and invalidate stuff
     _SetSel(lnNil);
@@ -1161,7 +1161,7 @@ void DCST::Draw(PGNV pgnv, RC *prcClip)
     if (size(rgb) < (cbExtra = pgstb->CbExtra()))
     {
         if (FAllocHq(&hqExtra, cbExtra, fmemNil, mprNormal))
-            pbExtra = (byte *)PvLockHq(hqExtra);
+            pbExtra = (byte *)PvLockHq(hqExtra).Ptr();
         else
             pbExtra = pvNil;
     }
@@ -1277,7 +1277,7 @@ bool DCST::FCmdAddItem(PCMD pcmd)
 
     if ((cb = pgstb->CbExtra()) > 0 && FAllocHq(&hq, cb, fmemClear, mprNormal))
     {
-        pgstb->PutExtra(ivNew, BlobPtr(PvLockHq(hq), cb));
+        pgstb->PutExtra(ivNew, PvLockHq(hq));
         UnlockHq(hq);
         FreePhq(&hq);
     }
@@ -1341,7 +1341,7 @@ bool DOCI::_FInit(void)
 
     if (0 < (cb = CbOfHq(hq)))
     {
-        fRet = _bsf.FReplace(PvLockHq(hq), cb, 0, 0);
+        fRet = _bsf.FReplace(PvLockHq(hq).Ptr(), cb, 0, 0);
         UnlockHq(hq);
     }
     else
@@ -1424,7 +1424,7 @@ bool DOCI::_FWrite(long iv)
 {
     long cb;
     HQ hq;
-    void *pv;
+    BlobPtr pv;
     bool fRet;
 
     cb = _bsf.IbMac();
@@ -1437,16 +1437,16 @@ bool DOCI::_FWrite(long iv)
     case kclsGL:
     case kclsAL:
         Assert(cb == ((PGLB)_pgrpb)->CbEntry(), "bad cb in GL/AL");
-        ((PGLB)_pgrpb)->Put(iv, BlobPtr(pv, cb));
+        ((PGLB)_pgrpb)->Put(iv, pv);
         break;
     case kclsGG:
     case kclsAG:
         if (_dln == 0)
-            fRet = ((PGGB)_pgrpb)->FPut(iv, cb, pv);
+            fRet = ((PGGB)_pgrpb)->FPut(iv, cb, pv.Ptr());
         else
         {
             Assert(cb == ((PGGB)_pgrpb)->CbFixed(), "bad cb in GG/AG");
-            ((PGGB)_pgrpb)->PutFixed(iv, BlobPtr(pv, cb));
+            ((PGGB)_pgrpb)->PutFixed(iv, pv);
         }
         break;
     case kclsGST:
@@ -1454,12 +1454,12 @@ bool DOCI::_FWrite(long iv)
         if (_dln == 0)
         {
             cb = LwMin(cb, kcchMaxStz);
-            fRet = ((PGSTB)_pgrpb)->FPutRgch(iv, (achar *)pv, cb / size(achar));
+            fRet = ((PGSTB)_pgrpb)->FPutRgch(iv, (achar *)pv.Ptr(), cb / size(achar));
         }
         else
         {
             Assert(cb == ((PGSTB)_pgrpb)->CbExtra(), "bad cb in GST/AST");
-            ((PGSTB)_pgrpb)->PutExtra(iv, BlobPtr(pv, cb));
+            ((PGSTB)_pgrpb)->PutExtra(iv, pv);
         }
         break;
     default:
@@ -1481,7 +1481,7 @@ HQ DOCI::_HqRead(void)
 {
     long cb;
     HQ hq;
-    void *pv;
+    BlobPtr pv;
     STN stn;
 
     _fFixed = fTrue;
@@ -1525,21 +1525,21 @@ HQ DOCI::_HqRead(void)
     {
     case kclsGL:
     case kclsAL:
-        ((PGLB)_pgrpb)->Get(_iv, BlobPtr(pv, cb));
+        ((PGLB)_pgrpb)->Get(_iv, pv);
         break;
     case kclsGG:
     case kclsAG:
         if (_dln == 0)
-            ((PGGB)_pgrpb)->Get(_iv, BlobPtr(pv, cb));
+            ((PGGB)_pgrpb)->Get(_iv, pv);
         else
-            ((PGGB)_pgrpb)->GetFixed(_iv, BlobPtr(pv, cb));
+            ((PGGB)_pgrpb)->GetFixed(_iv, pv);
         break;
     case kclsGST:
     case kclsAST:
         if (_dln == 0)
-            CopyPb(stn.Prgch(), pv, stn.Cch() * size(achar));
+            CopyPb(stn.Prgch(), pv.Ptr(), stn.Cch() * size(achar));
         else
-            ((PGSTB)_pgrpb)->GetExtra(_iv, BlobPtr(pv, cb));
+            ((PGSTB)_pgrpb)->GetExtra(_iv, pv);
         break;
     }
     UnlockHq(hq);

@@ -520,7 +520,7 @@ ulong FcmpCompareRgb(void *pv1, void *pv2, long cb)
 /***************************************************************************
     Copy data without overlap.
 ****************************************************************************/
-void CopyPb(void *pv1, void *pv2, long cb)
+void CopyPb(const void *pv1, void *pv2, long cb)
 {
     AssertIn(cb, 0, kcbMax);
     AssertPvCb(pv1, cb);

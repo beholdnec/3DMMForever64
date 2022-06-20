@@ -736,7 +736,7 @@ PCFL CFL::PcflReadForestFromFlo(PFLO pflo, bool fCopyData)
             if (!pcfl->_FAdd(0, ecdf.ctg, ecsdT.cno, icrp, pvNil))
                 goto LFail;
 
-            qcrp = (CRP *)pcfl->_pggcrp->QvFixedGet(icrp);
+            qcrp = pcfl->_pggcrp->QvFixedGet(icrp).Cast<CRP>();
             qcrp->fp = ecdf.cb > 0 ? fpSrc : 0;
             qcrp->SetCb(ecdf.cb);
             qcrp->AssignGrfcrp(ecdf.grfcrp, fcrpPacked | fcrpForest);
@@ -803,7 +803,7 @@ bool CFL::FForest(CTG ctg, CNO cno)
         Bug("chunk not there");
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     Assert(qcrp->cki.ctg == ctg && qcrp->cki.cno == cno, 0);
     return FPure(qcrp->Grfcrp(fcrpForest));
 }
@@ -822,7 +822,7 @@ void CFL::SetForest(CTG ctg, CNO cno, bool fForest)
         Bug("chunk not there");
         return;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     Assert(qcrp->cki.ctg == ctg && qcrp->cki.cno == cno, 0);
     if (FPure(qcrp->Grfcrp(fcrpForest)) != FPure(fForest))
     {
@@ -1079,7 +1079,7 @@ void CFL::AssertValid(ulong grfcfl)
         fFirstKid = fTrue;
         for (ikid = 0; ikid < crp.ckid; ikid++)
         {
-            _pggcrp->GetRgb(icrp, _BvKid(ikid), size(KID), &kid);
+            _pggcrp.GetRgb(icrp, _BvKid(ikid), size(KID), &kid);
             AssertVar(_FFindCtgCno(kid.cki.ctg, kid.cki.cno, &icrpT), "child doesn't exist", &kid.cki);
             Assert(kid.cki.ctg != ckiOld.ctg || kid.cki.cno != ckiOld.cno, "chunk is child of itself!");
 
@@ -1194,7 +1194,7 @@ tribool CFL::_TValidIndex(void)
     ccrpRefTot = ckidTot = 0;
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp, &cbVar);
+        qcrp = _pggcrp->QvFixedGet(icrp, &cbVar).Cast<CRP>();
         if (!FIn(qcrp->ckid, 0, cbVar / size(KID) + 1))
             return tNo;
         if (!FIn(qcrp->ccrpRef, 0, kckidMax + 1))
@@ -1215,7 +1215,7 @@ tribool CFL::_TValidIndex(void)
     // end up in an infinite loop in the orphan check.
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
         if (qcrp->ccrpRef > 0 || qcrp->ckid == 0)
             continue;
 
@@ -1235,7 +1235,7 @@ tribool CFL::_TValidIndex(void)
                 ResumeCheckPointers();
                 return tNo;
             }
-            qcrp = (CRP *)_pggcrp->QvFixedGet(icrpT);
+            qcrp = _pggcrp.QvFixedGet(icrpT);
             if (grfcge & fcgePre)
             {
                 if (qcrp->Grfcrp(fcrpMarkT))
@@ -1259,7 +1259,7 @@ tribool CFL::_TValidIndex(void)
     // this will find orphan subgraphs and validate (ccrpRef > 0).
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         if (qcrp->ccrpRef > 0 || qcrp->ckid == 0)
             continue;
 
@@ -1283,7 +1283,7 @@ tribool CFL::_TValidIndex(void)
                     ResumeCheckPointers();
                     return tNo;
                 }
-                qcrp = (CRP *)_pggcrp->QvFixedGet(icrpT);
+                qcrp = _pggcrp->QvFixedGet(icrpT).Cast<CRP>();
                 if (qcrp->Grfcrp(fcrpMarkT))
                     grfcgeIn = fcgeSkipToSib;
                 else
@@ -1295,7 +1295,7 @@ tribool CFL::_TValidIndex(void)
     // make sure the fcrpMarkT fields are set iff (ccrpRef > 0)
     for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
         if ((qcrp->ccrpRef != 0) != FPure(qcrp->Grfcrp(fcrpMarkT)))
         {
             ResumeAssertValid();
@@ -1401,7 +1401,7 @@ bool CFL::_FReadIndex(void)
 
         for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
         {
-            pcrpbg = (CRPBG *)_pggcrp->QvFixedGet(icrp, &cbVar);
+            pcrpbg = (CRPBG *)_pggcrp.QvFixedGet(icrp, &cbVar);
 #ifndef CHUNK_BIG_INDEX
             // make sure we can convert this CRP to a small index CRP
             if (pcrpbg->cb > kcbMaxCrpsm || pcrpbg->ckid > kckidMax || pcrpbg->ccrpRef > kckidMax)
@@ -1490,7 +1490,7 @@ bool CFL::_FReadIndex(void)
         bom = (bo != kboCur) ? kbomCrpsm : bomNil;
         for (icrp = _pggcrp->IvMac(); icrp-- != 0;)
         {
-            pcrpsm = (CRPSM *)_pggcrp->QvFixedGet(icrp, &cbVar);
+            pcrpsm = (CRPSM *)_pggcrp.QvFixedGet(icrp, &cbVar);
             if (!FIn(cbVar, 0, kcbMax))
                 goto LBadFile;
             if (bomNil != bom)
@@ -1528,7 +1528,7 @@ bool CFL::_FReadIndex(void)
 
         for (ccrp = _pggcrp->IvMac(), icrp = 0; icrp < ccrp; icrp++)
         {
-            pcrpOld = (CRPOTH *)_pggcrp->QvFixedGet(icrp, &cbVar);
+            pcrpOld = (CRPOTH *)_pggcrp.QvFixedGet(icrp, &cbVar);
             crp.cki = pcrpOld->cki;
             crp.fp = pcrpOld->fp;
             crp.SetCb(pcrpOld->Cb());
@@ -1663,7 +1663,7 @@ bool CFL::FSave(CTG ctgCreator, FNI *pfni)
     ccrp = _pggcrp->IvMac();
     for (icrp = 0; icrp < ccrp; icrp++)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         floSrc.pfil = qcrp->Grfcrp(fcrpOnExtra) ? _cstoExtra.pfil : _csto.pfil;
         floSrc.fp = qcrp->fp;
         floSrc.cb = floDst.cb = qcrp->Cb();
@@ -1682,7 +1682,7 @@ bool CFL::FSave(CTG ctgCreator, FNI *pfni)
     floSrc.fp = size(CFP);
     for (icrp = 0; icrp < ccrp; icrp++)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         qcrp->ClearGrfcrp(fcrpOnExtra);
         qcrp->fp = qcrp->Cb() > 0 ? floSrc.fp : 0;
         floSrc.fp += qcrp->Cb();
@@ -1733,7 +1733,7 @@ bool CFL::FSave(CTG ctgCreator, FNI *pfni)
             _csto.fpMac = size(CFP);
             for (icrp = 0; icrp < ccrp; icrp++)
             {
-                qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+                qcrp = _pggcrp.QvFixedGet(icrp);
                 if (qcrp->Cb() > 0)
                     qcrp->SetGrfcrp(fcrpOnExtra);
             }
@@ -1820,7 +1820,7 @@ bool CFL::FSaveACopy(CTG ctgCreator, FNI *pfni)
 
     for (icrp = 0; icrp < ccrp; icrp++, floDst.fp += floDst.cb)
     {
-        pcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        pcrp = _pggcrp.QvFixedGet(icrp);
         crp = *pcrp;
 
         // get the source and destination FLOs
@@ -1877,7 +1877,7 @@ bool CFL::FOnExtra(CTG ctg, CNO cno)
     if (!_FFindCtgCno(ctg, cno, &icrp))
         return fFalse;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     return FPure(qcrp->Grfcrp(fcrpOnExtra));
 }
 
@@ -1907,7 +1907,7 @@ bool CFL::_FEnsureOnExtra(long icrp, FLO *pflo)
 
     CRP *qcrp;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     if (qcrp->Grfcrp(fcrpOnExtra) || qcrp->Cb() == 0)
     {
         if (pvNil != pflo)
@@ -1945,7 +1945,7 @@ bool CFL::_FEnsureOnExtra(long icrp, FLO *pflo)
             return fFalse;
         }
 
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         qcrp->SetGrfcrp(fcrpOnExtra);
         qcrp->fp = floDst.fp;
         if (pvNil != pflo)
@@ -1979,7 +1979,7 @@ void CFL::_GetFlo(long icrp, PFLO pflo)
     {
         CRP *qcrp;
 
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         pflo->pfil = qcrp->Grfcrp(fcrpOnExtra) ? _cstoExtra.pfil : _csto.pfil;
         pflo->fp = qcrp->fp;
         pflo->cb = qcrp->Cb();
@@ -2012,7 +2012,7 @@ void CFL::_GetBlck(long icrp, PBLCK pblck)
     CRP *qcrp;
 
     _GetFlo(icrp, &flo);
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     pblck->Set(&flo, qcrp->Grfcrp(fcrpPacked));
 }
 
@@ -2089,7 +2089,7 @@ void CFL::SetPacked(CTG ctg, CNO cno, bool fPacked)
         Bug("chunk not there");
         return;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     Assert(qcrp->cki.ctg == ctg && qcrp->cki.cno == cno, 0);
     if (FPure(qcrp->Grfcrp(fcrpPacked)) != FPure(fPacked))
     {
@@ -2115,7 +2115,7 @@ bool CFL::FPacked(CTG ctg, CNO cno)
         Bug("chunk not there");
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     Assert(qcrp->cki.ctg == ctg && qcrp->cki.cno == cno, 0);
     return FPure(qcrp->Grfcrp(fcrpPacked));
 }
@@ -2277,7 +2277,7 @@ bool CFL::_FFindCtgCno(CTG ctg, CNO cno, long *picrp)
     for (icrpMin = 0, icrpLim = ccrp; icrpMin < icrpLim;)
     {
         icrp = (icrpMin + icrpLim) / 2;
-        cki = ((CRP *)_pggcrp->QvFixedGet(icrp))->cki;
+        cki = (_pggcrp.QvFixedGet(icrp))->cki;
 
         if (cki.ctg < ctg)
             icrpMin = icrp + 1;
@@ -2321,7 +2321,7 @@ void CFL::_GetUniqueCno(CTG ctg, long *picrp, CNO *pcno)
     ccrp = _pggcrp->IvMac();
     for (icrp = *picrp + 1, cno = 1; icrp < ccrp; icrp++, cno++)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+        qcrp = _pggcrp.QvFixedGet(icrp);
         if (qcrp->cki.ctg != ctg || qcrp->cki.cno != cno)
             break;
     }
@@ -2508,7 +2508,7 @@ bool CFL::_FAdd(long cb, CTG ctg, CNO cno, long icrp, PBLCK pblck)
     }
     Assert(flo.pfil == _csto.pfil || flo.pfil == _cstoExtra.pfil, 0);
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     ClearPb(qcrp, size(CRP));
     qcrp->cki.ctg = ctg;
     qcrp->cki.cno = cno;
@@ -2652,12 +2652,12 @@ bool CFL::_FPut(long cb, CTG ctg, CNO cno, PBLCK pblck, PBLCK pblckSrc, void *pv
         return fFalse;
     }
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     Assert(qcrp->cki.ctg == ctg, 0);
     Assert(qcrp->cki.cno == cno, 0);
     _FreeFpCb(qcrp->Grfcrp(fcrpOnExtra), qcrp->fp, qcrp->Cb());
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     qcrp->fp = flo.fp;
     qcrp->SetCb(flo.cb);
     if (flo.pfil == _cstoExtra.pfil)
@@ -2691,8 +2691,8 @@ void CFL::SwapData(CTG ctg1, CNO cno1, CTG ctg2, CNO cno2)
         Bug("can't find the chunks");
         return;
     }
-    qcrp1 = (CRP *)_pggcrp->QvFixedGet(icrp1);
-    qcrp2 = (CRP *)_pggcrp->QvFixedGet(icrp2);
+    qcrp1 = _pggcrp.QvFixedGet(icrp1);
+    qcrp2 = _pggcrp.QvFixedGet(icrp2);
 
     fp = qcrp1->fp;
     qcrp1->fp = qcrp2->fp;
@@ -2732,8 +2732,8 @@ void CFL::SwapChildren(CTG ctg1, CNO cno1, CTG ctg2, CNO cno2)
     }
 
     // Swap the child lists.
-    qcrp1 = (CRP *)_pggcrp->QvFixedGet(icrp1);
-    qcrp2 = (CRP *)_pggcrp->QvFixedGet(icrp2);
+    qcrp1 = _pggcrp.QvFixedGet(icrp1);
+    qcrp2 = _pggcrp.QvFixedGet(icrp2);
     cb1 = LwMul(qcrp1->ckid, size(KID));
     cb2 = LwMul(qcrp2->ckid, size(KID));
     SwapVars(&qcrp1->ckid, &qcrp2->ckid);
@@ -2776,7 +2776,7 @@ void CFL::Move(CTG ctg, CNO cno, CTG ctgNew, CNO cnoNew)
     if (rtiNil != rti)
         _FSetRti(ctg, cno, rtiNil);
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrpCur);
+    qcrp = _pggcrp.QvFixedGet(icrpCur);
     ccrpRef = qcrp->ccrpRef;
     qcrp->cki.ctg = ctgNew;
     qcrp->cki.cno = cnoNew;
@@ -2846,7 +2846,7 @@ void CFL::Delete(CTG ctg, CNO cno)
         Bug("chunk not there");
         return;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     Assert(qcrp->Grfcrp(fcrpLoner) || qcrp->ccrpRef == 0, "can't directly delete a child chunk");
     qcrp->ClearGrfcrp(fcrpLoner);
     if (qcrp->ccrpRef > 0)
@@ -2878,10 +2878,10 @@ void CFL::Delete(CTG ctg, CNO cno)
                 long ikid, icrpChild;
                 KID kid;
 
-                qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+                qcrp = _pggcrp.QvFixedGet(icrp);
                 for (ikid = qcrp->ckid; ikid-- != 0;)
                 {
-                    _pggcrp->GetRgb(icrp, _BvKid(ikid), size(kid), &kid);
+                    _pggcrp.GetRgb(icrp, _BvKid(ikid), size(kid), &kid);
                     if (!_FFindCtgCno(kid.cki.ctg, kid.cki.cno, &icrpChild))
                     {
                         Bug("child not there");
@@ -2912,7 +2912,7 @@ void CFL::SetLoner(CTG ctg, CNO cno, bool fLoner)
         Bug("chunk not there");
         return;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
 
     if (fLoner)
         qcrp->SetGrfcrp(fcrpLoner);
@@ -2934,7 +2934,7 @@ bool CFL::FLoner(CTG ctg, CNO cno)
         Bug("chunk not there");
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     return FPure(qcrp->Grfcrp(fcrpLoner));
 }
 
@@ -2952,7 +2952,7 @@ long CFL::CckiRef(CTG ctg, CNO cno)
         Bug("chunk not there");
         return 0;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     return qcrp->ccrpRef;
 }
 
@@ -3003,7 +3003,7 @@ void CFL::DeleteChild(CTG ctgPar, CNO cnoPar, CTG ctgChild, CNO cnoChild, CHID c
     }
 
     // remove the reference
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrpPar);
+    qcrp = _pggcrp.QvFixedGet(icrpPar);
     qcrp->ckid--;
     _pggcrp->DeleteRgb(icrpPar, _BvKid(ikid), size(KID));
 
@@ -3025,7 +3025,7 @@ bool CFL::_FDecRefCount(long icrp)
     AssertBaseThis(0);
     CRP *qcrp;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     if (qcrp->ccrpRef <= 0)
     {
         Bug("ref count wrong");
@@ -3043,7 +3043,7 @@ void CFL::_DeleteCore(long icrp)
     CRP *qcrp;
     CKI cki;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     cki = qcrp->cki;
     _FreeFpCb(qcrp->Grfcrp(fcrpOnExtra), qcrp->fp, qcrp->Cb());
     _FSetRti(cki.ctg, cki.cno, rtiNil);
@@ -3206,7 +3206,7 @@ bool CFL::_FSetName(long icrp, PSTN pstn)
     else
         cbNew = 0;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp, &cbVar);
+    qcrp = _pggcrp->QvFixedGet(icrp, &cbVar).Cast<CRP>();
     bvRgch = qcrp->BvRgch();
     cbOld = cbVar - bvRgch;
     AssertIn(cbOld, 0, kcbMaxDataStn + 1);
@@ -3262,7 +3262,7 @@ bool CFL::_FGetName(long icrp, PSTN pstn)
     long cbVar;
     CRP *qcrp;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp, &cbVar);
+    qcrp = _pggcrp.QvFixedGet(icrp, &cbVar);
     cbRgch = qcrp->CbRgch(cbVar);
     AssertIn(cbRgch, 0, kcbMaxDataStn + 1);
     if (cbRgch <= 0)
@@ -3323,7 +3323,7 @@ bool CFL::_FAdoptChild(long icrpPar, long ikid, CTG ctgChild, CNO cnoChild, CHID
         Bug("child not there");
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrpPar);
+    qcrp = _pggcrp->QvFixedGet(icrpPar).Cast<CRP>();
     AssertIn(ikid, 0, (long)qcrp->ckid + 1);
     if (tNo != TIsDescendent(ctgChild, cnoChild, qcrp->cki.ctg, qcrp->cki.cno))
     {
@@ -3339,15 +3339,15 @@ bool CFL::_FAdoptChild(long icrpPar, long ikid, CTG ctgChild, CNO cnoChild, CHID
         AssertThis(0);
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrpPar);
+    qcrp = _pggcrp->QvFixedGet(icrpPar).Cast<CRP>();
     if (qcrp->ckid >= kckidMax)
         goto LOverFlow;
     qcrp->ckid++;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     if (qcrp->ccrpRef >= kckidMax)
     {
-        qcrp = (CRP *)_pggcrp->QvFixedGet(icrpPar);
+        qcrp = _pggcrp->QvFixedGet(icrpPar).Cast<CRP>();
         qcrp->ckid--;
     LOverFlow:
         _pggcrp->DeleteRgb(icrpPar, _BvKid(ikid), size(KID));
@@ -3426,7 +3426,7 @@ bool CFL::FGetCki(long icki, CKI *pcki, long *pckid, PBLCK pblck)
             pblck->Free();
         return fFalse;
     }
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icki);
+    qcrp = _pggcrp->QvFixedGet(icki).Cast<CRP>();
     if (pvNil != pcki)
         *pcki = qcrp->cki;
     if (pvNil != pckid)
@@ -3495,7 +3495,7 @@ bool CFL::FGetCkiCtg(CTG ctg, long icki, CKI *pcki, long *pckid, PBLCK pblck)
     if (!FIn(icrp, 0, icrpMac))
         goto LFail;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     if (qcrp->cki.ctg != ctg)
     {
     LFail:
@@ -3530,7 +3530,7 @@ long CFL::Ckid(CTG ctg, CNO cno)
         return 0;
     }
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp.QvFixedGet(icrp);
     return qcrp->ckid;
 }
 
@@ -3553,13 +3553,13 @@ bool CFL::FGetKid(CTG ctg, CNO cno, long ikid, KID *pkid)
         return fFalse;
     }
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     if (!FIn(ikid, 0, qcrp->ckid))
     {
         TrashVar(pkid);
         return fFalse;
     }
-    _pggcrp->GetRgb(icrp, _BvKid(ikid), size(KID), pkid);
+    _pggcrp.GetRgb(icrp, _BvKid(ikid), size(KID), pkid);
     Assert(_FFindCtgCno(pkid->cki.ctg, pkid->cki.cno, &icrp), "child not there");
     Assert(pkid->cki.ctg != ctg || pkid->cki.cno != cno, "chunk is child of itself!");
     return fTrue;
@@ -3616,7 +3616,7 @@ bool CFL::_FFindChidCtg(CTG ctgPar, CNO cnoPar, CHID chid, CTG ctg, KID *pkid)
         goto LFail;
     }
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrp);
+    qcrp = _pggcrp->QvFixedGet(icrp).Cast<CRP>();
     if ((ckid = qcrp->ckid) <= 0)
     {
         Assert(0 == ckid, "bad crp");
@@ -3689,7 +3689,7 @@ bool CFL::_FFindChild(long icrpPar, CTG ctgChild, CNO cnoChild, CHID chid, long 
     CRP *qcrp;
     KID *qrgkid, *qkid;
 
-    qcrp = (CRP *)_pggcrp->QvFixedGet(icrpPar);
+    qcrp = _pggcrp.QvFixedGet(icrpPar);
     if ((ckid = qcrp->ckid) <= 0)
     {
         Assert(0 == ckid, "bad crp");
@@ -3912,10 +3912,10 @@ bool CFL::_FCopy(CTG ctgSrc, CNO cnoSrc, PCFL pcflDst, CNO *pcnoDst, bool fClone
             AssertDo(pcflDst->_FFindCtgCno(kid.cki.ctg, cnom.cnoDst, &icrpDst), "_FFindCtgCno doesn't work");
 
             // make sure the forest flags match
-            qcrp = (CRP *)_pggcrp->QvFixedGet(icrpSrc);
+            qcrp = _pggcrp.QvFixedGet(icrpSrc);
             if (qcrp->Grfcrp(fcrpForest))
             {
-                qcrp = (CRP *)pcflDst->_pggcrp->QvFixedGet(icrpDst);
+                qcrp = pcflDst->_pggcrp.QvFixedGet(icrpDst);
                 qcrp->SetGrfcrp(fcrpForest);
             }
 

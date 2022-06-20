@@ -74,7 +74,7 @@ bool DLG::FGetValues(long iditMin, long iditLim)
         case ditkRadioGroup:
             lw = _LwGetRadioGroup(idit);
         LPutLw:
-            PutRgb(idit, 0, size(lw), &lw);
+            PutRgb(idit, 0, size(lw), BlobPtr::Make(lw));
             break;
 
         case ditkEditText:
@@ -116,12 +116,12 @@ void DLG::SetValues(long iditMin, long iditLim)
         switch (dit.ditk)
         {
         case ditkCheckBox:
-            GetRgb(idit, 0, size(lw), &lw);
+            GetRgb(idit, 0, size(lw), BlobPtr::Make(lw));
             _SetCheckBox(idit, lw);
             break;
 
         case ditkRadioGroup:
-            GetRgb(idit, 0, size(lw), &lw);
+            GetRgb(idit, 0, size(lw), BlobPtr::Make(lw));
             _SetRadioGroup(idit, lw);
             break;
 
@@ -291,7 +291,7 @@ long DLG::LwGetRadio(long idit)
     Assert(ditkRadioGroup == dit.ditk, "not a radio group");
 #endif // DEBUG
 
-    GetRgb(idit, 0, size(long), &lw);
+    GetRgb(idit, 0, size(long), BlobPtr::Make(lw));
     return lw;
 }
 
@@ -310,7 +310,7 @@ void DLG::PutRadio(long idit, long lw)
     AssertIn(lw, 0, dit.sitLim - dit.sitMin);
 #endif // DEBUG
 
-    PutRgb(idit, 0, size(long), &lw);
+    PutRgb(idit, 0, size(long), BlobPtr::Make(lw));
 }
 
 /***************************************************************************
@@ -328,7 +328,7 @@ bool DLG::FGetCheck(long idit)
     Assert(ditkCheckBox == dit.ditk, "not a check box");
 #endif // DEBUG
 
-    GetRgb(idit, 0, size(long), &lw);
+    GetRgb(idit, 0, size(long), BlobPtr::Make(lw));
     return lw;
 }
 
@@ -348,7 +348,7 @@ void DLG::PutCheck(long idit, bool fOn)
 #endif // DEBUG
 
     lw = FPure(fOn);
-    PutRgb(idit, 0, size(long), &lw);
+    PutRgb(idit, 0, size(long), BlobPtr::Make(lw));
 }
 
 /***************************************************************************

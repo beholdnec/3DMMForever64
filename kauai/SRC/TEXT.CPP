@@ -1368,7 +1368,7 @@ bool EDML::_FLockLn(long ln, achar **pprgch, long *pcch)
         }
         *pcch -= ich;
     }
-    *pprgch = (achar *)_bsm.PvLock(ich * size(achar));
+    *pprgch = (achar *)_bsm.PvLock(ich * size(achar)).Ptr();
     return fTrue;
 }
 
@@ -1705,7 +1705,7 @@ long EDMW::_LnReformat(long lnMin, long *pclnDel, long *pclnIns)
     _pgnv->SetFont(_onn, _grfont, _dypFont, _tah);
     ich = _IchMinLn(lnMin);
     Assert((ich > 0) == (lnMin > 0), "bad beginning");
-    prgch = (achar *)_bsm.PvLock(0);
+    prgch = (achar *)_bsm.PvLock(0).Ptr();
     cich = _CichGetBreakables(prgch, ich, rgich, kcichMax);
     Assert(cich > 0, "bad cich");
 

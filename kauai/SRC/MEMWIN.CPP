@@ -145,13 +145,13 @@ void *QvFromHq(HQ hq)
 /***************************************************************************
     Lock the hq and return a pointer to the data.
 ***************************************************************************/
-void *PvLockHq(HQ hq)
+BlobPtr PvLockHq(HQ hq)
 {
     AssertHq(hq);
     HQH *phqh = (HQH *)PvSubBv(hq, size(HQH));
     phqh->cactLock++;
     Assert(phqh->cactLock > 0, "overflow in cactLock");
-    return (void *)hq;
+    return BlobPtr(hq, phqh->cb);
 }
 
 /***************************************************************************
@@ -206,7 +206,7 @@ void MarkHq(HQ hq)
     Make sure we can access a pointer's memory.  If cb is 0, pv can be
     anything (including nil).
 ***************************************************************************/
-void AssertPvCb(void *pv, long cb)
+void AssertPvCb(const void *pv, long cb)
 {
     if (vcactSuspendCheckPointers == 0 && cb != 0)
     {

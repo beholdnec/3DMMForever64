@@ -155,7 +155,7 @@ void TestMem(void)
             AssertDo(*(byte *)PvAddBv(QvFromHq(hq), cb - 1) == (byte)cb, 0);
         }
 
-        AssertDo(PvLockHq(hq) == QvFromHq(hq), 0);
+        AssertDo(PvLockHq(hq).Ptr() == QvFromHq(hq), 0);
         if (!FCopyHq(hq, &hqT, mprDebug))
             Bug("FCopyHq failed");
         else
@@ -381,7 +381,6 @@ void TestGg(void)
     {
         cb = pgg->Cb(iv);
         AssertDo(!(cb & 1), 0);
-        // I have carefully verified that BlobPtr::Make(rgch) works as expected.
         pgg->Get(iv, BlobPtr::Make(rgch));
         qb = (byte *)pgg->QvGet(iv).Ptr();
         AssertDo(FEqualRgb(rgch, qb, cb), 0);

@@ -378,7 +378,7 @@ bool ACTR::FGotoFrame(long nfrm, bool *pfSoundInFrame)
         {
             Assert(0 < _iaevCur, "Invalid state variables in FGotoFrame()");
             // Optimize if there are no events in the current frame
-            paev = (AEV *)_pggaev->QvFixedGet(_iaevCur - 1);
+            paev = _pggaev.QvFixedGet(_iaevCur - 1);
             if (paev->nfrm < nfrm)
             {
                 if (!_FQuickBackupToFrm(nfrm, &fQuickMethodValid))
@@ -396,7 +396,7 @@ bool ACTR::FGotoFrame(long nfrm, bool *pfSoundInFrame)
         {
             for (iaev = _iaevCur - 1; iaev >= 0; iaev--)
             {
-                paev = (AEV *)_pggaev->QvFixedGet(iaev);
+                paev = _pggaev.QvFixedGet(iaev);
                 if (paev->aet == aetAdd && paev->nfrm <= nfrm)
                 {
                     iaevT = iaev;
@@ -409,7 +409,7 @@ bool ACTR::FGotoFrame(long nfrm, bool *pfSoundInFrame)
         {
             AssertIn(iaevT, 0, _pggaev->IvMac());
             _iaevFrmMin = _iaevCur = _iaevAddCur = iaevT;
-            paev = (AEV *)_pggaev->QvFixedGet(_iaevCur);
+            paev = _pggaev.QvFixedGet(_iaevCur);
             _rtelCur = paev->rtel;
             _nfrmCur = paev->nfrm;
             Assert(paev->aet == aetAdd, "Illegal _iaevAddCur state var");
@@ -477,7 +477,7 @@ bool ACTR::_FQuickBackupToFrm(long nfrm, bool *pfQuickMethodValid)
 
 #ifdef DEBUG
     AEV *paev;
-    paev = (AEV *)_pggaev->QvFixedGet(_iaevCur - 1);
+    paev = _pggaev.QvFixedGet(_iaevCur - 1);
     Assert(paev->nfrm < nfrm, "Invalid Call to _FQuickBackupToFrm()");
 #endif // DEBUG
 
@@ -566,7 +566,7 @@ bool ACTR::_FGetRtelBack(RTEL *prtel, bool fUpdateStateVar)
     RTEL rtelAdd;
     BRS dwrT;
 
-    paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+    paev = _pggaev.QvFixedGet(_iaevAddCur);
     rtelAdd = paev->rtel;
 
     if (!_fFrozen)
@@ -903,7 +903,7 @@ bool ACTR::_FIsAddNow(long iaev)
     }
 
     Assert(_pggaev->Cb(iaev) == size(AEVADD), "Corrupt event list");
-    paev = (AEV *)_pggaev->QvFixedGet(iaev);
+    paev = _pggaev.QvFixedGet(iaev);
 
     if (paev->nfrm <= _nfrmCur)
         return fTrue;
@@ -1876,7 +1876,7 @@ bool ACTR::_FAddAevFromPrev(long iaevLim, ulong grfaet)
 
     // May need to delete entire previous subroute
     // if the prev Add occurred at the same frame
-    paev = (AEV *)_pggaev->QvFixedGet(iaevAdd);
+    paev = _pggaev.QvFixedGet(iaevAdd);
     if (_nfrmCur == paev->nfrm)
     {
         // Deleting the entire subroute
@@ -1887,7 +1887,7 @@ bool ACTR::_FAddAevFromPrev(long iaevLim, ulong grfaet)
     // May need to prune out same-frame events from prev subrte
     for (iaev = _iaevAddCur - 1; iaev >= iaevAdd; iaev--)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (_nfrmCur == paev->nfrm)
         {
             fPrunedPrevSubrte = fTrue;
@@ -2031,7 +2031,7 @@ bool ACTR::_FFindNextAevAet(long aet, long iaevCur, long *piaevAdd)
 
     for (; iaevCur < _pggaev->IvMac(); iaevCur++)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaevCur);
+        paev = _pggaev.QvFixedGet(iaevCur);
         if (paev->aet == aet)
         {
             *piaevAdd = iaevCur;
@@ -2096,7 +2096,7 @@ bool ACTR::FRemFromStageCore(void)
         return fFalse;
 
     AssertIn(_iaevAddCur, 0, _pggaev->IvMac());
-    paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+    paev = _pggaev.QvFixedGet(_iaevAddCur);
     if (_nfrmCur == paev->nfrm)
     {
         if (!_FDeleteEntireSubrte())
@@ -2120,7 +2120,7 @@ bool ACTR::_FDeleteEntireSubrte(void)
     AEV *paev;
     long nfrmSav;
 
-    paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+    paev = _pggaev.QvFixedGet(_iaevAddCur);
     Assert(paev->nfrm == _nfrmCur, "Logic error: trying to delete whole route from the middle");
 
     // Delete forward from here	(exclusive of current point)
@@ -2139,7 +2139,7 @@ bool ACTR::_FDeleteEntireSubrte(void)
     _nfrmCur = knfrmInvalid;
     if (_pggaev->IvMac() > 0)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(0);
+        paev = _pggaev.QvFixedGet(0);
         Assert(paev->aet == aetAdd, "Corrupt event list");
         _nfrmFirst = paev->nfrm;
         return FGotoFrame(nfrmSav);
@@ -2162,7 +2162,7 @@ void ACTR::_DelAddFrame(long iaevAdd, long iaevLim)
 
     AssertIn(iaevAdd, 0, iaevLim);
 
-    paev = (AEV *)_pggaev->QvFixedGet(iaevAdd);
+    paev = _pggaev.QvFixedGet(iaevAdd);
     irptAdd = paev->rtel.irpt;
 
     // Delete events in current frame of subroute
@@ -2174,7 +2174,7 @@ void ACTR::_DelAddFrame(long iaevAdd, long iaevLim)
     // Delete current point	if unused
     if (iaevAdd > 0)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaevAdd - 1);
+        paev = _pggaev.QvFixedGet(iaevAdd - 1);
         if (paev->rtel.irpt == irptAdd || (paev->rtel.irpt == (irptAdd - 1) && paev->rtel.dwrOffset > rZero))
         {
             return;
@@ -2579,7 +2579,7 @@ bool ACTR::FSoonerLater(long dnfrm)
             }
 
             // Account for subroute gaps
-            paevPrev = (AEV *)_pggaev->QvFixedGet(iaev - 1);
+            paevPrev = _pggaev.QvFixedGet(iaev - 1);
             dnfrmSub = aev.nfrm - (paevPrev->nfrm);
             aev.nfrm -= dnfrmT;
             _pggaev.PutFixed(iaev, &aev);
@@ -2795,7 +2795,7 @@ bool ACTR::FMoveRoute(BRS dxr, BRS dyr, BRS dzr, bool *pfMoved, ulong grfmaf)
 #ifdef DEBUG
             {
                 AEV *paev;
-                paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+                paev = _pggaev.QvFixedGet(_iaevAddCur);
                 Assert(_nfrmCur == paev->nfrm, "Unsupported use of fmafOrient");
             }
 #endif // DEBUG
@@ -2856,7 +2856,7 @@ bool ACTR::FMoveRoute(BRS dxr, BRS dyr, BRS dzr, bool *pfMoved, ulong grfmaf)
         // Update any type of rotate event in this frame
         for (iaev = _iaevAddCur + 1; iaev < _iaevCur; iaev++)
         {
-            paev = (AEV *)_pggaev->QvFixedGet(iaev);
+            paev = _pggaev.QvFixedGet(iaev);
             if (aetRotH == paev->aet)
                 _pggaev.Put(iaev, &_xfrm.bmat34Cur);
             if (aetRotF == paev->aet)
@@ -3696,7 +3696,7 @@ void ACTR::_MatrixRotUpdate(XYZ *pxyz, BMAT34 *pbmat34)
 
         // Post apply the path orientation
         AssertIn(_iaevAddCur, 0, _pggaev->IvMac());
-        paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+        paev = _pggaev.QvFixedGet(_iaevAddCur);
         _pglrpt.Get(paev->rtel.irpt, &rpt);
 #ifdef BUG1899
         if (_ptmpl->FIsTdt() || (_rtelCur.irpt == paev->rtel.irpt && _rtelCur.dwrOffset == rZero))
@@ -4044,7 +4044,7 @@ bool ACTR::_FComputeLifetime(long *pnfrmLast)
     // REVIEW *****(SeanSe): Why not start at the end and go backwards?
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (aetAdd == paev->aet)
             iaevAdd = iaev;
     }
@@ -4892,7 +4892,7 @@ void ACTR::_DeleteFwdCore(bool fDeleteAll, bool *pfAlive, long iaevCur)
         fDeleteAll = fTrue;
         for (iaev = iaevCur; iaev < _pggaev->IvMac(); iaev++)
         {
-            paev = (AEV *)_pggaev->QvFixedGet(iaev);
+            paev = _pggaev.QvFixedGet(iaev);
             if (aetAdd == paev->aet)
             {
                 fDeleteAll = fFalse;
@@ -4971,7 +4971,7 @@ LDone:
         }
         else if (_pggaev->IvMac() > 0)
         {
-            paev = (AEV *)_pggaev->QvFixedGet(0);
+            paev = _pggaev.QvFixedGet(0);
             _nfrmFirst = paev->nfrm;
             Assert(aetAdd == paev->aet, "Bug in ACTR::DeleteFwdCore");
         }
@@ -5329,12 +5329,12 @@ bool ACTR::FMustRender(long nfrmRenderLast)
     // Intervening events?	Sounds don't affect rendering.
     if (_iaevCur < _pggaev->IvMac())
     {
-        paev = (AEV *)_pggaev->QvFixedGet(_iaevCur);
+        paev = _pggaev.QvFixedGet(_iaevCur);
         if (paev->nfrm <= nfrmRenderLast)
         {
             for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
             {
-                paev = (AEV *)_pggaev->QvFixedGet(iaev);
+                paev = _pggaev.QvFixedGet(iaev);
                 if (paev->nfrm > nfrmRenderLast)
                     break;
                 if (aetSnd == paev->aet)
@@ -5638,7 +5638,7 @@ void ACTR::MarkMem(void)
     ACTR_PAR::MarkMem();
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (aetSnd == paev->aet)
         {
             paevsnd = (AEVSND *)_pggaev->QvGet(iaev).Cast<AEVSND>();

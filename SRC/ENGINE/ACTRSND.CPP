@@ -128,7 +128,7 @@ bool ACTR::FSetSndCore(PTAG ptag, tribool fLoop, tribool fQueue, tribool fMotion
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
         AEVSND aevsndT;
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (aetAdd == paev->aet)
             break;
         if (aetSnd != paev->aet)
@@ -299,7 +299,7 @@ bool ACTR::_FInsertSmm(long iaev)
     AEV *paev;
     AEVSND *paevsnd;
 
-    paev = (AEV *)_pggaev->QvFixedGet(iaev);
+    paev = _pggaev.QvFixedGet(iaev);
     paevsnd = _pggaev->QvGet(iaev).Cast<AEVSND>();
 
     smm.aev = *paev;
@@ -340,7 +340,7 @@ bool ACTR::_FRemoveAevMm(long anid)
     // Remove motion match sounds from the previous action
     for (iaev = _iaevCur; iaev < _pggaev->IvMac(); iaev++)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (aetAdd == paev->aet)
             break;
         if (aetActn == paev->aet)
@@ -726,7 +726,7 @@ bool ACTR::FResolveAllSndTags(CNO cnoScen)
 
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(iaev);
+        paev = _pggaev.QvFixedGet(iaev);
         if (paev->aet != aetSnd)
             continue;
         _pggaev.Get(iaev, &aevsnd);

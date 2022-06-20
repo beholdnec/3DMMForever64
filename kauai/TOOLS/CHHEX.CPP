@@ -178,7 +178,7 @@ void DCH::Draw(PGNV pgnv, RC *prcClip)
     for (; ib < cb && yp < prcClip->ypBottom; ib += _cbLine)
     {
         cbT = LwMin(_cbLine, cb - ib);
-        _pbsf->FetchRgb(ib, cbT, rgb);
+        _pbsf->FetchRgb(ib, cbT, BlobPtr::Make(rgb));
 
         // first comes the address of the first byte of the line
         stn.FFormatSz(PszLit("%08x "), ib);
@@ -370,7 +370,7 @@ bool DCH::FCmdKey(PCMD_KEY pcmd)
             if (_fHalfSel && ibAnchor > 0)
             {
                 // complete the byte
-                _pbsf->FetchRgb(--ibAnchor, 1, &bT);
+                _pbsf->FetchRgb(--ibAnchor, 1, BlobPtr::Make(bT));
                 rgb[0] = (bT & 0xF0) | (rgb[0] & 0x0F);
                 ibSrc = 1;
             }

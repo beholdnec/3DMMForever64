@@ -312,7 +312,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
                 goto LWriteCore;
             }
 
-            pag->GetRgb(iv, 0, cb, rgb);
+            pag.GetRgb(iv, 0, cb, rgb);
             ib = size(byte) + size(CNO);
             if (!stnT.FSetData(rgb + ib, cb - ib) || stnT.Cch() == 0)
             {
@@ -332,7 +332,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
                 goto LWriteCore;
 
             // an object
-            pag->GetRgb(iv, 0, size(CKI), &cki);
+            pag.GetRgb(iv, 0, size(CKI), &cki);
             switch (cki.ctg)
             {
             default:
@@ -347,7 +347,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
                     Bug("bad picture data");
                     goto LWriteCore;
                 }
-                pag->GetRgb(iv, ib, cb, rgb);
+                pag.GetRgb(iv, ib, cb, rgb);
                 if (!stnT.FSetData(rgb, cb) || stnT.Cch() == 0)
                 {
                     Bug("bad picture data 2");
@@ -369,7 +369,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
                     Bug("bad button data");
                     goto LWriteCore;
                 }
-                pag->GetRgb(iv, ib, cb, rgb);
+                pag.GetRgb(iv, ib, cb, rgb);
                 if (!stnT.FSetData(rgb, cb, &cbRead) || cbRead >= cb || !stnT2.FSetData(rgb + cbRead, cb - cbRead))
                 {
                     Bug("bad picture data 2");
@@ -395,7 +395,7 @@ bool _FWriteHelpPropAg(PCFL pcfl, PCHSE pchse, KID *pkid, CKI *pckiPar)
                 }
                 else
                 {
-                    pag->GetRgb(iv, size(CKI), size(long), &lw);
+                    pag.GetRgb(iv, size(CKI), size(long), &lw);
                     stnT2.FFormatSz(PszLit("0x%x"), lw);
                     stn.FAppendStn(&stnT2);
                     stnT2.SetNil();

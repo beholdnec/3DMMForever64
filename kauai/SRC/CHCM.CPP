@@ -948,7 +948,7 @@ void CHCM::_ParseBodyCursor(bool fPack, CTG ctg, CNO cno)
     }
     ReleasePpo(&floSrc.pfil);
 
-    prgb = (byte *)PvLockHq(hq);
+    prgb = (byte *)PvLockHq(hq).Ptr();
     pcurdir = (CURDIR *)prgb;
     if (pvNil == (pggcurf = GG::PggNew(size(CURF), ccurdir)))
     {
@@ -1239,14 +1239,15 @@ void CHCM::_ParseBodyList(bool fPack, bool fAl, CTG ctg, CNO cno)
         if (FError())
             continue;
 
-        if (!pglb->FAdd(BlobPtr(), &iv))
+        if (!pglb->FAdd({}, &iv))
             _Error(ertOom);
         else
         {
             Assert(iv == pglb->IvMac() - 1, "what?");
-            prgb = (byte *)pglb->PvLock(iv).Ptr();
+            BlobPtr prgb_ = pglb->PvLock(iv);
+            prgb = (byte *)prgb_.Ptr();
             if (cb > 0)
-                _bsf.FetchRgb(0, cb, prgb);
+                _bsf.FetchRgb(0, cb, prgb_);
             if (cb < cbEntry)
                 ClearPb(prgb + cb, cbEntry - cb);
             pglb->Unlock();
@@ -1378,9 +1379,10 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
             else
             {
                 Assert(iv == pggb->IvMac() - 1, "what?");
-                prgb = (byte *)pggb->PvFixedLock(iv);
+                BlobPtr prgb_ = pggb->PvFixedLock(iv);
+                prgb = (byte *)prgb_.Ptr();
                 if (cb > 0)
-                    _bsf.FetchRgb(0, cb, prgb);
+                    _bsf.FetchRgb(0, cb, prgb_);
                 if (cb < cbFixed)
                     ClearPb(prgb + cb, cbFixed - cb);
                 pggb->Unlock();
@@ -1404,8 +1406,9 @@ void CHCM::_ParseBodyGroup(bool fPack, bool fAg, CTG ctg, CNO cno)
             _Error(ertOom);
         else
         {
-            prgb = (byte *)pggb->PvLock(iv).Ptr();
-            _bsf.FetchRgb(0, cb, prgb);
+            BlobPtr prgb_ = pggb->PvLock(iv);
+            prgb = (byte *)prgb_.Ptr();
+            _bsf.FetchRgb(0, cb, prgb_);
             pggb->Unlock();
         }
     }
@@ -1548,7 +1551,7 @@ void CHCM::_ParseBodyStringTable(bool fPack, bool fAst, CTG ctg, CNO cno)
             // add the item
             Assert(iv == pgstb->IvMac() - 1, "what?");
             if (cb > 0)
-                _bsf.FetchRgb(0, cb, pvExtra);
+                _bsf.FetchRgb(0, cb, BlobPtr(pvExtra, cbExtra));
             if (cb < cbExtra)
                 ClearPb(PvAddBv(pvExtra, cb), cbExtra - cb);
             pgstb->PutExtra(iv, BlobPtr(pvExtra, cbExtra));
@@ -1626,7 +1629,7 @@ void CHCM::_ParseBodyPackedFile(bool *pfPacked)
         return;
     }
 
-    _bsf.FetchRgb(0, size(long), &lw);
+    _bsf.FetchRgb(0, size(long), BlobPtr::Make(lw));
     lwSwapped = lw;
     SwapBytesRglw(&lwSwapped, 1);
     if (lw == klwSigPackedFile || lwSwapped == klwSigPackedFile)

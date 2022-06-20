@@ -287,8 +287,8 @@ class GGB : public GGB_PAR
     {
         return _cbFixed;
     }
-    void *QvFixedGet(long iv, long *pcbVar = pvNil);
-    void *PvFixedLock(long iv, long *pcbVar = pvNil);
+    BlobPtr QvFixedGet(long iv, long *pcbVar = pvNil);
+    BlobPtr PvFixedLock(long iv, long *pcbVar = pvNil);
     void GetFixed(long iv, BlobPtr pv);
     void PutFixed(long iv, BlobPtr pv);
 
@@ -299,8 +299,8 @@ class GGB : public GGB_PAR
     void Get(long iv, BlobPtr pv);
     void Put(long iv, BlobPtr pv);
     bool FPut(long iv, long cb, void *pv);
-    void GetRgb(long iv, long bv, long cb, void *pv);
-    void PutRgb(long iv, long bv, long cb, void *pv);
+    void GetRgb(long iv, long bv, long cb, BlobPtr pv);
+    void PutRgb(long iv, long bv, long cb, BlobPtr pv);
     void DeleteRgb(long iv, long bv, long cb);
     bool FInsertRgb(long iv, long bv, long cb, void *pv);
     bool FMoveRgb(long ivSrc, long bvSrc, long ivDst, long bvDst, long cb);

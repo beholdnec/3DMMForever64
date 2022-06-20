@@ -60,7 +60,7 @@ void TXTB::AssertValid(ulong grfobj)
     AssertNilOrPo(_pfil, 0);
     if (grfobj & fobjAssertFull)
     {
-        _pbsf->FetchRgb(ibMac - size(achar), size(achar), &ch);
+        _pbsf->FetchRgb(ibMac - size(achar), size(achar), BlobPtr::Make(ch));
         Assert(ch == kchReturn, "stream doesn't end with a carriage return");
     }
 }
@@ -383,7 +383,7 @@ void TXTB::_CacheRange(long cpMin, long cpLim)
         cpT = LwMax(0, LwMin(cpMin, _cpLimCache - kcchMaxTxtbCache));
         _cpLimCache = LwMin(cpT + kcchMaxTxtbCache, _cpLimCache);
         BltPb(_rgchCache, _rgchCache + (_cpMinCache - cpT), (_cpLimCache - _cpMinCache) * size(achar));
-        _pbsf->FetchRgb(cpT * size(achar), (_cpMinCache - cpT) * size(achar), _rgchCache);
+        _pbsf->FetchRgb(cpT * size(achar), (_cpMinCache - cpT) * size(achar), BlobPtr::Make(_rgchCache));
         _cpMinCache = cpT;
     }
     else
@@ -395,7 +395,7 @@ void TXTB::_CacheRange(long cpMin, long cpLim)
             // just cache around [cpMin, cpLim)
             _cpMinCache = LwMax(0, LwMin((cpMin + cpLim - kcchMaxTxtbCache) / 2, cpMac - kcchMaxTxtbCache));
             _cpLimCache = LwMin(_cpMinCache + kcchMaxTxtbCache, cpMac);
-            _pbsf->FetchRgb(_cpMinCache * size(achar), (_cpLimCache - _cpMinCache) * size(achar), _rgchCache);
+            _pbsf->FetchRgb(_cpMinCache * size(achar), (_cpLimCache - _cpMinCache) * size(achar), BlobPtr::Make(_rgchCache));
         }
         else
         {
@@ -409,7 +409,7 @@ void TXTB::_CacheRange(long cpMin, long cpLim)
                 BltPb(_rgchCache + (cpMinCache - _cpMinCache), _rgchCache, (_cpLimCache - cpMinCache) * size(achar));
             }
             _pbsf->FetchRgb(_cpLimCache * size(achar), (cpLimCache - _cpLimCache) * size(achar),
-                            _rgchCache + _cpLimCache - cpMinCache);
+                            BlobPtr(_rgchCache + _cpLimCache - cpMinCache, sizeof(long)));
             _cpMinCache = cpMinCache;
             _cpLimCache = cpLimCache;
         }
@@ -879,7 +879,7 @@ void TXTB::ExportFormats(PCLIP pclip)
         return;
 
     if (pvNil != (pv = pclip->PvExport(ccp * size(achar), kclfmText)))
-        _pbsf->FetchRgb(0, ccp * size(achar), pv);
+        _pbsf->FetchRgb(0, ccp * size(achar), BlobPtr(pv, ccp * sizeof(achar)));
 
     pclip->EndExport();
 }
@@ -1245,7 +1245,7 @@ bool TXRD::_FOpenArg(long icact, byte sprm, short bo, short osk)
             Bug("bad font entry");
             return fFalse;
         }
-        _pagcact->GetRgb(icact, size(long), size(short), &osk);
+        _pagcact.GetRgb(icact, size(long), size(short), &osk);
         prgb = (byte *)PvAddBv(_pagcact->PvLock(icact).Ptr(), size(long) + size(short));
         if (!stn.FSetData(prgb, cb))
         {
@@ -1256,7 +1256,7 @@ bool TXRD::_FOpenArg(long icact, byte sprm, short bo, short osk)
         _pagcact->Unlock();
 
         onn = vntl.OnnMapStn(&stn, osk);
-        _pagcact->PutRgb(icact, 0, size(long), &onn);
+        _pagcact.PutRgb(icact, 0, size(long), &onn);
         break;
 
     default:

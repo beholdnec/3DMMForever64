@@ -459,7 +459,7 @@ bool FLO::FReadHq(HQ *phq, long cbRead, FP dfp)
 
     if (!FAllocHq(phq, cbRead, fmemNil, mprNormal))
         return fFalse;
-    fT = FReadRgb(PvLockHq(*phq), cbRead, dfp);
+    fT = FReadRgb(PvLockHq(*phq).Ptr(), cbRead, dfp);
     UnlockHq(*phq);
     if (!fT)
         FreePhq(phq);
@@ -482,7 +482,7 @@ bool FLO::FWriteHq(HQ hq, long dfp)
         return fFalse;
     }
 
-    fRet = FWriteRgb(PvLockHq(hq), cbWrite, dfp);
+    fRet = FWriteRgb(PvLockHq(hq).Ptr(), cbWrite, dfp);
     UnlockHq(hq);
     return fRet;
 }
@@ -1068,7 +1068,7 @@ bool BLCK::FWriteToFlo(PFLO pfloDst, bool fPackedOk)
     if (hqNil != _hq)
     {
         bool fRet;
-        fRet = pfloDst->FWrite(PvAddBv(PvLockHq(_hq), _ibMin));
+        fRet = pfloDst->FWrite(PvAddBv(PvLockHq(_hq), _ibMin).Ptr());
         UnlockHq(_hq);
         return fRet;
     }
@@ -1103,7 +1103,7 @@ bool BLCK::FWriteToBlck(PBLCK pblckDst, bool fPackedOk)
     if (hqNil != pblckDst->_hq)
     {
         bool fRet;
-        fRet = FReadRgb((byte *)PvLockHq(pblckDst->_hq) + pblckDst->_ibMin, cb, 0, fTrue);
+        fRet = FReadRgb((byte *)PvLockHq(pblckDst->_hq).Ptr() + pblckDst->_ibMin, cb, 0, fTrue);
         UnlockHq(pblckDst->_hq);
         return fRet;
     }
@@ -1140,7 +1140,7 @@ bool BLCK::FGetFlo(PFLO pflo, bool fPackedOk)
             goto LFail;
         pflo->fp = 0;
         pflo->cb = _ibLim - _ibMin;
-        fRet = pflo->FWrite(PvAddBv(PvLockHq(_hq), _ibMin));
+        fRet = pflo->FWrite(PvAddBv(PvLockHq(_hq), _ibMin).Ptr());
         UnlockHq(_hq);
         if (!fRet)
         {

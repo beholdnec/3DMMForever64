@@ -48,7 +48,7 @@ class BSM : public BSM_PAR
 
     void SetMinGrow(long cb);
     bool FEnsureSpace(long cb, bool fShrink);
-    void *PvLock(long ib);
+    BlobPtr PvLock(long ib);
     void Unlock(void);
 
     long IbMac(void)
@@ -91,7 +91,7 @@ class BSF : public BSF_PAR
     {
         return _ibMac;
     }
-    void FetchRgb(long ib, long cb, void *prgb);
+    void FetchRgb(long ib, long cb, BlobPtr prgb);
     bool FReplace(void *prgb, long cbIns, long ib, long cbDel);
     bool FReplaceFlo(PFLO pflo, bool fCopy, long ib, long cbDel);
     bool FReplaceBsf(PBSF pbsfSrc, long ibSrc, long cbSrc, long ibDst, long cbDel);

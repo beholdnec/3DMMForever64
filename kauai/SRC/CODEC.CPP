@@ -213,14 +213,14 @@ bool CODM::_FCodePhq(long cfmt, HQ *phq)
     AssertHq(*phq);
 
     HQ hqDst;
-    void *pvSrc;
+    BlobPtr pvSrc;
     long cbSrc;
     long cbDst;
     bool fRet;
 
     pvSrc = PvLockHq(*phq);
     cbSrc = CbOfHq(*phq);
-    fRet = _FCode(cfmt, pvSrc, cbSrc, pvNil, 0, &cbDst);
+    fRet = _FCode(cfmt, pvSrc.Ptr(), cbSrc, pvNil, 0, &cbDst);
     UnlockHq(*phq);
     if (!fRet)
         return fFalse;
@@ -229,7 +229,7 @@ bool CODM::_FCodePhq(long cfmt, HQ *phq)
         return fFalse;
 
     pvSrc = PvLockHq(*phq);
-    fRet = _FCode(cfmt, pvSrc, cbSrc, PvLockHq(hqDst), cbDst, &cbDst);
+    fRet = _FCode(cfmt, pvSrc.Ptr(), cbSrc, PvLockHq(hqDst).Ptr(), cbDst, &cbDst);
     UnlockHq(hqDst);
     UnlockHq(*phq);
     if (!fRet)

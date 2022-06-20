@@ -853,7 +853,7 @@ bool APP::FCmdNewTestWnd(PCMD pcmd)
             goto LFail;
     }
 
-    pcmd->pgg->GetRgb(2, 0, size(long), &lw);
+    pcmd->pgg->GetRgb(2, 0, size(long), BlobPtr::Make(lw));
     switch (lw)
     {
     case 0: // new graphics window

@@ -1273,7 +1273,7 @@ bool ACTR::FDelete(bool *pfAlive, bool fDeleteAll)
     // frame be	later than _nfrmFirst.
     if (_iaevAddCur >= 0 && !fDeleteAll)
     {
-        paev = (AEV *)_pggaev->QvFixedGet(_iaevAddCur);
+        paev = _pggaev.QvFixedGet(_iaevAddCur);
         if (_nfrmCur == paev->nfrm)
         {
             if (!_FDeleteEntireSubrte())

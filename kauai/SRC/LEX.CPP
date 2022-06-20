@@ -439,7 +439,7 @@ bool LEXB::_FFetchRgch(achar *prgch, long cch)
         else
         {
             AssertPo(_pbsf, 0);
-            _pbsf->FetchRgb(_fpCur, cchT * size(achar), _rgch + _ichLim);
+            _pbsf->FetchRgb(_fpCur, cchT * size(achar), BlobPtr(_rgch + _ichLim, sizeof(achar)));
         }
         _ichLim += cchT;
         _fpCur += cchT * size(achar);

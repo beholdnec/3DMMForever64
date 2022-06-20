@@ -199,20 +199,20 @@ bool TXHD::_FOpenArg(long icact, byte sprm, short bo, short osk)
             return fFalse;
         if (bo == kboOther)
         {
-            _pagcact->GetRgb(icact, size(byte), size(CNO), &cno);
+            _pagcact.GetRgb(icact, size(byte), size(CNO), &cno);
             SwapBytesRglw(&cno, 1);
-            _pagcact->PutRgb(icact, size(byte), size(CNO), &cno);
+            _pagcact.PutRgb(icact, size(byte), size(CNO), &cno);
         }
         break;
 
     case sprmObject:
         if (cb < size(CTG))
             return fFalse;
-        _pagcact->GetRgb(icact, 0, size(CTG), &ctg);
+        _pagcact.GetRgb(icact, 0, size(CTG), &ctg);
         if (bo == kboOther)
         {
             SwapBytesRglw(&ctg, 1);
-            _pagcact->PutRgb(icact, 0, size(CTG), &ctg);
+            _pagcact.PutRgb(icact, 0, size(CTG), &ctg);
         }
         cb -= size(CTG);
 
@@ -232,9 +232,9 @@ bool TXHD::_FOpenArg(long icact, byte sprm, short bo, short osk)
 
             if (bo == kboOther)
             {
-                _pagcact->GetRgb(icact, size(CTG), clw * size(long), rglw);
+                _pagcact.GetRgb(icact, size(CTG), clw * size(long), rglw);
                 SwapBytesRglw(rglw, clw);
-                _pagcact->PutRgb(icact, size(CTG), clw * size(long), rglw);
+                _pagcact.PutRgb(icact, size(CTG), clw * size(long), rglw);
             }
             break;
 
@@ -315,7 +315,7 @@ bool TXHD::_FGetObjectRc(long icact, byte sprm, PGNV pgnv, PCHP pchp, RC *prc)
     cb = _pagcact->Cb(icact);
     if (cb < size(rglw))
         return fFalse;
-    _pagcact->GetRgb(icact, 0, size(rglw), rglw);
+    _pagcact->GetRgb(icact, 0, size(rglw), BlobPtr::Make(rglw));
     switch ((CTG)rglw[0])
     {
     case kctgMbmp:
@@ -378,7 +378,7 @@ bool TXHD::_FDrawObject(long icact, byte sprm, PGNV pgnv, long *pxp, long yp, PC
     cb = _pagcact->Cb(icact);
     if (cb < size(rglw))
         return fFalse;
-    _pagcact->GetRgb(icact, 0, size(rglw), rglw);
+    _pagcact->GetRgb(icact, 0, size(rglw), BlobPtr::Make(rglw));
     switch ((CTG)rglw[0])
     {
     case kctgMbmp:

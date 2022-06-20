@@ -136,7 +136,7 @@ bool TAGL::_FFindTag(PTAG ptag, long *pitag)
     for (itagfMin = 0, itagfLim = _pggtagf->IvMac(); itagfMin < itagfLim;)
     {
         itagf = (itagfMin + itagfLim) / 2;
-        qtagf = (TAGF *)_pggtagf->QvFixedGet(itagf);
+        qtagf = _pggtagf.QvFixedGet(itagf);
         if (sid < qtagf->tag.sid)
             itagfLim = itagf;
         else if (sid > qtagf->tag.sid)
@@ -268,7 +268,7 @@ bool TAGL::FCacheTags(void)
         ccc = _pggtagf->Cb(itagf) / size(CC);
         for (icc = 0; icc < ccc; icc++)
         {
-            _pggtagf->GetRgb(itagf, icc * size(CC), size(CC), &cc);
+            _pggtagf.GetRgb(itagf, icc * size(CC), size(CC), &cc);
             if (!vptagm->FBuildChildTag(&tagf.tag, cc.chid, cc.ctg, &tag))
                 return fFalse;
             // Note that if we ever have the case where we don't always

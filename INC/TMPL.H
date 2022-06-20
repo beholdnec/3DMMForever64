@@ -154,7 +154,7 @@ class TMPL : public TMPL_PAR
     ulong _grftmpl;
     GLPtr<short> _pglibactPar; // GL of parent IDs (shorts) to build BODY
     GLPtr<short> _pglibset;    // GL of body-part-set IDs to build BODY
-    PGG _pggcmid;     // List of costumes for each body part set
+    GGPtr<long> _pggcmid;     // List of costumes for each body part set
     long _ccmid;      // Count of custom costumes
     long _cbset;      // Count of body part sets
     long _cactn;      // Count of actions

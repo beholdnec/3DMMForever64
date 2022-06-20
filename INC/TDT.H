@@ -80,7 +80,7 @@ class TDT : public TDT_PAR
     bool _FInitLists(void);
     GLPtr<short> _PglibactParBuild(void);
     GLPtr<short> _PglibsetBuild(void);
-    PGG _PggcmidBuild(void);
+    GGPtr<long> _PggcmidBuild(void);
     GLPtr<BMAT34> _Pglbmat34Build(long tda);
     GGPtr<CEL> _PggcelBuild(long tda);
     virtual PACTN _PactnFetch(long tda);

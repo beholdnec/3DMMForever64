@@ -57,7 +57,7 @@ void MSTP::Init(PMIDS pmids, ulong tsStart, long lwTempo)
             return;
         _pmids->AddRef();
 
-        _prgb = (byte *)PvLockHq(_pmids->_hqrgb);
+        _prgb = (byte *)PvLockHq(_pmids->_hqrgb).Ptr();
         _pbLim = _prgb + CbOfHq(_pmids->_hqrgb);
     }
     else if (pvNil == _pmids)
@@ -615,7 +615,7 @@ PMIDS MIDS::PmidsReadNative(FNI *pfni)
 
     if (pvNil != (pmids = NewObj MIDS) && FAllocHq(&pmids->_hqrgb, bsm.IbMac(), fmemNil, mprNormal))
     {
-        bsm.FetchRgb(0, bsm.IbMac(), PvLockHq(pmids->_hqrgb));
+        bsm.FetchRgb(0, bsm.IbMac(), PvLockHq(pmids->_hqrgb).Ptr());
         UnlockHq(pmids->_hqrgb);
     }
     else

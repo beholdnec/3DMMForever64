@@ -201,14 +201,14 @@ bool GRPB::_FWrite(PBLCK pblck, void *pv, long cb, long cb1, long cb2)
 
     if (cb1 > 0)
     {
-        fRet = pblck->FWriteRgb(PvLockHq(_hqData1), cb1, cb);
+        fRet = pblck->FWriteRgb(PvLockHq(_hqData1).Ptr(), cb1, cb);
         UnlockHq(_hqData1);
         if (!fRet)
             return fFalse;
     }
     if (cb2 > 0)
     {
-        fRet = pblck->FWriteRgb(PvLockHq(_hqData2), cb2, cb + cb1);
+        fRet = pblck->FWriteRgb(PvLockHq(_hqData2).Ptr(), cb2, cb + cb1);
         UnlockHq(_hqData2);
         if (!fRet)
             return fFalse;
@@ -236,14 +236,14 @@ bool GRPB::_FReadData(PBLCK pblck, long cb1, long cb2, long ib)
 
     if (cb1 > 0)
     {
-        fRet = pblck->FReadRgb(PvLockHq(_hqData1), cb1, ib);
+        fRet = pblck->FReadRgb(PvLockHq(_hqData1).Ptr(), cb1, ib);
         UnlockHq(_hqData1);
         if (!fRet)
             return fFalse;
     }
     if (cb2 > 0)
     {
-        fRet = pblck->FReadRgb(PvLockHq(_hqData2), cb2, ib + cb1);
+        fRet = pblck->FReadRgb(PvLockHq(_hqData2).Ptr(), cb2, ib + cb1);
         UnlockHq(_hqData2);
         if (!fRet)
             return fFalse;
@@ -1346,7 +1346,7 @@ void GGB::_AdjustLocs(long bvMin, long bvLim, long dcb)
     Returns a volative pointer the the fixed sized data in the element.
     If pcbVar is not nil, fills *pcbVar with the size of the variable part.
 ***************************************************************************/
-void *GGB::QvFixedGet(long iv, long *pcbVar)
+BlobPtr GGB::QvFixedGet(long iv, long *pcbVar)
 {
     AssertThis(0);
     AssertIn(_cbFixed, 1, kcbMax);
@@ -1360,13 +1360,13 @@ void *GGB::QvFixedGet(long iv, long *pcbVar)
     if (pcbVar != pvNil)
         *pcbVar = loc.cb - _cbFixed;
     AssertIn(loc.cb, _cbFixed, _bvMac - loc.bv + 1);
-    return _Qb1(loc.bv);
+    return BlobPtr(_Qb1(loc.bv), _cbFixed);
 }
 
 /***************************************************************************
     Lock the data and return a pointer to the fixed sized data.
 ***************************************************************************/
-void *GGB::PvFixedLock(long iv, long *pcbVar)
+BlobPtr GGB::PvFixedLock(long iv, long *pcbVar)
 {
     AssertThis(0);
     Lock();
@@ -1526,12 +1526,13 @@ bool GGB::FPut(long iv, long cb, void *pv)
 /***************************************************************************
     Get a portion of the element.
 ***************************************************************************/
-void GGB::GetRgb(long iv, long bv, long cb, void *pv)
+void GGB::GetRgb(long iv, long bv, long cb, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
-    AssertPvCb(pv, cb);
+    AssertPvCb(pv.Ptr(), cb);
+    Assert(pv.Size() >= cb, "not enough space");
 
     LOC loc;
 
@@ -1540,18 +1541,19 @@ void GGB::GetRgb(long iv, long bv, long cb, void *pv)
     AssertIn(bv, _cbFixed, loc.cb);
     AssertIn(cb, 1, loc.cb - bv + 1);
 
-    CopyPb(_Qb1(loc.bv + bv), pv, cb);
+    CopyPb(_Qb1(loc.bv + bv), pv.Ptr(), cb);
 }
 
 /***************************************************************************
     Put a portion of the element.
 ***************************************************************************/
-void GGB::PutRgb(long iv, long bv, long cb, void *pv)
+void GGB::PutRgb(long iv, long bv, long cb, BlobPtr pv)
 {
     AssertThis(0);
     AssertIn(iv, 0, _ivMac);
     Assert(!FFree(iv), "element free!");
-    AssertPvCb(pv, cb);
+    AssertPvCb(pv.Ptr(), cb);
+    Assert(pv.Size() >= cb, "not enough data");
 
     LOC loc;
 
@@ -1560,7 +1562,7 @@ void GGB::PutRgb(long iv, long bv, long cb, void *pv)
     AssertIn(bv, _cbFixed, loc.cb);
     AssertIn(cb, 1, loc.cb - bv + 1);
 
-    CopyPb(pv, _Qb1(loc.bv + bv), cb);
+    CopyPb(pv.Ptr(), _Qb1(loc.bv + bv), cb);
     AssertThis(0);
 }
 
@@ -1740,7 +1742,7 @@ bool GGB::FMoveRgb(long ivSrc, long bvSrc, long ivDst, long bvDst, long cb)
     {
         byte rgb[size(long)];
 
-        GetRgb(ivSrc, bvSrc, cb - cbMove, rgb);
+        GetRgb(ivSrc, bvSrc, cb - cbMove, BlobPtr::Make(rgb));
         DeleteRgb(ivSrc, bvSrc, cb - cbMove);
         AssertDo(FInsertRgb(ivDst, bvDst + cbMove, cb - cbMove, rgb), "logic error caused failure");
     }
@@ -1770,7 +1772,7 @@ void GGB::Merge(long ivSrc, long ivDst)
     cb = Cb(ivSrc);
     cbMove = LwRoundToward(cb, size(long));
     if (cb > cbMove)
-        GetRgb(ivSrc, cbMove, cb - cbMove, rgb); // get the tail bytes
+        GetRgb(ivSrc, cbMove, cb - cbMove, BlobPtr::Make(rgb)); // get the tail bytes
 
     bv = Cb(ivDst);
     if (cbMove > 0)

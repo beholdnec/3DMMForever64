@@ -77,7 +77,7 @@ PPIC PIC::PpicRead(PBLCK pblck)
     if (hqNil == (hq = pblck->HqFree()))
         return pvNil;
 
-    ppich = (PICH *)PvLockHq(hq);
+    ppich = PvLockHq(hq).Cast<PICH>();
     rc = ppich->rc;
     if (rc.FEmpty() || ppich->cb != cb)
         hpic = hNil;

@@ -121,7 +121,7 @@ bool ACTR::FWrite(PCFL pcfl, CNO cnoActr, CNO cnoScene)
     // Adopt actor sounds into the scene
     for (iaev = 0; iaev < _pggaev->IvMac(); iaev++)
     {
-        paev = (AEV *)(_pggaev->QvFixedGet(iaev));
+        paev = (_pggaev.QvFixedGet(iaev));
         if (aetSnd != paev->aet)
             continue;
         _pggaev.Get(iaev, &aevsnd);
@@ -367,8 +367,8 @@ void ACTR::_SwapBytesPggaev(GGPtr<AEV> pggaev)
 
     for (iaev = 0; iaev < pggaev->IvMac(); iaev++)
     {
-        SwapBytesBom(pggaev->QvFixedGet(iaev), kbomAev);
-        switch (((AEV *)pggaev->QvFixedGet(iaev))->aet)
+        SwapBytesBom(pggaev.QvFixedGet(iaev), kbomAev);
+        switch ((pggaev.QvFixedGet(iaev))->aet)
         {
         case aetCost:
             SwapBytesBom(pggaev->QvGet(iaev).Ptr(), kbomAevcost);
@@ -587,7 +587,7 @@ bool ACTR::_FIsIaevTag(GGPtr<AEV> pggaev, long iaev, PTAG *pptag, PAEV *pqaev)
     AssertNilOrVarMem(pqaev);
 
     AEV *qaev;
-    qaev = (AEV *)pggaev->QvFixedGet(iaev);
+    qaev = pggaev.QvFixedGet(iaev);
     if (pqaev != pvNil)
         *pqaev = qaev;
 

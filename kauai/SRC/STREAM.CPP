@@ -67,13 +67,13 @@ bool BSM::FEnsureSpace(long cb, bool fShrink)
     Return a locked pointer into the byte stream.  The stream is stored
     contiguously.
 ***************************************************************************/
-void *BSM::PvLock(long ib)
+BlobPtr BSM::PvLock(long ib)
 {
     AssertThis(0);
     AssertIn(ib, 0, _ibMac + 1);
 
     if (hqNil == _hqrgb)
-        return pvNil;
+        return {};
     return PvAddBv(PvLockHq(_hqrgb), ib);
 }
 
@@ -157,7 +157,7 @@ bool BSM::FWriteRgb(PBLCK pblck, long ib)
     }
     if (pblck->Cb() == 0)
         return fTrue;
-    fRet = pblck->FWrite(PvAddBv(PvLockHq(_hqrgb), ib));
+    fRet = pblck->FWrite(PvAddBv(PvLockHq(_hqrgb), ib).Ptr());
     UnlockHq(_hqrgb);
     return fRet;
 }
@@ -692,7 +692,7 @@ bool BSF::FReplaceFlo(PFLO pflo, bool fCopy, long ib, long cbDel)
 
         if (!pflo->FReadHq(&hq))
             return fFalse;
-        fRet = FReplace(PvLockHq(hq), pflo->cb, ib, cbDel);
+        fRet = FReplace(PvLockHq(hq).Ptr(), pflo->cb, ib, cbDel);
         UnlockHq(hq);
         FreePhq(&hq);
         return fRet;
@@ -739,12 +739,12 @@ bool BSF::FReplaceFlo(PFLO pflo, bool fCopy, long ib, long cbDel)
 /***************************************************************************
     Fetch cb bytes from position ib into prgb.
 ***************************************************************************/
-void BSF::FetchRgb(long ib, long cb, void *prgb)
+void BSF::FetchRgb(long ib, long cb, BlobPtr prgb)
 {
     AssertThis(fobjAssertFull);
     AssertIn(ib, 0, _ibMac + 1);
     AssertIn(cb, 0, _ibMac - ib + 1);
-    AssertPvCb(prgb, cb);
+    AssertPvCb(prgb.Ptr(), cb);
     long iflo, cbT, ibMin;
     FLO flo;
 
@@ -767,10 +767,10 @@ void BSF::FetchRgb(long ib, long cb, void *prgb)
         else
         {
             // the data is on file
-            if (!flo.FReadRgb(prgb, cbT, ib))
+            if (!flo.FReadRgb(prgb.Ptr(), cbT, ib))
             {
                 Warn("read failed in fetch");
-                FillPb(prgb, cbT, kbGarbage);
+                FillPb(prgb.Ptr(), cbT, kbGarbage);
             }
         }
         prgb = PvAddBv(prgb, cbT);

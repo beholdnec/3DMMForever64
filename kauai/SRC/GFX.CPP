@@ -664,7 +664,7 @@ HQ GNV::_HqolyCreate(POGN pogn, ulong grfogn)
     if (!FAllocHq(&hqoly, cb, fmemNil, mprNormal))
         return hqNil;
 
-    poly = (OLY *)PvLockHq(hqoly);
+    poly = PvLockHq(hqoly).Cast<OLY>();
 #ifdef MAC
     poly->cb = (short)cb;
     Assert(cb == poly->cb, "polygon too big");

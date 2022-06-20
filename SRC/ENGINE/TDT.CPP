@@ -210,7 +210,7 @@ bool TDT::_FInitLists(void)
     long cch;
     GLPtr<short> pglibactParNew;
     GLPtr<short> pglibsetNew;
-    PGG pggcmidNew = pvNil;
+    GGPtr<long> pggcmidNew;
     PMTRL pmtrlDefaultNew = pvNil;
 
     pglibactParNew = _PglibactParBuild();
@@ -220,7 +220,7 @@ bool TDT::_FInitLists(void)
     if (!pglibsetNew)
         goto LFail;
     pggcmidNew = _PggcmidBuild();
-    if (pvNil == pggcmidNew)
+    if (!pggcmidNew)
         goto LFail;
     cch = _stn.Cch();
     if (pvNil == _pmtrlDefault)
@@ -240,7 +240,7 @@ bool TDT::_FInitLists(void)
     _pglibactPar = pglibactParNew;
     _pglibset.Release();
     _pglibset = pglibsetNew;
-    ReleasePpo(&_pggcmid);
+    _pggcmid.Release();
     _pggcmid = pggcmidNew;
     ReleasePpo(&_pmtrlDefault);
     _pmtrlDefault = pmtrlDefaultNew;
@@ -255,7 +255,7 @@ bool TDT::_FInitLists(void)
 LFail:
     pglibactParNew.Release();
     pglibsetNew.Release();
-    ReleasePpo(&pggcmidNew);
+    pggcmidNew.Release();
     ReleasePpo(&pmtrlDefaultNew);
     return fFalse;
 }
@@ -408,22 +408,22 @@ GLPtr<short> TDT::_PglibsetBuild(void)
     Build the costume GG for TMPL creation.  For TDTs, the costume is
     simple: all body part sets get cmid 0.
 ***************************************************************************/
-PGG TDT::_PggcmidBuild(void)
+GGPtr<long> TDT::_PggcmidBuild(void)
 {
     AssertBaseThis(0);
 
     long cch = _stn.Cch();
     long lwOne = 1;
-    PGG pggcmid;
+    GGPtr<long> pggcmid;
     long cmid = 0;
 
-    pggcmid = GG::PggNew(size(long), 1, size(long));
-    if (pvNil == pggcmid)
-        return pvNil;
+    pggcmid = GGPtr<long>::New(1, size(long));
+    if (!pggcmid)
+        return {};
     if (!pggcmid->FAdd(size(long), pvNil, &cmid, &lwOne))
     {
-        ReleasePpo(&pggcmid);
-        return pvNil;
+        pggcmid.Release();
+        return {};
     }
     return pggcmid;
 }
